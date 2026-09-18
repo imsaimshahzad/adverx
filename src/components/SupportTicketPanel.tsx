@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 const db = supabase as any;
 const categories = ["Withdrawal Issue", "Task Not Credited", "Account Issue", "Referral Issue", "Other"] as const;
 const statuses = ["open", "in_progress", "resolved", "closed"] as const;
-const priorities = ["low", "medium", "high"] as const;
+const priorities = ["low", "normal", "high", "urgent"] as const;
+const priorityLabels: Record<(typeof priorities)[number], string> = { low: "Low", normal: "Medium", high: "High", urgent: "Urgent" };
 
 type Ticket = { id: string; user_id: string; subject: string; description: string | null; message: string | null; category: string; status: string; priority: string; created_at: string; updated_at: string };
 type Message = { id: string; ticket_id: string; sender_type: "user" | "admin"; message: string; created_at: string };
@@ -44,7 +45,7 @@ export function SupportTicketPanel({ admin = false }: { admin?: boolean }) {
   useEffect(() => { void loadTickets(); }, [loadTickets]);
 
   async function openTicket(ticket: Ticket) { setSelected(ticket); const { data, error } = await db.from("support_messages").select("*").eq("ticket_id", ticket.id).order("created_at"); if (error) toast.error(error.message); else setMessages(data ?? []); }
-  async function createTicket(): Promise<void> { if (!subject.trim() || !description.trim()) { toast.error("Add a subject and description."); return; } const { data: auth } = await db.auth.getUser(); if (!auth.user) return; const { data, error } = await db.from("support_tickets").insert({ user_id: auth.user.id, subject: subject.trim(), category, description: description.trim(), message: description.trim(), status: "open", priority: "medium" }).select().single(); if (error) { toast.error(error.message); return; } await db.from("support_messages").insert({ ticket_id: data.id, sender_type: "user", message: description.trim() }); toast.success("Support ticket created."); setSubject(""); setDescription(""); setCreating(false); await loadTickets(); await openTicket(data); }
+  async function createTicket(): Promise<void> { if (!subject.trim() || !description.trim()) { toast.error("Add a subject and description."); return; } const { data: auth } = await db.auth.getUser(); if (!auth.user) return; const { data, error } = await db.from("support_tickets").insert({ user_id: auth.user.id, subject: subject.trim(), category, description: description.trim(), message: description.trim(), status: "open", priority: "normal" }).select().single(); if (error) { toast.error(error.message); return; } await db.from("support_messages").insert({ ticket_id: data.id, sender_type: "user", message: description.trim() }); toast.success("Support ticket created."); setSubject(""); setDescription(""); setCreating(false); await loadTickets(); await openTicket(data); }
   async function sendReply(): Promise<void> { if (!selected || !reply.trim()) return; const { error } = await db.from("support_messages").insert({ ticket_id: selected.id, sender_type: admin ? "admin" : "user", message: reply.trim() }); if (error) { toast.error(error.message); return; } if (!admin) await db.from("support_tickets").update({ updated_at: new Date().toISOString() }).eq("id", selected.id); setReply(""); await openTicket(selected); await loadTickets(); }
   async function updateTicket(field: "status" | "priority", value: string): Promise<void> { if (!selected || !admin) return; const { data, error } = await db.from("support_tickets").update({ [field]: value }).eq("id", selected.id).select().single(); if (error) { toast.error(error.message); return; } setSelected(data); await loadTickets(); }
 

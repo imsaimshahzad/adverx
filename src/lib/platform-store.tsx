@@ -163,8 +163,9 @@ type State = {
 const DAY = 86400000;
 export const money = (n: number) =>
   `Rs. ${n.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const isToday = (value: number) =>
-  new Date(value).toDateString() === new Date().toDateString();
+const pakistanDate = (value: number | Date = new Date()) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
+const isToday = (value: number) => pakistanDate(value) === pakistanDate();
 const num = (value: unknown) => Number(value ?? 0);
 
 async function loadCatalog() {
@@ -660,18 +661,13 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     [state.user?.planId],
   );
   const derived = useMemo(() => {
-    const credits = state.ledger
-      .filter(
-        (e) =>
-          e.status !== "Pending" &&
-          e.type !== "deposit" &&
-          e.type !== "withdrawal",
-      )
-      .reduce((a, e) => a + e.credit, 0);
-    const withdrawalHolds = state.ledger
-      .filter((e) => e.type === "withdrawal")
-      .reduce((a, e) => a + e.debit, 0);
-    const availableBalance = Math.max(0, credits - withdrawalHolds);
+    // ledger_entries is the same authoritative, append-only source used by
+    // request_withdrawal. Pending withdrawal holds are already negative ledger rows;
+    // refunds are positive rows, so never subtract withdrawals a second time.
+    const availableBalance = Math.max(
+      0,
+      state.ledger.reduce((total, entry) => total + entry.credit - entry.debit, 0),
+    );
     const totalWithdrawn = state.withdrawals
       .filter((w) => w.status === "paid")
       .reduce((a, w) => a + w.amount, 0);

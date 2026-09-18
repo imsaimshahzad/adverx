@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-export type HomepageHeroConfig = { headline: string; subtext: string; ctaText: string; ctaLink: string; backgroundUrl: string; testimonials: string };
-export const defaultHomepageHero: HomepageHeroConfig = { headline: "Complete tasks. Earn rewards. Track everything.", subtext: "A simple rewards workspace where you can complete verified ad tasks, monitor your earnings, manage your network, and request withdrawals.", ctaText: "Start Earning Now", ctaLink: "/auth", backgroundUrl: "", testimonials: JSON.stringify([{ name: "Ayesha Khan", quote: "The dashboard makes every reward easy to understand." }, { name: "Bilal Ahmed", quote: "I can track tasks and withdrawals without confusion." }]) };
+export type HomepageHeroConfig = { headline: string; subtext: string; ctaText: string; ctaLink: string; backgroundUrl: string; testimonials: string; stats: { members: { title: string; source: "members"; visible: boolean }; rewards: { title: string; source: "rewards"; visible: boolean }; withdrawalTime: { title: string; source: "withdrawal_time"; visible: boolean } } };
+export const defaultHomepageHero: HomepageHeroConfig = { headline: "Complete tasks. Earn rewards. Track everything.", subtext: "A simple rewards workspace where you can complete verified ad tasks, monitor your earnings, manage your network, and request withdrawals.", ctaText: "Start Earning Now", ctaLink: "/auth", backgroundUrl: "", testimonials: JSON.stringify([{ name: "Ayesha Khan", quote: "The dashboard makes every reward easy to understand." }, { name: "Bilal Ahmed", quote: "I can track tasks and withdrawals without confusion." }]), stats: { members: { title: "Members in the workspace", source: "members", visible: true }, rewards: { title: "Rewards paid out", source: "rewards", visible: true }, withdrawalTime: { title: "Average withdrawal time", source: "withdrawal_time", visible: true } } };
 const db = supabase as any;
 const key = "homepage_hero";
 
@@ -36,9 +36,22 @@ export function HomepageHeroSettings() {
 }
 
 export function HeroTrustStrip() {
-  const [metrics, setMetrics] = useState({ users: 0, rewards: 0, withdrawals: 0 });
-  useEffect(() => { void Promise.all([db.from("profiles").select("id", { count: "exact", head: true }), db.from("reward_transactions").select("amount_pkr").eq("status", "completed"), db.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "paid")]).then(([users, rewards, withdrawals]: any[]) => setMetrics({ users: users.count ?? 0, rewards: (rewards.data ?? []).reduce((sum: number, row: any) => sum + Number(row.amount_pkr ?? 0), 0), withdrawals: withdrawals.count ?? 0 })).catch(() => undefined); }, []);
-  return <section className="border-y border-border/70 bg-card"><div className="mx-auto grid max-w-7xl gap-4 px-5 py-5 sm:grid-cols-3 lg:px-8"><div><p className="text-2xl font-semibold">{metrics.users.toLocaleString()}+</p><p className="text-xs text-muted-foreground">Members in the workspace</p></div><div><p className="text-2xl font-semibold">Rs. {metrics.rewards.toLocaleString("en-PK")}</p><p className="text-xs text-muted-foreground">Rewards paid out</p></div><div><p className="text-2xl font-semibold">{metrics.withdrawals > 0 ? "24h" : "Fast"}</p><p className="text-xs text-muted-foreground">Average withdrawal time</p></div></div></section>;
+  const config = useHomepageHero();
+  const [metrics, setMetrics] = useState({ users: 0, rewards: 0, averageHours: null as number | null });
+  useEffect(() => { void Promise.all([
+    db.from("profiles").select("id", { count: "exact", head: true }),
+    db.from("wallet_transactions").select("amount").in("type", ["TASK_REWARD", "REFERRAL_REWARD", "REFERRAL_COMMISSION"]).eq("status", "completed"),
+    db.from("withdrawals").select("requested_at, reviewed_at").in("status", ["paid", "approved"]),
+  ]).then(([users, rewards, withdrawals]: any[]) => {
+    const durations = (withdrawals.data ?? []).filter((row: any) => row.requested_at && row.reviewed_at).map((row: any) => (new Date(row.reviewed_at).getTime() - new Date(row.requested_at).getTime()) / 3600000).filter((hours: number) => hours >= 0);
+    setMetrics({ users: users.count ?? 0, rewards: (rewards.data ?? []).reduce((sum: number, row: any) => sum + Number(row.amount ?? 0), 0), averageHours: durations.length ? durations.reduce((a: number, b: number) => a + b, 0) / durations.length : null });
+  }).catch(() => undefined); }, []);
+  const stats = [
+    config.stats.members.visible && { value: metrics.users.toLocaleString(), title: config.stats.members.title },
+    config.stats.rewards.visible && { value: `Rs. ${metrics.rewards.toLocaleString("en-PK")}`, title: config.stats.rewards.title },
+    config.stats.withdrawalTime.visible && { value: metrics.averageHours === null ? "No history" : `${metrics.averageHours.toFixed(1)}h`, title: config.stats.withdrawalTime.title },
+  ].filter(Boolean) as { value: string; title: string }[];
+  return <section className="border-y border-border/70 bg-card"><div className="mx-auto grid max-w-7xl gap-4 px-5 py-5 sm:grid-cols-3 lg:px-8">{stats.map((stat) => <div key={stat.title}><p className="text-2xl font-semibold">{stat.value}</p><p className="text-xs text-muted-foreground">{stat.title}</p></div>)}</div></section>;
 }
 
 export default HomepageHeroSettings;

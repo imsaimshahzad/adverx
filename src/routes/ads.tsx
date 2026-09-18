@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dialog";
 import { ADS, money, usePlatform, type Ad } from "@/lib/platform-store";
 
+const pakistanDate = (value: number | Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
+
 export const Route = createFileRoute("/ads")({
   head: () => ({
     meta: [
@@ -42,7 +44,7 @@ function AdsPage() {
   const [completing, setCompleting] = useState(false);
   const watchedIds = new Set(
     state.adViews
-      .filter((v) => new Date(v.completedAt).toDateString() === new Date().toDateString())
+      .filter((v) => pakistanDate(v.completedAt) === pakistanDate(new Date()))
       .map((v) => v.adId),
   );
   const availableAds = ADS.filter((ad) => !watchedIds.has(ad.id));
