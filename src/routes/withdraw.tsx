@@ -69,10 +69,15 @@ function WithdrawPage() {
   const [submitting, setSubmitting] = useState(false);
   const requestKeyRef = useRef<string | null>(null);
   const value = Number(amount) || 0;
+  const requestedPaise = Math.round(value * 100);
+  const availablePaise = Math.round(Number(availableBalance) * 100);
+  const minPaise = Math.round(Number(min) * 100);
   const fee = Math.round(value * 0.02 * 100) / 100;
   const methodMin = selectedMethod?.minWithdrawal ?? min;
   const methodMax = selectedMethod?.maxWithdrawal ?? Number.POSITIVE_INFINITY;
-  const amountOutsideMethodLimits = Boolean(selectedMethod && (value < methodMin || value > methodMax));
+  const methodMinPaise = Math.round(Number(methodMin) * 100);
+  const methodMaxPaise = Number.isFinite(methodMax) ? Math.round(Number(methodMax) * 100) : Number.POSITIVE_INFINITY;
+  const amountOutsideMethodLimits = Boolean(selectedMethod && (requestedPaise < methodMinPaise || requestedPaise > methodMaxPaise));
 
   return (
     <AppShell
@@ -122,19 +127,19 @@ function WithdrawPage() {
           disabled={submitting || amountOutsideMethodLimits}
           onClick={async () => {
             if (submitting) return;
-            if (selectedMethod && value < methodMin) {
+            if (selectedMethod && requestedPaise < methodMinPaise) {
               toast.error(`Minimum withdrawal for ${selectedMethod.name} is ${money(methodMin)}.`);
               return;
             }
-            if (selectedMethod && value > methodMax) {
+            if (selectedMethod && requestedPaise > methodMaxPaise) {
               toast.error(`Maximum withdrawal for ${selectedMethod.name} is ${money(methodMax)}.`);
               return;
             }
-            if (value < min) {
+            if (requestedPaise < minPaise) {
               toast.error(`Minimum withdrawal is ${money(min)}.`);
               return;
             }
-            if (value > availableBalance) {
+            if (requestedPaise > availablePaise) {
               toast.error("Amount exceeds your available earnings.");
               return;
             }
@@ -152,7 +157,7 @@ function WithdrawPage() {
               const savedDetails = { methodId: selectedMethod.id, type: selectedMethod.type, ...details };
               await userDb.from("user_withdrawal_methods").upsert({ user_id: state.user?.id, method_id: selectedMethod.id, details: savedDetails }, { onConflict: "user_id,method_id" });
               await requestWithdrawal({
-                amount: value,
+                amount: requestedPaise / 100,
                 method: selectedMethod.name,
                 account: JSON.stringify(savedDetails),
                 requestKey: requestKeyRef.current,

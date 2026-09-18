@@ -697,11 +697,13 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const todaysEarnings = state.ledger
       .filter((e) => e.type !== "deposit" && isToday(e.createdAt))
       .reduce((a, e) => a + e.credit, 0);
-    // Count the same credited ad rewards used by Today earnings, using the
-    // Asia/Karachi calendar day rather than the browser's UTC date.
-    const adsCompletedToday = state.ledger.filter(
-      (entry) => entry.type === "ad_reward" && isToday(entry.createdAt),
+  // Count the same credited ad rewards used by Today earnings, using the
+  // Asia/Karachi calendar day rather than the browser's UTC date.
+  const adsCompletedToday = state.ledger.filter(
+    (entry) => entry.type === "ad_reward" && isToday(entry.createdAt),
+
     ).length;
+    const dailyAdLimit = plan ? Math.max(plan.dailyAdLimit, 10) : 0;
     const score = Math.min(
       100,
       Math.round(
@@ -727,6 +729,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       totalWithdrawn,
       todaysEarnings,
       adsCompletedToday,
+      dailyAdLimit,
       activityScore: score,
       activityLevel,
     };
@@ -842,7 +845,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         state,
         plan,
         ...derived,
-        dailyAdLimit: plan?.dailyAdLimit || 10,
+  dailyAdLimit: plan?.dailyAdLimit || 10,
+
         unreadCount: state.notifications.filter((n) => !n.read).length,
         register,
         login,
