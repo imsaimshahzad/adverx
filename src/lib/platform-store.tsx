@@ -169,14 +169,27 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
 const num = (value: unknown) => Number(value ?? 0);
 
 async function loadCatalog() {
-  const [{ data: plans, error: plansError }, { data: depositMethods, error: methodsError }, { data: ads, error: adsError }] = await Promise.all([
+  const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }] = await Promise.all([
+    db.from("tasks").select("*").eq("status", "active").eq("reward_enabled", true).order("created_at"),
     db.from("plans").select("*").eq("active", true).eq("status", "active").order("price_pkr"),
     db.from("deposit_methods").select("*").eq("is_active", true).order("sort_order"),
-    db.from("tasks").select("*").eq("status", "active").order("created_at"),
   ]);
+
+  // Keep the availability list independent from account/catalog data. A failure in
+  // another catalog query must not erase successfully fetched active ads.
+  ADS.splice(0, ADS.length, ...((ads ?? []) as any[]).map((a) => ({
+    id: a.id,
+    title: a.title,
+    advertiser: a.advertiser ?? "Advertiser",
+    description: a.description ?? "Complete this verified task.",
+    category: a.category ?? "General",
+    watchSeconds: a.required_watch_seconds ?? a.duration_seconds ?? 15,
+    reward: num(a.reward),
+  })));
+
+  if (adsError) throw new Error(`Unable to load active ads: ${adsError.message}`);
   if (plansError) throw new Error(`Unable to load plans: ${plansError.message}`);
   if (methodsError) throw new Error(`Unable to load deposit methods: ${methodsError.message}`);
-  if (adsError) throw new Error(`Unable to load tasks: ${adsError.message}`);
 
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({
     id: method.id,
@@ -254,7 +267,7 @@ async function loadState(user: {
       .order("purchased_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    db.from("tasks").select("*").eq("status", "active").order("created_at"),
+    db.from("tasks").select("*").eq("status", "active").eq("reward_enabled", true).order("created_at"),
     db
       .from("deposits")
       .select("*")
