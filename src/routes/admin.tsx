@@ -1001,6 +1001,9 @@ function CreateRecordButton({
     minWithdrawal: "",
     maxWithdrawal: "",
     dailyAds: "",
+    adminProfit: "",
+    referralCommission: "",
+    recoveryFund: "",
   });
   const table = tableFor[active];
   const supported = Boolean(
@@ -1029,6 +1032,9 @@ function CreateRecordButton({
       minWithdrawal: "",
       maxWithdrawal: "",
       dailyAds: "",
+      adminProfit: "",
+      referralCommission: "",
+      recoveryFund: "",
     });
   async function create() {
     const name = form.name.trim();
@@ -1087,28 +1093,15 @@ function CreateRecordButton({
         }
         await insertRow(table!, { name, destination_label: form.advertiser.trim(), instructions: form.body.trim(), is_active: true, sort_order: 0, min_withdrawal_pkr: minimum, max_withdrawal_pkr: maximum }, "admin_create_withdrawal_method");
       } else if (active === "plans") {
-        const minDeposit = Number(form.amount);
+        const price = Number(form.amount);
         const dailyAds = Number(form.dailyAds);
-        if (
-          !name ||
-          !Number.isFinite(minDeposit) ||
-          minDeposit < 0 ||
-          !Number.isInteger(dailyAds) ||
-          dailyAds < 0
-        )
-          throw new Error(
-            "Enter a plan name, minimum deposit, and daily ads count.",
-          );
-        await insertRow(
-          table!,
-          {
-            name,
-            min_deposit: minDeposit,
-            ads_per_day: dailyAds,
-            status: "active",
-          },
-          "admin_create_plans",
-        );
+        const adminProfit = Number(form.adminProfit || 0);
+        const referralCommission = Number(form.referralCommission || 0);
+        const recoveryFund = Number(form.recoveryFund || 0);
+        const rewardReserve = 100 - adminProfit - referralCommission - recoveryFund;
+        if (!name || !form.body.trim() || !Number.isFinite(price) || price < 0 || !Number.isInteger(dailyAds) || dailyAds < 0 || [adminProfit, referralCommission, recoveryFund].some((value) => !Number.isFinite(value) || value < 0 || value > 100) || rewardReserve < 0)
+          throw new Error("Enter valid plan details. Allocation percentages must total 100% or less.");
+        await insertRow(table!, { name, description: form.body.trim(), price_pkr: price, ads_per_day: dailyAds, admin_profit_pct: adminProfit, referrer_commission_pct: referralCommission, recovery_fund_pct: recoveryFund, ad_budget_pct: rewardReserve, reward_budget_pkr: price * rewardReserve / 100, status: "active", active: true }, "admin_create_plans");
       } else {
         const value = Number(form.amount);
         if (!name || !Number.isFinite(value) || value <= 0)
@@ -1203,18 +1196,14 @@ function CreateRecordButton({
             )}
             {isPlan && (
               <>
+                <label className="grid gap-2 text-sm font-medium">Description<textarea className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></label>
                 <label className="grid gap-2 text-sm font-medium">
-                  Minimum deposit
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.amount}
-                    onChange={(e) =>
-                      setForm({ ...form, amount: e.target.value })
-                    }
-                  />
+                  Price PKR
+                  <Input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
                 </label>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {([["adminProfit", "Admin Profit %"], ["referralCommission", "Referral Commission %"], ["recoveryFund", "Recovery Fund %"]] as const).map(([field, label]) => <label key={field} className="grid gap-2 text-sm font-medium">{label}<Input type="number" min="0" max="100" step="0.01" value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })} /></label>)}
+                </div>
                 <label className="grid gap-2 text-sm font-medium">
                   Daily Ads Limit
                   <Input
@@ -1312,8 +1301,14 @@ function ManagementEditDialog({
 }) {
   const [form, setForm] = useState<AdminRow>({});
   useEffect(() => { setForm(row ? { ...row } : {}); }, [row]);
+  const planPrice = Number(form.price_pkr ?? 0);
+  const adminProfit = Number(form.admin_profit_pct ?? 0);
+  const referralCommission = Number(form.referrer_commission_pct ?? 0);
+  const recoveryFund = Number(form.recovery_fund_pct ?? 0);
+  const rewardReserve = 100 - adminProfit - referralCommission - recoveryFund;
+  const rewardBudget = planPrice * Math.max(0, rewardReserve) / 100;
   const fields = table === "plans"
-    ? ["name", "description", "price_pkr", "admin_profit_pct", "referrer_commission_pct", "recovery_fund_pct", "recovery_per_referral_pkr", "reward_budget_pkr", "base_ad_reward_pkr", "max_ad_reward_pkr", "daily_reward_limit_pkr", "ads_per_day", "referral_enabled", "active"]
+    ? ["name", "description", "price_pkr", "admin_profit_pct", "referrer_commission_pct", "recovery_fund_pct", "ad_budget_pct", "reward_budget_pkr", "ads_per_day", "active"]
     : table === "ads"
       ? ["title", "description", "destination_url", "duration_seconds", "reward", "reward_enabled", "display_order", "status"]
       : table === "deposit_methods"
@@ -1329,10 +1324,19 @@ function ManagementEditDialog({
           {fields.map((field) => {
             const value = form[field];
             const booleanField = typeof value === "boolean" || ["active", "is_active", "reward_enabled", "referral_enabled"].includes(field);
-            return <label key={field} className="grid gap-1 text-sm font-medium">{table === "plans" && field === "ads_per_day" ? "Daily Ads Limit" : field.replaceAll("_", " ")}{booleanField ? <select className="h-9 rounded-md border bg-background px-2" value={String(Boolean(value))} onChange={(e) => setForm({ ...form, [field]: e.target.value === "true" })}><option value="true">Active / enabled</option><option value="false">Inactive / disabled</option></select> : <Input type={["price_pkr", "reward_budget_pkr", "base_ad_reward_pkr", "max_ad_reward_pkr", "daily_reward_limit_pkr", "ads_per_day", "duration_seconds", "reward", "display_order", "sort_order", "min_deposit_pkr", "max_deposit_pkr", "min_withdrawal_pkr", "max_withdrawal_pkr"].includes(field) ? "number" : "text"} value={String(value ?? "")} onChange={(e) => setForm({ ...form, [field]: e.target.type === "number" ? Number(e.target.value) : e.target.value })} />}</label>;
+            return <label key={field} className="grid gap-1 text-sm font-medium">{table === "plans" && field === "ads_per_day" ? "Daily Ads Limit" : field.replaceAll("_", " ")}{booleanField ? <select className="h-9 rounded-md border bg-background px-2" value={String(Boolean(value))} onChange={(e) => setForm({ ...form, [field]: e.target.value === "true" })}><option value="true">Active / enabled</option><option value="false">Inactive / disabled</option></select> : <Input type={["price_pkr", "admin_profit_pct", "referrer_commission_pct", "recovery_fund_pct", "ad_budget_pct", "reward_budget_pkr", "base_ad_reward_pkr", "max_ad_reward_pkr", "daily_reward_limit_pkr", "ads_per_day", "duration_seconds", "reward", "display_order", "sort_order", "min_deposit_pkr", "max_deposit_pkr", "min_withdrawal_pkr", "max_withdrawal_pkr"].includes(field) ? "number" : "text"} value={String(value ?? "")} onChange={(e) => setForm({ ...form, [field]: e.target.type === "number" ? Number(e.target.value) : e.target.value })} />}</label>;
           })}
         </div>
-        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={busy} onClick={() => onSave(Object.fromEntries(fields.map((field) => [field, form[field]])))}>{busy ? "Saving���" : "Save changes"}</Button></DialogFooter>
+        {table === "plans" && (
+          <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+            <p className="mb-2 font-medium">Live allocation summary</p>
+            <p>Admin profit: {adminProfit}% = Rs. {(planPrice * adminProfit / 100).toFixed(2)}</p>
+            <p>Referral commission: {referralCommission}% = Rs. {(planPrice * referralCommission / 100).toFixed(2)}</p>
+            <p>Recovery fund: {recoveryFund}% = Rs. {(planPrice * recoveryFund / 100).toFixed(2)}</p>
+            <p>Reward reserve: {rewardReserve}% = Rs. {rewardBudget.toFixed(2)}</p>
+          </div>
+        )}
+        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={busy || (table === "plans" && rewardReserve < 0)} onClick={() => onSave(Object.fromEntries(fields.map((field) => [field, field === "ad_budget_pct" ? rewardReserve : field === "reward_budget_pkr" ? rewardBudget : form[field]])))}>{busy ? "Saving…" : "Save changes"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -1421,6 +1425,11 @@ function ModuleTable({
   ...[
   "name",
   "price_pkr",
+  "admin_profit_pct",
+  "referrer_commission_pct",
+  "recovery_fund_pct",
+  "ad_budget_pct",
+  "reward_budget_pkr",
   "ads_per_day",
   "status",
   "created_at",
