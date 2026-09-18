@@ -18,7 +18,7 @@ export type Plan = {
   name: string;
   price: number;
   description: string;
-  durationDays: number;
+  durationDays: number | null;
   dailyAdLimit: number;
   rewardBudget: number;
   baseAdReward: number;
@@ -191,7 +191,7 @@ async function loadCatalog() {
     name: p.name,
     price: num(p.price_pkr ?? p.min_deposit),
     description: p.description ?? "Verified rewards plan",
-    durationDays: p.duration_days ?? 30,
+    durationDays: p.duration_days == null ? null : num(p.duration_days),
     dailyAdLimit: num(p.daily_task_limit),
     rewardBudget: num(p.reward_budget_pkr),
     baseAdReward: num(p.base_ad_reward_pkr),
@@ -300,7 +300,7 @@ async function loadState(user: {
       name: p.name,
       price: num(p.price_pkr ?? p.min_deposit),
       description: p.description ?? "Verified rewards plan",
-      durationDays: p.duration_days ?? 30,
+      durationDays: p.duration_days == null ? null : num(p.duration_days),
       dailyAdLimit: num(p.daily_task_limit),
       rewardBudget: num(p.reward_budget_pkr),
       baseAdReward: num(p.base_ad_reward_pkr),

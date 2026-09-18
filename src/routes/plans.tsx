@@ -64,7 +64,7 @@ function PlansPage() {
 
               <ul className="mt-4 space-y-1.5 text-sm">
                 <Line>{p.dailyAdLimit} ad tasks per day</Line>
-                <Line>{p.durationDays} days validity</Line>
+                <Line>{p.durationDays ? `${p.durationDays} days validity` : "Lifetime access"}</Line>
                 <Line>Minimum withdrawal {money(p.minWithdrawal)}</Line>
                 <Line>{p.networkEligible ? "Network rewards enabled" : "No network rewards"}</Line>
               </ul>
