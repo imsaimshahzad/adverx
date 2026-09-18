@@ -229,7 +229,7 @@ function Dashboard() {
           <div>
             <p className="morphic-eyebrow">Available earnings</p>
             <p className="morphic-number num">{money(availableBalance)}</p>
-            <p className="morphic-caption">Liquid balance · updates as rewards clear</p>
+            <p className="morphic-caption">Available now · rewards are credited instantly</p>
           </div>
           <button type="button" aria-label="Expand earnings details" className="morphic-icon-button" onClick={() => setExpanded((value) => !value)}><Maximize2 className="size-4" /></button>
         </div>

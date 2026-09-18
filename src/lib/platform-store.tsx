@@ -508,7 +508,6 @@ type Ctx = {
   state: State;
   plan: Plan | null;
   availableBalance: number;
-  pendingEarnings: number;
   totalWithdrawn: number;
   todaysEarnings: number;
   adsCompletedToday: number;
@@ -671,9 +670,6 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const totalWithdrawn = state.withdrawals
       .filter((w) => w.status === "paid")
       .reduce((a, w) => a + w.amount, 0);
-    const pendingEarnings = state.withdrawals
-      .filter((w) => !["paid", "rejected"].includes(w.status))
-      .reduce((a, w) => a + w.amount, 0);
     const todaysEarnings = state.ledger
       .filter((e) => e.type !== "deposit" && isToday(e.createdAt))
       .reduce((a, e) => a + e.credit, 0);
@@ -703,7 +699,6 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return {
       availableBalance,
       totalWithdrawn,
-      pendingEarnings,
       todaysEarnings,
       adsCompletedToday,
       activityScore: score,
