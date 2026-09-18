@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Bell,
   History,
@@ -7,9 +7,12 @@ import {
   Users,
   Wallet,
   LifeBuoy,
+  Menu,
+  Settings,
+  X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { usePlatform } from "@/lib/platform-store";
 import { Button } from "@/components/ui/button";
@@ -19,14 +22,30 @@ import { BrandLogo } from "@/components/BrandLogo";
 import "@/dashboard-design.css";
 import "@/morphic-system.css";
 
-const NAV: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/ads", label: "Ads", icon: MonitorPlay },
-  { to: "/network", label: "Network", icon: Users },
-  { to: "/withdraw", label: "Withdraw", icon: Wallet },
-  { to: "/history", label: "History", icon: History },
-  { to: "/support", label: "Support", icon: LifeBuoy },
-];
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [{ to: "/", label: "Dashboard", icon: Home }],
+  },
+  {
+    label: "Earn & manage",
+    items: [
+      { to: "/ads", label: "Earn / Tasks", icon: MonitorPlay },
+      { to: "/network", label: "Referrals", icon: Users },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [
+      { to: "/withdraw", label: "Withdrawals", icon: Wallet },
+      { to: "/history", label: "Transactions", icon: History },
+    ],
+  },
+  {
+    label: "Support",
+    items: [{ to: "/support", label: "Support", icon: LifeBuoy }, { to: "/profile", label: "Settings", icon: Settings }],
+  },
+] satisfies Array<{ label: string; items: { to: string; label: string; icon: LucideIcon }[] }>;
 
 export function AppShell({
   title,
@@ -41,6 +60,8 @@ export function AppShell({
 }) {
   const { state, ready, dataError, unreadCount } = usePlatform();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const user = state.user;
 
   useEffect(() => {
@@ -69,59 +90,41 @@ export function AppShell({
     );
   }
 
-  return (
-    <div className="dashboard-shell mx-auto flex min-h-screen w-full max-w-7xl flex-col">
-      <header className="dashboard-header sticky top-0 z-20 mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link to="/" aria-label="AdverX home" className="shrink-0">
-            <BrandLogo compact className="max-w-[10.5rem] sm:max-w-[12rem]" />
-          </Link>
-          <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
-            {title}
-          </h1>
-          {subtitle ? (
-            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
-          ) : null}
+  const navigation = (
+    <div className="flex h-full flex-col">
+      <div className="flex h-20 items-center border-b border-sidebar-border px-6">
+        <Link to="/" aria-label="AdverX home" onClick={() => setMobileOpen(false)}><BrandLogo compact className="max-w-[9.5rem]" /></Link>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-6">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="mb-6">
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{group.label}</p>
+            <div className="flex flex-col gap-1">
+              {group.items.map(({ to, label, icon: Icon }) => (
+                <Link key={to} to={to} activeOptions={{ exact: to === "/" }} onClick={() => setMobileOpen(false)} className="app-nav-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium">
+                  <Icon className="size-[18px]" />{label}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button asChild variant="ghost" size="icon" className="glass-input relative border-0">
-            <Link to="/notifications" aria-label="Notifications">
-              <Bell className="size-5" />
-              {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" />
-              )}
-            </Link>
-          </Button>
-          <Link to="/profile" aria-label="Profile">
-            <Avatar className="size-8">
-              <AvatarFallback className="bg-primary text-xs text-primary-foreground shadow-brand">
-                {(user?.fullName ?? "G").slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
-        </div>
-      </header>
+        ))}
+      </div>
+      <div className="border-t border-sidebar-border p-4"><div className="flex items-center gap-3 rounded-lg bg-muted/60 p-3"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar><div className="min-w-0"><p className="truncate text-sm font-semibold">{user?.fullName ?? "Member"}</p><p className="truncate text-xs text-muted-foreground">{user?.email ?? ""}</p></div></div></div>
+    </div>
+  );
 
-      <main className="mx-auto w-full max-w-5xl min-w-0 flex-1 px-4 pb-32 pt-4 sm:px-6 sm:pb-28 lg:px-8">{children}</main>
-
-      <nav className="dashboard-nav fixed bottom-3 left-1/2 z-20 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 sm:bottom-5 sm:pb-2">
-        <ul className="grid grid-cols-6 gap-1">
-          {NAV.map(({ to, label, icon: Icon }) => (
-            <li key={to}>
-              <Link
-                to={to}
-                activeOptions={{ exact: to === "/" }}
-                className="dashboard-nav-item flex min-h-12 flex-col items-center justify-center gap-1 rounded-full px-2 py-2 text-[10px] font-medium transition-all duration-200 sm:text-[11px]"
-              >
-                <Icon className="size-5" />
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+  return (
+    <div className="dashboard-shell flex min-h-screen w-full">
+      <aside className="app-sidebar hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">{navigation}</aside>
+      {mobileOpen ? <button aria-label="Close navigation" className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
+      <aside className={`app-mobile-sidebar fixed inset-y-0 left-0 z-40 w-72 bg-sidebar shadow-xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>{navigation}<button className="absolute right-4 top-6 rounded-md p-1 text-muted-foreground" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button></aside>
+      <div className="min-w-0 flex-1">
+        <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between border-b px-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></Button><div className="min-w-0"><p className="hidden text-xs font-medium text-muted-foreground sm:block">AdverX workspace</p><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1>{subtitle ? <p className="truncate text-xs text-muted-foreground sm:hidden">{subtitle}</p> : null}</div></div>
+          <div className="flex items-center gap-2"><Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button><Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link></div>
+        </header>
+        <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">{children}</main>
+      </div>
     </div>
   );
 }
