@@ -177,7 +177,7 @@ async function loadCatalog() {
       .eq("reward_enabled", true)
       .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true }),
-    db.from("plans").select("id, name, description, price_pkr, duration_days, ads_per_day, reward_budget_pkr, base_ad_reward_pkr, max_ad_reward_pkr, daily_reward_limit_pkr, admin_profit_pct, referrer_commission_pct, recovery_fund_pct, ad_budget_pct, recovery_per_referral_pkr, min_withdrawal, highlight").eq("active", true).eq("status", "active").order("price_pkr"),
+    db.from("plans").select("*").eq("active", true).eq("status", "active").order("price_pkr"),
     db.from("deposit_methods").select("*").eq("is_active", true).order("sort_order"),
   ]);
 
