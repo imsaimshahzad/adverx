@@ -38,7 +38,15 @@ export const Route = createFileRoute("/ads")({
 });
 
 function AdsPage() {
-  const { plan, state, adsCompletedToday, dailyAdLimit, startAd, completeAd } = usePlatform();
+  const {
+    plan,
+    state,
+    adsCompletedToday,
+    dailyAdLimit,
+    todaysEarnings,
+    startAd,
+    completeAd,
+  } = usePlatform();
   const [openAd, setOpenAd] = useState<Ad | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
@@ -47,16 +55,18 @@ function AdsPage() {
       .filter((v) => pakistanDate(v.completedAt) === pakistanDate(new Date()))
       .map((v) => v.adId),
   );
-  const availableAds = ADS.filter((ad) => !watchedIds.has(ad.id));
-  const limitReached = adsCompletedToday >= dailyAdLimit;
-  const remainingAds = Math.max(0, Math.min(dailyAdLimit - adsCompletedToday, availableAds.length));
+  const dailyLimitReached = adsCompletedToday >= dailyAdLimit;
+  const earningsLimitReached = Boolean(
+    plan?.dailyRewardLimit && todaysEarnings >= plan.dailyRewardLimit,
+  );
+  const remainingAds = Math.max(0, dailyAdLimit - adsCompletedToday);
 
   return (
     <AppShell
       title="Ad tasks"
       subtitle={plan ? `${adsCompletedToday} of ${dailyAdLimit} completed today` : "Locked"}
     >
-      {!plan ? (
+      {!plan && (
         <div className="surface flex flex-col items-center gap-3 p-8 text-center">
           <Lock className="size-6 text-muted-foreground" />
           <p className="text-sm font-medium">Ad tasks are locked</p>
@@ -67,9 +77,10 @@ function AdsPage() {
             <Link to="/plans">View plans</Link>
           </Button>
         </div>
-      ) : (
-        <>
-          <div className="glass-panel flex items-center justify-between gap-3 p-4">
+      )}
+
+      <>
+        <div className="glass-panel flex items-center justify-between gap-3 p-4">
             <div className="flex items-center gap-3"><ShieldCheck className="size-5 text-success" />
             <p className="text-xs text-muted-foreground">
               Rewards are credited only after the full engagement time and verification
@@ -79,10 +90,28 @@ function AdsPage() {
           </div>
 
           <div className="mt-3 space-y-3">
-            {availableAds.map((ad) => {
+            {ADS.map((ad) => {
               const done = watchedIds.has(ad.id);
+              const disabledReason = !plan
+                ? "Activate a plan to unlock ad tasks"
+                : done
+                  ? "Completed today"
+                  : dailyLimitReached
+                    ? "Daily limit reached"
+                    : earningsLimitReached
+                      ? "Earnings limit reached"
+                      : null;
+              const disabled = Boolean(disabledReason);
+
               return (
-                <div key={ad.id} className="surface p-4 transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
+                <div
+                  key={ad.id}
+                  className={`surface p-4 transition-transform duration-200 sm:p-5 ${
+                    disabled
+                      ? "opacity-60"
+                      : "hover:-translate-y-0.5"
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold">{ad.title}</p>
@@ -91,34 +120,40 @@ function AdsPage() {
                     <Badge variant="secondary">{ad.category}</Badge>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">{ad.description}</p>
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-3 flex items-center justify-between gap-3">
                     <span className="text-xs text-muted-foreground">
                       {ad.watchSeconds}s engagement
                     </span>
-                    <Button
-                      size="sm"
-                      variant={done ? "secondary" : "default"}
-                      disabled={done || limitReached}
-                      onClick={async () => {
-                        try {
-                          const id = await startAd(ad.id);
-                          setSessionId(id);
-                          setOpenAd(ad);
-                        } catch (error) {
-                          toast.error(error instanceof Error ? error.message : "Ad could not start");
-                        }
-                      }}
-                    >
-                      {done ? "Completed" : limitReached ? "Daily limit" : "Watch"}
-                      {!done && !limitReached && <Play className="size-4" />}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      {disabledReason && (
+                        <span className="text-right text-xs text-muted-foreground">
+                          {disabledReason}
+                        </span>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={disabled ? "secondary" : "default"}
+                        disabled={disabled}
+                        onClick={async () => {
+                          try {
+                            const id = await startAd(ad.id);
+                            setSessionId(id);
+                            setOpenAd(ad);
+                          } catch (error) {
+                            toast.error(error instanceof Error ? error.message : "Ad could not start");
+                          }
+                        }}
+                      >
+                        {done ? "Completed" : disabledReason ?? "Watch"}
+                        {!disabled && <Play className="size-4" />}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        </>
-      )}
+      </>
 
       <AdPlayer
         ad={openAd}
