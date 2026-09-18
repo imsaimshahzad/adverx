@@ -150,6 +150,7 @@ function AdminRoute() {
   const [page, setPage] = useState(1);
   const [statusPartition, setStatusPartition] = useState<"pending" | "approved" | "rejected">("pending");
   const [refreshing, setRefreshing] = useState(false);
+  const [adsFilter, setAdsFilter] = useState<"active" | "archived" | "all">("active");
   const [receipt, setReceipt] = useState<{
     url: string | null;
     state: "loading" | "ready" | "unavailable" | "expired";
@@ -386,6 +387,10 @@ function AdminRoute() {
   const currentRows = active === "users" ? userPageRows : currentTable ? (rows[currentTable] ?? []) : [];
   const filtered = useMemo(() => {
     const partitionedRows = currentRows.filter((row) => {
+      if (active === "tasks") {
+        const status = String(row.status ?? "").toLowerCase();
+        return adsFilter === "all" || status === adsFilter;
+      }
       if (active !== "deposits" && active !== "withdrawals") return true;
       const status = String(row.status ?? "").toLowerCase();
       return statusPartition === "approved"
@@ -400,7 +405,7 @@ function AdminRoute() {
         return (Number.isFinite(aTime) ? aTime : Number.MAX_SAFE_INTEGER) -
           (Number.isFinite(bTime) ? bTime : Number.MAX_SAFE_INTEGER);
       });
-  }, [active, currentRows, query, statusPartition]);
+  }, [active, adsFilter, currentRows, query, statusPartition]);
   const metrics = useMemo(
     () => [
       { label: "Total users", value: Number(overview.total_users ?? 0) },
@@ -702,6 +707,18 @@ function AdminRoute() {
               setSelectedUser={setSelectedUser}
               actions={statusActions[active] ?? []}
               statusPartition={statusPartition}
+              adsFilter={adsFilter}
+              onAdsFilter={(value) => {
+                setAdsFilter(value);
+                setPage(1);
+              }}
+              {...(active === "tasks" ? {
+                adsCounts: {
+                  active: currentRows.filter((row) => String(row.status ?? "").toLowerCase() === "active").length,
+                  archived: currentRows.filter((row) => String(row.status ?? "").toLowerCase() === "archived").length,
+                  all: currentRows.length,
+                },
+              } : {})}
               onStatusPartition={(value) => {
                 setStatusPartition(value);
                 setPage(1);
@@ -770,9 +787,19 @@ function AdminRoute() {
           >
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Confirm status change</DialogTitle>
+                <DialogTitle>
+                  {statusConfirm?.status === "archived"
+                    ? "Archive ad?"
+                    : statusConfirm?.status === "active" && active === "tasks"
+                      ? "Restore ad?"
+                      : "Confirm status change"}
+                </DialogTitle>
                 <DialogDescription>
-                  Update this record through the admin workflow.
+                  {statusConfirm?.status === "archived"
+                    ? "This ad will be archived to preserve its history. It will remain available in the Archived tab."
+                    : statusConfirm?.status === "active" && active === "tasks"
+                      ? "Restore this archived ad so it is active and available to users again."
+                      : "Update this record through the admin workflow."}
                 </DialogDescription>
               </DialogHeader>
               {statusConfirm?.status === "rejected" ? (
@@ -1343,6 +1370,9 @@ function ModuleTable({
   actions,
   statusPartition,
   onStatusPartition,
+  adsFilter,
+  onAdsFilter,
+  adsCounts,
   statusCounts,
   onStatus,
   onReply,
@@ -1365,6 +1395,9 @@ function ModuleTable({
   actions: string[];
   statusPartition?: "pending" | "approved" | "rejected";
   onStatusPartition?: (value: "pending" | "approved" | "rejected") => void;
+  adsFilter?: "active" | "archived" | "all";
+  onAdsFilter?: (value: "active" | "archived" | "all") => void;
+  adsCounts?: { active: number; archived: number; all: number };
   statusCounts?: { pending: number; approved: number; rejected: number };
   onStatus: (row: AdminRow, status: string) => void;
   onReply: (row: AdminRow) => void;
@@ -1420,7 +1453,15 @@ function ModuleTable({
             {rows.length} live records from Supabase.
           </p>
         </div>
-        {statusCounts && onStatusPartition ? (
+        {adsCounts && onAdsFilter ? (
+          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Ads status">
+            {(["active", "archived", "all"] as const).map((status) => (
+              <Button key={status} type="button" size="sm" variant={adsFilter === status ? "default" : "outline"} role="tab" aria-selected={adsFilter === status} onClick={() => onAdsFilter(status)} className="shrink-0 capitalize">
+                {status} ({adsCounts[status]})
+              </Button>
+            ))}
+          </div>
+        ) : statusCounts && onStatusPartition ? (
           <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${active} status`}>
             {(["pending", "approved", "rejected"] as const).map((status) => (
               <Button
@@ -1561,7 +1602,7 @@ function ModuleTable({
                       </td>
   ) : actions.length || managementTable || active === "support" ? (
   <td className="px-3 py-4">
-                        {managementTable ? <div className="mb-2 flex gap-2"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button><Button size="sm" variant="destructive" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button></div> : null}
+                        {managementTable ? <div className="mb-2 flex gap-2"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</div> : null}
                         {active === "support" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
                         {actions.length ? <select
                           aria-label={`Change status for ${String(row.full_name ?? row.id ?? "record")}`}
