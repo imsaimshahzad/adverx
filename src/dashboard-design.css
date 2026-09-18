@@ -1,4 +1,11 @@
-.dashboard-shell { --dashboard-accent:#6366f1; --dashboard-cyan:#06b6d4; background:#f8fafc; color:#111827; }
+.dashboard-shell { --dashboard-accent:#4f46e5; --dashboard-cyan:#0891b2; background:#f7f8fa; color:#111827; }
+.dashboard-shell .app-sidebar { position:sticky; top:0; height:100vh; }
+.dashboard-shell .app-nav-item { color:#64748b; transition:background-color 160ms ease, color 160ms ease; }
+.dashboard-shell .app-nav-item:hover { background:#f1f5f9; color:#1e293b; }
+.dashboard-shell .app-nav-item[data-status="active"],.dashboard-shell .app-nav-item.active { background:#eef2ff; color:#4338ca; }
+.dashboard-shell .app-nav-item[aria-current="page"] { background:#eef2ff; color:#4338ca; }
+.dashboard-shell .dashboard-header { background:rgba(255,255,255,.88); }
+@media (max-width: 1023px) { .dashboard-shell { display:block; } .dashboard-shell .dashboard-header { height:4.25rem; } }
 .dashboard-shell .dashboard-header { background:rgba(248,250,252,.88); border-bottom:1px solid #e2e8f0; backdrop-filter:blur(18px); }
 .dashboard-shell .dashboard-nav { border:1px solid #e2e8f0; border-radius:1.25rem; background:rgba(255,255,255,.96); box-shadow:0 16px 36px rgba(15,23,42,.12); backdrop-filter:blur(18px); }
 .dashboard-shell .dashboard-nav-item { color:#4b5563; }

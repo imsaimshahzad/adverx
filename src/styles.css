@@ -49,14 +49,14 @@
 }
 
 :root {
-  --radius: 0.875rem;
-  --background: #f8fafc;
+  --radius: 0.75rem;
+  --background: #f7f8fa;
   --foreground: #111827;
   --card: #ffffff;
   --card-foreground: #111827;
   --popover: #ffffff;
   --popover-foreground: #111827;
-  --primary: #6366f1;
+  --primary: #4f46e5;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #1f2937;
