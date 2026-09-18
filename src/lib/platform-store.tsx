@@ -170,7 +170,13 @@ const num = (value: unknown) => Number(value ?? 0);
 
 async function loadCatalog() {
   const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }] = await Promise.all([
-    db.from("tasks").select("*").eq("status", "active").eq("reward_enabled", true).order("created_at"),
+    db
+      .from("ads")
+      .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at")
+      .eq("status", "active")
+      .eq("reward_enabled", true)
+      .order("display_order", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true }),
     db.from("plans").select("*").eq("active", true).eq("status", "active").order("price_pkr"),
     db.from("deposit_methods").select("*").eq("is_active", true).order("sort_order"),
   ]);
@@ -241,7 +247,7 @@ async function loadState(user: {
     { data: profile, error: profileError },
     { data: plans, error: plansError },
     { data: userPlanSnapshot },
-    { data: ads },
+    { data: ads, error: adsError },
     { data: deposits },
     { data: ledger },
     { data: withdrawals },
@@ -267,7 +273,13 @@ async function loadState(user: {
       .order("purchased_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    db.from("tasks").select("*").eq("status", "active").eq("reward_enabled", true).order("created_at"),
+    db
+      .from("ads")
+      .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at")
+      .eq("status", "active")
+      .eq("reward_enabled", true)
+      .order("display_order", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true }),
     db
       .from("deposits")
       .select("*")
@@ -300,6 +312,7 @@ async function loadState(user: {
   ]);
   if (profileError) throw new Error(`Unable to load your profile: ${profileError.message}`);
   if (plansError) throw new Error(`Unable to load active plans: ${plansError.message}`);
+  if (adsError) throw new Error(`Unable to load active ads: ${adsError.message}`);
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, accountTitle: method.account_title, accountNumber: method.account_number, instructions: method.instructions ?? "" })));
   WITHDRAWAL_METHODS.splice(0, WITHDRAWAL_METHODS.length, ...((withdrawalMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, type: method.destination_label ?? method.name, instructions: method.instructions ?? "", isActive: Boolean(method.is_active), minWithdrawal: num(method.min_withdrawal_pkr), maxWithdrawal: num(method.max_withdrawal_pkr) })));
   const planRows = (plans ?? []) as any[];
