@@ -671,8 +671,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const todaysEarnings = state.ledger
       .filter((e) => e.type !== "deposit" && isToday(e.createdAt))
       .reduce((a, e) => a + e.credit, 0);
-    const adsCompletedToday = state.adViews.filter((v) =>
-      isToday(v.completedAt),
+    // Count the same credited ad rewards used by Today earnings, using the
+    // Asia/Karachi calendar day rather than the browser's UTC date.
+    const adsCompletedToday = state.ledger.filter(
+      (entry) => entry.type === "ad_reward" && isToday(entry.createdAt),
     ).length;
     const score = Math.min(
       100,
