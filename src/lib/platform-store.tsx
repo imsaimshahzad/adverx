@@ -683,8 +683,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const score = Math.min(
       100,
       Math.round(
-        adsCompletedToday * 9 +
-          state.adViews.length * 1.2 +
+      adsCompletedToday * (plan?.dailyAdLimit ?? 0) +
+      state.adViews.length * 1.2 +
           state.network.filter((m) => m.active).length * 4 +
           (plan ? 15 : 0),
       ),
