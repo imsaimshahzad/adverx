@@ -25,7 +25,7 @@ export const Route = createFileRoute("/history")({
 });
 
 function HistoryPage() {
-  const { state, availableBalance, totalWithdrawn, pendingEarnings } = usePlatform();
+  const { state, availableBalance, totalWithdrawn } = usePlatform();
   const rewards = state.ledger.filter(
     (e) => e.type === "ad_reward" || e.type === "referral_reward",
   );
@@ -35,7 +35,6 @@ function HistoryPage() {
     <AppShell title="Transaction History" subtitle="Your deposits, rewards and withdrawals">
       <div className="grid grid-cols-3 gap-3">
         <StatTile label="Available Balance" value={money(availableBalance)} />
-        <StatTile label="Pending Earnings" value={money(pendingEarnings)} />
         <StatTile label="Total Withdrawn" value={money(totalWithdrawn)} />
       </div>
 
