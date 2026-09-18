@@ -1,0 +1,38 @@
+/* Adaptive dashboard layer: keeps transitions anchored to familiar controls. */
+.morphic-hero {
+  min-height: 196px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 1.75rem;
+  padding: 1.35rem;
+  color: #fffaf5;
+  background: linear-gradient(135deg, #c86b45 0%, #a84f57 48%, #6f5aa8 100%);
+  box-shadow: 0 22px 48px rgba(141, 76, 68, .22);
+  isolation: isolate;
+  transition: min-height .5s cubic-bezier(.2,.8,.2,1), border-radius .5s, background .7s;
+}
+.morphic-hero.is-expanded { min-height: 270px; border-radius: 2rem; background: linear-gradient(135deg, #b85d46 0%, #8e526c 52%, #4f76a2 100%); }
+.morphic-orb { position:absolute; border-radius:999px; filter:blur(2px); opacity:.28; pointer-events:none; transition:transform .8s cubic-bezier(.2,.8,.2,1); }
+.morphic-orb-one { width:180px;height:180px;right:-52px;top:-88px;background:#ffd8b7; }
+.morphic-orb-two { width:120px;height:120px;left:42%;bottom:-90px;background:#b9dbff; }
+.morphic-hero:hover .morphic-orb-one { transform:translate(-18px,22px) scale(1.15); }
+.morphic-hero:hover .morphic-orb-two { transform:translate(20px,-24px) scale(1.2); }
+.morphic-eyebrow,.morphic-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; opacity:.72; }
+.morphic-number { margin-top:.25rem; font-size:2.35rem; font-weight:700; letter-spacing:-.06em; }
+.morphic-caption { margin-top:.2rem; font-size:11px; opacity:.68; }
+.morphic-icon-button { display:flex; align-items:center; justify-content:center; width:2rem;height:2rem;border:1px solid rgba(255,255,255,.25);border-radius:.8rem;background:rgba(255,255,255,.12);color:inherit;transition:transform .25s,background .25s; }
+.morphic-icon-button:hover { transform:rotate(12deg) scale(1.08); background:rgba(255,255,255,.2); }
+.morphic-action { color:#8f4c39; border:0; }
+.morphic-detail { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.18);opacity:0;transform:translateY(12px);transition:opacity .35s,transform .45s; }
+.morphic-detail.is-visible { opacity:1;transform:none; }
+.morphic-tools { display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem .85rem;border:1px solid #eadfd5;border-radius:1rem;background:#f7f4ef;transition:background .3s,transform .3s; }
+.morphic-tools:hover { transform:translateY(-1px);background:#fff7f0; }
+.morphic-tool-button { display:inline-flex;align-items:center;gap:.35rem;border-radius:.7rem;padding:.45rem .65rem;color:#a95636;font-size:11px;font-weight:600;transition:background .2s; }
+.morphic-tool-button:hover { background:#f4dfd2; }
+.morphic-search { min-height:2.5rem;padding:.65rem .8rem;border:1px solid #eadfd5;border-radius:1rem;color:#9b9087;font-size:12px;transition:border-color .25s,box-shadow .25s; }
+.morphic-search:hover { border-color:#d99a7d;box-shadow:0 0 0 3px rgba(200,107,69,.08); }
+.morphic-search kbd { margin-left:auto;border:1px solid #e5d6cb;border-radius:.4rem;padding:.15rem .35rem;font-size:10px;color:#a99c92; }
+.morphic-stats > .surface { transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s, border-color .35s; }
+.morphic-stats > .surface:hover { transform:translateY(-4px) scale(1.015); border-color:#d99a7d;box-shadow:0 14px 28px rgba(94,69,52,.1); }
+.morphic-stats.is-focused > .surface:nth-child(2) { transform:translateY(-3px) scale(1.025); border-color:#d99a7d; }
+@media (prefers-reduced-motion:reduce) { .morphic-hero,.morphic-detail,.morphic-orb,.morphic-stats > .surface { transition:none!important; } }

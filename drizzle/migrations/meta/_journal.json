@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788269695903,
+      "tag": "0000_core_identity_wallet_ledger",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788269774777,
+      "tag": "0001_revenue_reward_pool_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788269900134,
+      "tag": "0002_business_logic_functions_and_seed",
+      "breakpoints": true
+    }
+  ]
+}

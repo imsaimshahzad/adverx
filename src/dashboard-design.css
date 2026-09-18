@@ -1,0 +1,31 @@
+.dashboard-shell { --dashboard-accent:#6366f1; --dashboard-cyan:#06b6d4; background:#f8fafc; color:#111827; }
+.dashboard-shell .dashboard-header { background:rgba(248,250,252,.88); border-bottom:1px solid #e2e8f0; backdrop-filter:blur(18px); }
+.dashboard-shell .dashboard-nav { border:1px solid #e2e8f0; border-radius:1.25rem; background:rgba(255,255,255,.96); box-shadow:0 16px 36px rgba(15,23,42,.12); backdrop-filter:blur(18px); }
+.dashboard-shell .dashboard-nav-item { color:#4b5563; }
+.dashboard-shell .dashboard-nav-item:hover { background:#eef2ff; color:#3730a3; transform:translateY(-1px); }
+.dashboard-shell .dashboard-nav-item[data-status="active"] { background:#eef2ff; color:#3730a3; box-shadow:inset 0 0 0 1px #c7d2fe; }
+.dashboard-shell .surface,.dashboard-shell .glass-panel,.dashboard-shell [data-slot="card"],.dashboard-shell .bg-white,.dashboard-shell .bg-card { border-color:#e2e8f0; background:#fff; box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 28px rgba(15,23,42,.05); }
+.dashboard-shell .surface:hover,.dashboard-shell [data-slot="card"]:hover { border-color:#c7d2fe; box-shadow:0 8px 24px rgba(79,70,229,.1); }
+/* Card icons stay part of the card surface instead of becoming nested color blocks. */
+.dashboard-shell .surface > [class*="bg-indigo-"],
+.dashboard-shell .surface > [class*="bg-blue-"],
+.dashboard-shell [data-slot="card"] > [class*="bg-indigo-"],
+.dashboard-shell [data-slot="card"] > [class*="bg-blue-"] { background:#f8fafc; border-color:#e2e8f0; color:#4f46e5; }
+.dashboard-shell .surface > [class*="bg-primary\\/"],
+.dashboard-shell [data-slot="card"] > [class*="bg-primary\\/"] { background:#f8fafc; border-color:#e2e8f0; color:#4f46e5; }
+.dashboard-shell .surface > [class*="rounded-full"],
+.dashboard-shell [data-slot="card"] > [class*="rounded-full"] { box-shadow:none; }
+
+.dashboard-shell table { width:100%; border-collapse:separate; border-spacing:0; background:#fff; }
+.dashboard-shell thead { background:#f8fafc; }
+.dashboard-shell th { padding:14px 16px; color:#475569; font-weight:600; text-align:left; border-bottom:1px solid #e2e8f0; }
+.dashboard-shell td { padding:14px 16px; color:#111827; border-bottom:1px solid #f1f5f9; }
+.dashboard-shell tbody tr { background:#fff; transition:background-color 180ms ease; }
+.dashboard-shell tbody tr:hover { background:#f8fafc; }
+.dashboard-shell tbody tr[data-selected="true"],.dashboard-shell tbody tr[data-state="selected"] { background:#eef2ff; }
+.dashboard-shell tbody tr:last-child td { border-bottom:0; }
+.dashboard-shell .bg-white\/80,.dashboard-shell .bg-white\/90,.dashboard-shell .bg-white\/95 { background:#fff; border-color:#e2e8f0; }
+.dashboard-shell [class*="border-white"] { border-color:#e2e8f0; }
+.dashboard-shell input,.dashboard-shell textarea,.dashboard-shell select { background:#fff; border-color:#cbd5e1; color:#111827; }
+@media (min-width:1024px) { .dashboard-shell { max-width:none; padding-inline:2rem; } .dashboard-shell>main { max-width:1180px; } }
+@media (prefers-reduced-motion:reduce) { .dashboard-shell * { transition-duration:.01ms!important; } }
