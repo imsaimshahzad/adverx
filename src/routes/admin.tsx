@@ -1498,7 +1498,7 @@ function ModuleTable({
                           <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-600" title={String(row[column] ?? "")}>{shortId(row[column])}<button type="button" className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-indigo-700" aria-label="Copy ID" onClick={(event) => { event.stopPropagation(); void navigator.clipboard?.writeText(String(row[column] ?? "")); }}><Copy className="size-3" /></button></span>
                         ) : active === "audit-logs" && ["action", "event_type"].includes(column) ? (
                           <Badge variant="outline" className={`border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${actionBadgeClass(String(row[column] ?? ""))}`}>{String(row[column] ?? "—").replaceAll("_", " ")}</Badge>
-                        ) : <span title={String(row[column] ?? "")}>{formatValue(row[column])}</span>}
+                        ) : <span title={String(row[column] ?? "")}>{active === "tasks" && column !== "created_at" ? String(row[column] ?? "—") : formatValue(row[column])}</span>}
                       </td>
                     ))}
                     {active === "deposits" ? (
