@@ -787,11 +787,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return num((data as any)?.reward);
   }, [refresh]);
   const requestWithdrawal = useCallback(async (input: any) => {
-    const method = WITHDRAWAL_METHODS.find((candidate) => candidate.name === input.method);
     const { error } = await db.rpc("request_withdrawal", {
-      _amount: input.amount,
-      _method_id: method?.id ?? null,
-      _destination: input.account,
+      p_amount: input.amount,
+      p_method: input.method,
+      p_account: input.account,
     });
     if (error) throw new Error(error.message ?? "Withdrawal request failed");
     const { data } = await supabase.auth.getUser();
