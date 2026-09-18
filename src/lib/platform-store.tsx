@@ -172,7 +172,7 @@ async function loadCatalog() {
   const [{ data: plans, error: plansError }, { data: depositMethods, error: methodsError }, { data: ads, error: adsError }] = await Promise.all([
     db.from("plans").select("*").eq("active", true).eq("status", "active").order("price_pkr"),
     db.from("deposit_methods").select("*").eq("is_active", true).order("sort_order"),
-    db.from("ads").select("*").eq("status", "active").order("created_at"),
+    db.from("tasks").select("*").eq("status", "active").order("created_at"),
   ]);
   if (plansError) throw new Error(`Unable to load plans: ${plansError.message}`);
   if (methodsError) throw new Error(`Unable to load deposit methods: ${methodsError.message}`);
@@ -231,7 +231,6 @@ async function loadState(user: {
     { data: ads },
     { data: deposits },
     { data: ledger },
-    { data: wallet },
     { data: withdrawals },
     { data: completions },
     { data: notifications },
@@ -255,28 +254,27 @@ async function loadState(user: {
       .order("purchased_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    db.from("ads").select("*").eq("status", "active").order("created_at"),
+    db.from("tasks").select("*").eq("status", "active").order("created_at"),
     db
       .from("deposits")
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
     db
-      .from("ledger_entries")
+      .from("wallet_transactions")
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
-    db.from("wallets").select("*").eq("user_id", uid).maybeSingle(),
     db
       .from("withdrawals")
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
     db
-      .from("ad_completions")
+      .from("task_completions")
       .select("*")
       .eq("user_id", uid)
-      .order("completed_at", { ascending: false }),
+      .order("created_at", { ascending: false }),
     db
       .from("notifications")
       .select("*")
@@ -330,7 +328,7 @@ async function loadState(user: {
       advertiser: a.advertiser ?? "Advertiser",
       description: a.description ?? "Complete this verified task.",
       category: a.category ?? "General",
-      watchSeconds: a.duration_seconds ?? 15,
+      watchSeconds: a.required_watch_seconds ?? 15,
       reward: num(a.reward),
     })),
   );
@@ -431,28 +429,28 @@ async function loadState(user: {
       createdAt: new Date(d.created_at).getTime(),
     })),
     ledger: ((ledger ?? []) as any[])
-      .filter((e) => e.note !== "Initial ad reward budget")
+      .filter((e) => e.status !== "cancelled" && e.status !== "reversed")
       .map((e) => ({
         id: e.id,
         type:
-          e.entry_type === "deposit"
+          e.type === "DEPOSIT"
             ? "deposit"
-            : e.entry_type === "withdrawal"
+            : e.type === "WITHDRAWAL" || e.type === "WITHDRAWAL_FEE"
               ? "withdrawal"
-              : e.entry_type === "referral"
+              : e.type === "REFERRAL_REWARD"
                 ? "referral_reward"
                 : "ad_reward",
         label:
-          e.entry_type === "deposit"
+          e.type === "DEPOSIT"
             ? "Deposit"
-            : e.entry_type === "withdrawal"
+            : e.type === "WITHDRAWAL" || e.type === "WITHDRAWAL_FEE"
               ? "Withdrawal"
-              : e.entry_type === "referral"
+              : e.type === "REFERRAL_REWARD"
                 ? "Referral Reward"
                 : "Ad Reward",
         credit: num(e.amount) > 0 ? num(e.amount) : 0,
         debit: num(e.amount) < 0 ? Math.abs(num(e.amount)) : 0,
-        status: "Credited",
+        status: e.status === "completed" ? "Credited" : e.status,
         createdAt: new Date(e.created_at).getTime(),
         reference: e.reference_id,
       })),
@@ -466,8 +464,8 @@ async function loadState(user: {
       createdAt: new Date(w.created_at).getTime(),
     })),
     adViews: ((completions ?? []) as any[]).map((c) => ({
-      adId: c.ad_id,
-      completedAt: new Date(c.completed_at).getTime(),
+      adId: c.task_id,
+      completedAt: new Date(c.created_at).getTime(),
       reward: num(c.reward),
     })),
     network: referralRows.map((r) => {
@@ -775,26 +773,25 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   }
   }, []);
   const startAd = useCallback(async (adId: string) => {
-    const { data, error } = await db.rpc("start_ad_view", { p_ad_id: adId });
+    const { data, error } = await db.rpc("start_task_session", { _task_id: adId });
     if (error) throw new Error(error.message);
     return String(data);
   }, []);
   const completeAd = useCallback(async (sessionId: string) => {
-    const { data, error } = await db.rpc("complete_ad_view", {
-      p_session_id: sessionId,
-      p_idempotency_key: crypto.randomUUID(),
+    const { data, error } = await db.rpc("complete_task_session", {
+      _session_id: sessionId,
     });
     if (error) throw new Error(error.message);
     const { data: authData } = await supabase.auth.getUser();
     if (authData.user) await refresh(authData.user);
-    return num(data);
+    return num((data as any)?.reward);
   }, [refresh]);
   const requestWithdrawal = useCallback(async (input: any) => {
+    const method = WITHDRAWAL_METHODS.find((candidate) => candidate.name === input.method);
     const { error } = await db.rpc("request_withdrawal", {
-      p_amount: input.amount,
-      p_method: input.method,
-      p_account: input.account,
-      p_request_key: input.requestKey ?? crypto.randomUUID(),
+      _amount: input.amount,
+      _method_id: method?.id ?? null,
+      _destination: input.account,
     });
     if (error) throw new Error(error.message ?? "Withdrawal request failed");
     const { data } = await supabase.auth.getUser();
