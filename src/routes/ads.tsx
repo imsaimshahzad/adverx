@@ -44,6 +44,8 @@ function AdsPage() {
     adsCompletedToday,
     dailyAdLimit,
     todaysEarnings,
+    catalogReady,
+    catalogError,
     startAd,
     completeAd,
   } = usePlatform();
@@ -88,6 +90,27 @@ function AdsPage() {
               </p></div>
             <span className="text-sm font-semibold text-foreground">{remainingAds} Ads Remaining Today</span>
           </div>
+
+          {catalogError && (
+            <div role="alert" className="mt-3 surface border border-destructive/30 p-4 text-sm text-destructive">
+              {catalogError}
+            </div>
+          )}
+
+          {!catalogReady && !catalogError && (
+            <div className="mt-3 surface p-6 text-center text-sm text-muted-foreground">
+              Loading active ads…
+            </div>
+          )}
+
+          {catalogReady && ADS.length === 0 && !catalogError && (
+            <div className="mt-3 surface p-6 text-center">
+              <p className="text-sm font-medium">No active ads available</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Check back later for new reward-enabled tasks.
+              </p>
+            </div>
+          )}
 
           <div className="mt-3 space-y-3">
             {ADS.map((ad) => {
