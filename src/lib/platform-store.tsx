@@ -153,6 +153,7 @@ const EMPTY = {
 } as const;
 type State = {
   user: User | null;
+  walletTransactions: any[];
   deposits: Deposit[];
   ledger: LedgerEntry[];
   withdrawals: Withdrawal[];
@@ -185,6 +186,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "AD_REWARD",
   "REWARD",
   "REFERRAL_REWARD",
+  "REFERRAL_COMMISSION",
   "WITHDRAWAL",
   "WITHDRAWAL_FEE",
   "REFUND",
@@ -460,6 +462,7 @@ async function loadState(user: {
   const commissionByUser = new Map<string, number>();
   for (const row of commissions ?? []) commissionByUser.set(row.source_user_id, (commissionByUser.get(row.source_user_id) ?? 0) + num(row.amount));
   return {
+    walletTransactions: (walletTransactions ?? []) as any[],
     user: {
       id: uid,
       fullName:
@@ -749,26 +752,18 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     [state.user?.planId],
   );
   const derived = useMemo(() => {
-    // ledger_entries is the same authoritative, append-only source used by
-    // request_withdrawal. Pending withdrawal holds are already negative ledger rows;
-    // refunds are positive rows, so never subtract withdrawals a second time.
     const availableBalance = Math.max(
       0,
-      state.ledger
-        .filter((entry) => BALANCE_TRANSACTION_TYPES.has(
-          entry.type === "ad_reward"
-            ? "TASK_REWARD"
-            : entry.type === "referral_reward"
-              ? "REFERRAL_REWARD"
-              : entry.type === "withdrawal"
-                ? "WITHDRAWAL"
-              : entry.type === "refund"
-                ? "REFUND"
-                : entry.type === "adjustment"
-                  ? "ADMIN_ADJUSTMENT"
-                  : "",
-        ))
-        .reduce((total, entry) => total + entry.credit - entry.debit, 0),
+      state.walletTransactions
+        .filter((transaction) => String(transaction.currency ?? "").toUpperCase() === "PKR")
+        .filter((transaction) => !["PLAN_PURCHASE", "PLATFORM_PROFIT", "PLAN_AD_BUDGET"].includes(String(transaction.type ?? "").toUpperCase()))
+        .filter((transaction) => BALANCE_TRANSACTION_TYPES.has(String(transaction.type ?? "").toUpperCase()))
+        .filter((transaction) => !["cancelled", "reversed"].includes(String(transaction.status ?? "").toLowerCase()))
+        .reduce(
+          (total, transaction) =>
+            total + (transaction.amount != null ? num(transaction.amount) : num(transaction.credit) - num(transaction.debit)),
+          0,
+        ),
     );
     const totalWithdrawn = state.withdrawals
       .filter((w) => w.status === "paid")
