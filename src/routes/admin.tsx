@@ -88,23 +88,38 @@ type UserPartition = "all" | "paid" | "unpaid" | "starter" | "growth" | "pro";
 type UserClassification = {
   paid: boolean;
   plan: "starter" | "growth" | "pro" | null;
+  system: boolean;
+};
+
+type UserCounts = {
+  all: number;
+  paid: number;
+  unpaid: number;
+  starter: number;
+  growth: number;
+  pro: number;
 };
 
 function classifyUser(row: AdminRow): UserClassification {
   const role = String(row.role ?? row.account_role ?? "").toLowerCase();
   const accountType = String(row.account_type ?? row.user_type ?? "").toLowerCase();
-  const isSystemAccount = row.is_admin === true || row.is_system === true || ["admin", "super_admin", "moderator", "system"].includes(role) || ["admin", "system"].includes(accountType);
-  if (isSystemAccount) return { paid: false, plan: null };
-
+  const system = row.is_admin === true || row.is_system === true || ["admin", "super_admin", "moderator", "system"].includes(role) || ["admin", "system"].includes(accountType);
   const nestedPlan = row.plan && typeof row.plan === "object" ? row.plan as Record<string, unknown> : null;
-  const planName = String(
-    row.active_plan_name ?? row.plan_name ?? row.plan_title ?? row.plan_name_snapshot ?? nestedPlan?.name ?? row.plan ?? "",
-  ).toLowerCase();
+  const planName = String(row.active_plan_name ?? row.plan_name ?? row.plan_title ?? row.plan_name_snapshot ?? nestedPlan?.name ?? "").toLowerCase();
   const plan = planName.includes("starter") ? "starter" : planName.includes("growth") ? "growth" : planName.includes("pro") ? "pro" : null;
-  const planStatus = String(row.user_plan_status ?? row.plan_status ?? row.subscription_status ?? row.payment_status ?? "").toLowerCase();
-  const hasActivePlan = row.has_active_plan === true || row.active_plan === true || row.is_active === true || row.plan_active === true || Boolean(row.plan_id && (row.plan_status === undefined || row.plan_status === "active"));
-  const paid = row.is_paid === true || row.paid === true || (hasActivePlan && Boolean(plan)) || ["paid", "active", "subscribed", "approved"].includes(planStatus);
-  return { paid: Boolean(paid && plan), plan: paid ? plan : null };
+  const planStatus = String(row.user_plan_status ?? row.plan_status ?? row.subscription_status ?? "").toLowerCase();
+  const hasActivePlan = row.has_active_plan === true || row.active_plan === true || row.plan_active === true || planStatus === "active" || planStatus === "paid";
+  return { paid: !system && hasActivePlan && Boolean(plan), plan: hasActivePlan ? plan : null, system };
+}
+
+function mapUserForDisplay(row: AdminRow): AdminRow {
+  const classification = classifyUser(row);
+  return {
+    ...row,
+    user: row.full_name ?? row.email ?? row.username ?? "Unknown user",
+    plan: classification.plan ? `${classification.plan.slice(0, 1).toUpperCase()}${classification.plan.slice(1)}` : "No Plan",
+    payment: classification.system ? "System/Admin" : classification.paid ? "Paid" : "Unpaid",
+  };
 }
 
 const menu: Array<[AdminModule, string, Icon]> = [
@@ -301,7 +316,7 @@ function AdminRoute() {
       }
       if (active === "users") {
         try {
-          const userRows = await getUsersPage(query, "", 1, 1000);
+          const userRows = (await getUsersPage(query, "", 1, 1000)).map(mapUserForDisplay);
           setUserPageRows(userRows);
           setUserTotal(Number(userRows[0]?.total_count ?? 0));
         } catch {
@@ -776,17 +791,20 @@ function AdminRoute() {
               actions={statusActions[active] ?? []}
               statusPartition={statusPartition}
               userPartition={userPartition}
-              userCounts={active === "users" ? currentRows.reduce((counts, row) => {
+              userCounts={active === "users" ? currentRows.reduce((counts: UserCounts, row) => {
                 const classification = classifyUser(row);
                 counts.all += 1;
+                if (classification.system) return counts;
                 if (classification.paid) {
                   counts.paid += 1;
-                  if (classification.plan) counts[classification.plan] += 1;
+                  if (classification.plan === "starter") counts.starter += 1;
+                  if (classification.plan === "growth") counts.growth += 1;
+                  if (classification.plan === "pro") counts.pro += 1;
                 } else {
                   counts.unpaid += 1;
                 }
                 return counts;
-              }, { all: 0, paid: 0, unpaid: 0, starter: 0, growth: 0, pro: 0 }) : undefined}
+              }, { all: 0, paid: 0, unpaid: 0, starter: 0, growth: 0, pro: 0 } as { all: number; paid: number; unpaid: number; starter: number; growth: number; pro: number }) : undefined}
               onUserPartition={(value) => {
                 setUserPartition(value);
                 setPage(1);
@@ -1591,6 +1609,8 @@ function ModuleTable({
   ].includes(column),
   ),
   ].slice(0, 6)
+  : active === "users"
+  ? ["user", "plan", "payment", "status", "role"]
   : rawColumns.slice(0, 6);
   return (
     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
@@ -1606,7 +1626,7 @@ function ModuleTable({
           <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="User filters">
             {(["all", "paid", "unpaid", "starter", "growth", "pro"] as const).map((filter) => (
               <Button key={filter} type="button" size="sm" variant={userPartition === filter ? "default" : "outline"} role="tab" aria-selected={userPartition === filter} onClick={() => onUserPartition(filter)} className="shrink-0 capitalize">
-                {filter} ({userCounts[filter]})
+                {filter === "all" ? "All" : `${filter.slice(0, 1).toUpperCase()}${filter.slice(1)}`} ({userCounts[filter]})
               </Button>
             ))}
           </div>
