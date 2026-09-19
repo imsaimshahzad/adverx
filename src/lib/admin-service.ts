@@ -311,14 +311,50 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
 }
 
 export async function getUsersPage(search = "", status = "", page = 1, pageSize = 25) {
-  const { data, error } = await db.rpc("admin_users_page", {
-    p_search: search || null,
-    p_status: status || null,
-    p_page: page,
-    p_page_size: pageSize,
-  });
-  if (error) throw new Error("Unable to load users.");
-  return (data ?? []) as AdminRow[];
+  const [{ data: profiles, error: profilesError }, { data: activePlans, error: plansError }, { data: plans, error: planNamesError }] = await Promise.all([
+    db.from("profiles").select("*").order("created_at", { ascending: false }),
+    db.from("user_plans").select("user_id, plan_id, status").eq("status", "active"),
+    db.from("plans").select("id, name"),
+  ]);
+
+  if (profilesError || plansError || planNamesError) {
+    throw new Error("Unable to load users.");
+  }
+
+  const planById = new Map(
+    (plans ?? []).map((plan: AdminRow) => [String(plan.id), String(plan.name ?? "")]),
+  );
+  const activePlanByUser = new Map<string, AdminRow>();
+  for (const activePlan of activePlans ?? []) {
+    const userId = String(activePlan.user_id ?? "");
+    if (userId && !activePlanByUser.has(userId)) {
+      activePlanByUser.set(userId, activePlan);
+    }
+  }
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const matchingRows = (profiles ?? [])
+    .map((profile: AdminRow) => {
+      const activePlan = activePlanByUser.get(String(profile.id));
+      const planName = activePlan ? planById.get(String(activePlan.plan_id)) ?? "" : "";
+      return {
+        ...profile,
+        active_plan_name: planName,
+        user_plan_status: activePlan?.status ?? null,
+        has_active_plan: Boolean(activePlan && planName),
+      };
+    })
+    .filter((row: AdminRow) => {
+      const matchesSearch = !normalizedSearch || JSON.stringify(row).toLowerCase().includes(normalizedSearch);
+      const matchesStatus = !status || String(row.status ?? "").toLowerCase() === status.toLowerCase();
+      return matchesSearch && matchesStatus;
+    });
+
+  const offset = Math.max(0, page - 1) * pageSize;
+  return matchingRows.slice(offset, offset + pageSize).map((row: AdminRow) => ({
+    ...row,
+    total_count: matchingRows.length,
+  })) as AdminRow[];
 }
 
 export async function getReserveSummary() {
