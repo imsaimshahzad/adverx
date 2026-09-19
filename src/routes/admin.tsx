@@ -1469,6 +1469,8 @@ function prettyJson(value: unknown) {
 function ModuleTable({
   active,
   rows,
+  totalRecords,
+  userCounts,
   query,
   setQuery,
   page,
@@ -1497,7 +1499,7 @@ function ModuleTable({
 }: {
   active: AdminModule;
   rows: AdminRow[];
-  totalRecords?: number;
+  totalRecords: number | undefined;
   query: string;
   setQuery: (value: string) => void;
   page: number;
@@ -1509,7 +1511,7 @@ function ModuleTable({
   userPartition?: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro";
   onUserPartition?: (value: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro") => void;
   onStatusPartition?: (value: "pending" | "approved" | "rejected") => void;
-  userCounts?: { all: number; paid: number; unpaid: number; starter: number; growth: number; pro: number };
+  userCounts: { all: number; paid: number; unpaid: number; starter: number; growth: number; pro: number } | undefined;
   adsFilter?: "active" | "archived" | "all";
   onAdsFilter?: (value: "active" | "archived" | "all") => void;
   adsCounts?: { active: number; archived: number; all: number };
