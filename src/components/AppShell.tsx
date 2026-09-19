@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   Menu,
   Settings,
+  ShieldCheck,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -108,6 +109,14 @@ export function AppShell({
             </div>
           </div>
         ))}
+        {user?.role && ["admin", "super_admin", "moderator"].includes(user.role) ? (
+          <div className="mb-6">
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Administration</p>
+            <Link to="/admin" onClick={() => setMobileOpen(false)} className="app-nav-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium">
+              <ShieldCheck className="size-[18px]" />Admin panel
+            </Link>
+          </div>
+        ) : null}
       </div>
       <div className="border-t border-sidebar-border p-4"><div className="flex items-center gap-3 rounded-lg bg-muted/60 p-3"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar><div className="min-w-0"><p className="truncate text-sm font-semibold">{user?.fullName ?? "Member"}</p><p className="truncate text-xs text-muted-foreground">{user?.email ?? ""}</p></div></div></div>
     </div>

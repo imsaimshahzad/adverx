@@ -107,6 +107,7 @@ export type User = {
   planId: string | null;
   planActivatedAt: number | null;
   status: "active" | "pending_verification" | "restricted";
+  role?: "user" | "admin" | "super_admin" | "moderator";
   createdAt: number;
 };
 export type ActivityLevel =
@@ -462,6 +463,7 @@ async function loadState(user: {
         ? new Date(profileRow.plan_activated_at).getTime()
         : null,
       status: profileRow?.status ?? "active",
+      role: profileRow?.role ?? "user",
       createdAt: profileRow?.created_at
         ? new Date(profileRow.created_at).getTime()
         : Date.now(),
