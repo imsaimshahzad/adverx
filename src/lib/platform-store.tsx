@@ -272,7 +272,8 @@ async function loadState(user: {
     { data: userPlanSnapshot },
     { data: ads, error: adsError },
     { data: deposits },
-    { data: ledger },
+    { data: walletTransactions, error: walletTransactionsError },
+    { data: ledgerEntries, error: ledgerEntriesError },
     { data: withdrawals },
     { data: completions },
     { data: notifications },
@@ -314,6 +315,11 @@ async function loadState(user: {
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
     db
+      .from("ledger_entries")
+      .select("*")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false }),
+    db
       .from("withdrawals")
       .select("*")
       .eq("user_id", uid)
@@ -336,6 +342,9 @@ async function loadState(user: {
   if (profileError) throw new Error(`Unable to load your profile: ${profileError.message}`);
   if (plansError) throw new Error(`Unable to load active plans: ${plansError.message}`);
   if (adsError) throw new Error(`Unable to load active ads: ${adsError.message}`);
+  if (walletTransactionsError && ledgerEntriesError) {
+    throw new Error(`Unable to load your wallet transactions: ${walletTransactionsError.message}`);
+  }
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, accountTitle: method.account_title, accountNumber: method.account_number, instructions: method.instructions ?? "" })));
   WITHDRAWAL_METHODS.splice(0, WITHDRAWAL_METHODS.length, ...((withdrawalMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, type: method.destination_label ?? method.name, instructions: method.instructions ?? "", isActive: Boolean(method.is_active), minWithdrawal: num(method.min_withdrawal_pkr), maxWithdrawal: num(method.max_withdrawal_pkr) })));
   const planRows = (plans ?? []) as any[];
@@ -478,10 +487,14 @@ async function loadState(user: {
       status: d.status,
       createdAt: new Date(d.created_at).getTime(),
     })),
-    ledger: ((ledger ?? []) as any[])
-      // Keep the wallet ledger as the source of truth, but never let reserve or
-      // plan-accounting rows fall through to a user-facing transaction type.
-      .filter((e) => USER_LEDGER_TYPES.has(String(e.type ?? "").toUpperCase()))
+    ledger: Array.from(
+      new Map(
+        ([...(walletTransactions ?? []), ...(ledgerEntries ?? [])] as any[]).map((entry) => [entry.id, entry]),
+      ).values(),
+    )
+      // Wallet transactions are the live user ledger. Keep legacy ledger rows as
+      // a fallback so older rewards remain visible after the admin mapping change.
+      .filter((e: any) => USER_LEDGER_TYPES.has(String(e.type ?? "").toUpperCase()))
       .filter((e) => e.status !== "cancelled" && e.status !== "reversed")
       .map((e) => {
         const rawType = String(e.type ?? "").toUpperCase();
