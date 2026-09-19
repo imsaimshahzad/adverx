@@ -271,6 +271,21 @@ export type OperationsOverview = {
   total_recovery_fund_used: number;
   remaining_recovery_fund: number;
   total_ad_budget_recovered: number;
+  platform_profit_total?: number;
+  unassigned_referral_total?: number;
+  retained_reward_budget_total?: number;
+};
+
+export type AdminProfitSummary = AdminRow & {
+  platform_profit_total?: number;
+  platform_profit_today?: number;
+  platform_profit_month?: number;
+  available_platform_balance?: number;
+  unassigned_referral_total?: number;
+  retained_reward_budget_total?: number;
+  user_reward_reserve_total?: number;
+  recovery_fund_total?: number;
+  admin_own_balance?: number;
 };
 
 export async function getOperationsOverview() {
@@ -282,7 +297,7 @@ export async function getOperationsOverview() {
 export async function getAdminProfitSummary() {
   const { data, error } = await db.rpc("admin_profit_summary");
   if (error) throw new Error("Unable to load admin profit summary.");
-  return (data ?? {}) as AdminRow;
+  return (data ?? {}) as AdminProfitSummary;
 }
 
 export async function getAdminProfitLedger() {
