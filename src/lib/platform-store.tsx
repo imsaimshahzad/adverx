@@ -749,19 +749,23 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     [state.user?.planId],
   );
   const derived = useMemo(() => {
+    // `state.ledger` is the normalized, de-duplicated user ledger. It combines
+    // wallet transactions with legacy ledger rows by id, so credited rewards are
+    // not lost when the source uses a different reward type or table.
     const availableBalance = Math.max(
       0,
-      state.walletTransactions
-        .filter((transaction) => String(transaction.currency ?? "").toUpperCase() === "PKR")
-        .filter((transaction) => !["PLAN_PURCHASE", "PLATFORM_PROFIT", "PLAN_AD_BUDGET"].includes(String(transaction.type ?? "").toUpperCase()))
-        .filter((transaction) => BALANCE_TRANSACTION_TYPES.has(String(transaction.type ?? "").toUpperCase()))
-        .filter((transaction) => !["cancelled", "reversed"].includes(String(transaction.status ?? "").toLowerCase()))
-        .reduce((total, transaction) => {
-          const type = String(transaction.type ?? "").toUpperCase();
-          const amount = transaction.amount != null
-            ? num(transaction.amount)
-            : num(transaction.credit) - num(transaction.debit);
-          return total + (type === "WITHDRAWAL" ? -Math.abs(amount) : amount);
+      state.ledger
+        .filter((entry) => ["ad_reward", "referral_reward", "refund", "adjustment", "withdrawal"].includes(entry.type))
+        .filter((entry) => {
+          const status = String(entry.status ?? "").toLowerCase();
+          if (entry.type === "withdrawal") {
+            return !["cancelled", "reversed", "rejected"].includes(status);
+          }
+          return COMPLETED_REWARD_STATUSES.has(status);
+        })
+        .reduce((total, entry) => {
+          const amount = num(entry.credit) - num(entry.debit);
+          return total + (entry.type === "withdrawal" ? -Math.abs(amount) : amount);
         }, 0),
     );
     const totalWithdrawn = state.withdrawals
