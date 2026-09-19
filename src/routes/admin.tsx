@@ -1057,31 +1057,34 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
 }
 
 function RevenueDashboard({ summary, ledger }: { summary: AdminRow; ledger: AdminRow[] }) {
-  const metric = (keys: string[]) => {
-    const key = keys.find((candidate) => summary[candidate] !== undefined && summary[candidate] !== null);
-    return key ? Number(summary[key] ?? 0).toLocaleString() : "—";
+  const metric = (key: string) => {
+    const value = summary[key];
+    return value === undefined || value === null ? "—" : Number(value).toLocaleString();
   };
-  const cards: Array<[string, string[]]> = [
-    ["Platform Profit", ["total_profit", "profit_total", "total_admin_profit"]],
-    ["Today", ["today_profit", "profit_today"]],
-    ["This month", ["month_profit", "profit_month"]],
-    ["Available Balance", ["available_balance", "available_profit"]],
-    ["Pending", ["pending_balance", "pending_profit"]],
-    ["Withdrawn", ["withdrawn_balance", "total_withdrawn"]],
+  const cards: Array<[string, string]> = [
+    ["Platform Profit", "platform_profit_total"],
+    ["Today", "platform_profit_today"],
+    ["This month", "platform_profit_month"],
+    ["Available Platform Profit", "available_platform_balance"],
+    ["Unassigned Referral", "unassigned_referral_total"],
+    ["Retained Reward Budget", "retained_reward_budget_total"],
+    ["User Reward Reserve", "user_reward_reserve_total"],
+    ["Recovery Fund Remaining", "recovery_fund_remaining"],
+    ["Admin Own Balance", "admin_own_balance"],
   ];
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <div>
         <h2 className="text-2xl font-semibold">Platform Wallet</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Ledger-derived PKR accounting. Every approved purchase is shown with its immutable allocation snapshot.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Reserves, budgets, and unassigned referrals are not platform profit.</p>
       </div>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, keys]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{metric(keys)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p></CardContent></Card>)}
+        {cards.map(([label, key]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p></CardContent></Card>)}
       </section>
       <Card>
-        <CardHeader><CardTitle>Platform Wallet Activity</CardTitle><p className="text-sm text-muted-foreground">A clear record of plan purchases, rewards and platform profit.</p></CardHeader>
+        <CardHeader><CardTitle>Platform Wallet Activity</CardTitle><p className="text-sm text-muted-foreground">Each entry identifies its accounting category and source. Historical rows are not reclassified automatically.</p></CardHeader>
         <CardContent className="overflow-x-auto p-0">
-          <table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Purchase</th><th className="p-4">User</th><th className="p-4">Plan</th><th className="p-4">Gross</th><th className="p-4">Profit</th><th className="p-4">Status</th><th className="p-4">Date</th></tr></thead><tbody>{ledger.length ? ledger.map((row, index) => <tr key={String(row.id ?? index)} className="border-b last:border-0"><td className="p-4 font-mono text-xs">{formatValue(row.deposit_id ?? row.purchase_id ?? row.id)}</td><td className="p-4">{formatValue(row.user_display ?? "User")}</td><td className="p-4">{formatValue(row.plan_name ?? row.plan_id)}</td><td className="p-4">{formatValue(row.gross_amount ?? row.purchase_amount ?? row.purchase_price ?? row.plan_price ?? row.price_pkr ?? row.amount)} PKR</td><td className="p-4 font-medium">{formatValue(row.profit_amount ?? row.admin_profit)} PKR</td><td className="p-4"><Badge variant="outline">{formatValue(row.status ?? row.source)}</Badge></td><td className="p-4 text-muted-foreground">{formatValue(row.created_at)}</td></tr>) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No profit ledger entries available.</td></tr>}</tbody></table>
+          <table className="w-full min-w-[900px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Purchase</th><th className="p-4">User</th><th className="p-4">Plan</th><th className="p-4">Category</th><th className="p-4">Amount</th><th className="p-4">Source</th><th className="p-4">Date</th></tr></thead><tbody>{ledger.length ? ledger.map((row, index) => <tr key={String(row.id ?? index)} className="border-b last:border-0"><td className="p-4 font-mono text-xs">{formatValue(row.deposit_id ?? row.purchase_id ?? row.id)}</td><td className="p-4">{formatValue(row.user_display ?? "User")}</td><td className="p-4">{formatValue(row.plan_name ?? row.plan_id)}</td><td className="p-4"><Badge variant="outline">{formatValue(row.category ?? row.status)}</Badge></td><td className="p-4 font-medium">{formatValue(row.amount ?? row.profit_amount ?? row.admin_profit)} PKR</td><td className="p-4">{formatValue(row.source)}</td><td className="p-4 text-muted-foreground">{formatValue(row.created_at)}</td></tr>) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}</tbody></table>
         </CardContent>
       </Card>
     </div>
