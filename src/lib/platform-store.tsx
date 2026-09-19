@@ -46,7 +46,7 @@ export type Deposit = {
   createdAt: number;
 };
 export type LedgerType =
-  "deposit" | "ad_reward" | "referral_reward" | "withdrawal" | "adjustment";
+  "deposit" | "ad_reward" | "referral_reward" | "withdrawal" | "refund" | "adjustment";
 export type LedgerEntry = {
   id: string;
   type: LedgerType;
@@ -167,7 +167,21 @@ const pakistanDate = (value: number | Date = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
 const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   const num = (value: unknown) => Number(value ?? 0);
-  const USER_LEDGER_TYPES = new Set(["DEPOSIT", "AD_REWARD", "REFERRAL_REWARD", "WITHDRAWAL", "WITHDRAWAL_FEE"]);
+  const USER_TRANSACTION_TYPES = new Set([
+    "DEPOSIT",
+    "TASK_REWARD",
+    "REFERRAL_REWARD",
+    "WITHDRAWAL",
+    "WITHDRAWAL_FEE",
+    "REFUND",
+  ]);
+  const BALANCE_TRANSACTION_TYPES = new Set([
+    "TASK_REWARD",
+    "REFERRAL_REWARD",
+    "WITHDRAWAL",
+    "WITHDRAWAL_FEE",
+    "REFUND",
+  ]);
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
   
   async function loadCatalog() {
@@ -251,7 +265,7 @@ async function loadState(user: {
     { data: userPlanSnapshot },
     { data: ads, error: adsError },
     { data: deposits },
-    { data: ledger },
+    { data: walletTransactions },
     { data: withdrawals },
     { data: completions },
     { data: notifications },
@@ -288,7 +302,7 @@ async function loadState(user: {
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
     db
-      .from("ledger_entries")
+      .from("wallet_transactions")
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
@@ -456,11 +470,11 @@ async function loadState(user: {
       status: d.status,
       createdAt: new Date(d.created_at).getTime(),
     })),
-    ledger: ((ledger ?? []) as any[])
-      // Only expose real user wallet transactions. Reserve/accounting rows are
-      // intentionally ignored instead of falling through to Ad Reward.
-      .filter((e) => USER_LEDGER_TYPES.has(String(e.type ?? "").toUpperCase()))
-      .filter((e) => e.status !== "cancelled" && e.status !== "reversed")
+    ledger: ((walletTransactions ?? []) as any[])
+      // User history comes from wallet_transactions. Exclude reserve/accounting
+      // and plan-activation rows; those must never become user earnings.
+      .filter((e) => USER_TRANSACTION_TYPES.has(String(e.type ?? "").toUpperCase()))
+      .filter((e) => e.status !== "cancelled" && e.status !== "reversed" && e.status !== "failed")
       .map((e) => {
         const rawType = String(e.type ?? "").toUpperCase();
         return {
@@ -472,7 +486,9 @@ async function loadState(user: {
                 ? "withdrawal"
                 : rawType === "REFERRAL_REWARD"
                   ? "referral_reward"
-                  : "ad_reward",
+                  : rawType === "REFUND"
+                    ? "refund"
+                    : "ad_reward",
           label:
             rawType === "DEPOSIT"
               ? "Deposit"
@@ -480,7 +496,9 @@ async function loadState(user: {
                 ? "Withdrawal"
                 : rawType === "REFERRAL_REWARD"
                   ? "Referral Reward"
-                  : "Ad Reward",
+                  : rawType === "REFUND"
+                    ? "Refund"
+                    : "Ad Reward",
           credit: num(e.amount) > 0 ? num(e.amount) : 0,
           debit: num(e.amount) < 0 ? Math.abs(num(e.amount)) : 0,
           status: e.status === "completed" ? "Credited" : e.status,
@@ -697,7 +715,19 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     // refunds are positive rows, so never subtract withdrawals a second time.
     const availableBalance = Math.max(
       0,
-      state.ledger.reduce((total, entry) => total + entry.credit - entry.debit, 0),
+      state.ledger
+        .filter((entry) => BALANCE_TRANSACTION_TYPES.has(
+          entry.type === "ad_reward"
+            ? "TASK_REWARD"
+            : entry.type === "referral_reward"
+              ? "REFERRAL_REWARD"
+              : entry.type === "withdrawal"
+                ? "WITHDRAWAL"
+                : entry.type === "refund"
+                  ? "REFUND"
+                  : "",
+        ))
+        .reduce((total, entry) => total + entry.credit - entry.debit, 0),
     );
     const totalWithdrawn = state.withdrawals
       .filter((w) => w.status === "paid")
