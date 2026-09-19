@@ -320,7 +320,7 @@ export async function getAdminProfitLedger() {
 export async function getRecoveryFundActivity() {
   const { data, error } = await db
     .from("recovery_fund_ledger")
-    .select("id, entry_type, amount_pkr, reference_id, user_id, plan_id, note, created_at")
+    .select("id, entry_type, amount_pkr, balance_after, reference_id, user_id, plan_id, note, created_at")
     .order("created_at", { ascending: false });
   if (error) throw new Error(`Unable to load Recovery Fund activity: ${error.message}`);
   return (data ?? []).map((row) => ({
