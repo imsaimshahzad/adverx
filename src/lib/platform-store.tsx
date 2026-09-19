@@ -186,6 +186,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "ADMIN_ADJUSTMENT",
   "REFERRAL_COMMISSION",
   "TASK_REWARD",
+  "AD_REWARD",
   "WITHDRAWAL",
   ]);
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
