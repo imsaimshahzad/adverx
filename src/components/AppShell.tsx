@@ -1,14 +1,13 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Bell,
-  History,
   Home,
   MonitorPlay,
   Users,
   Wallet,
   LifeBuoy,
   Menu,
-  Settings,
+  BadgeCheck,
   ShieldCheck,
   X,
   type LucideIcon,
@@ -31,20 +30,18 @@ const NAV_GROUPS = [
   {
     label: "Earn & manage",
     items: [
-      { to: "/ads", label: "Earn / Tasks", icon: MonitorPlay },
+      { to: "/ads", label: "Ad Tasks", icon: MonitorPlay },
+      { to: "/plans", label: "Plans", icon: BadgeCheck },
       { to: "/network", label: "Referrals", icon: Users },
     ],
   },
   {
     label: "Finance",
-    items: [
-      { to: "/withdraw", label: "Withdrawals", icon: Wallet },
-      { to: "/history", label: "Transactions", icon: History },
-    ],
+    items: [{ to: "/withdraw", label: "Withdrawals", icon: Wallet }],
   },
   {
     label: "Support",
-    items: [{ to: "/support", label: "Support", icon: LifeBuoy }, { to: "/profile", label: "Settings", icon: Settings }],
+    items: [{ to: "/support", label: "Support", icon: LifeBuoy }, { to: "/profile", label: "Profile", icon: BadgeCheck }],
   },
 ] satisfies Array<{ label: string; items: { to: string; label: string; icon: LucideIcon }[] }>;
 
