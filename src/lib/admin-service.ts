@@ -317,6 +317,33 @@ export async function getAdminProfitLedger() {
   return (data ?? []) as AdminRow[];
 }
 
+export async function getRecoveryFundActivity() {
+  const { data, error } = await db
+    .from("recovery_fund_transactions")
+    .select("id, direction, amount, usage_type, target_user_id, reason, reference, actor_id, balance_after, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`Unable to load Recovery Fund activity: ${error.message}`);
+  return (data ?? []) as AdminRow[];
+}
+
+export async function useRecoveryFund(values: {
+  amount: number;
+  usageType: "User Recovery" | "Platform Recovery" | "Other";
+  targetUserId?: string | null;
+  reason: string;
+  reference?: string;
+}) {
+  const { data, error } = await db.rpc("admin_use_recovery_fund", {
+    p_amount: values.amount,
+    p_usage_type: values.usageType,
+    p_target_user_id: values.targetUserId ?? null,
+    p_reason: values.reason,
+    p_reference: values.reference?.trim() || null,
+  });
+  if (error) throw new Error(error.message || "Unable to use Recovery Fund.");
+  return data as AdminRow;
+}
+
 export async function replySupportTicket(ticketId: string, status: "open" | "in_progress" | "resolved" | "closed", reply: string) {
   const { data, error } = await db.rpc("admin_reply_support_ticket", {
     p_ticket_id: ticketId,
