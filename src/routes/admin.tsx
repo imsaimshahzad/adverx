@@ -61,6 +61,8 @@ import {
   getOperationsOverview,
   getAdminProfitLedger,
   getAdminProfitSummary,
+  getRecoveryFundActivity,
+  useRecoveryFund,
   getUsersPage,
   approveDeposit,
   deleteOrArchive,
@@ -1139,7 +1141,75 @@ function RevenueDashboard({
           </table>
         </CardContent>
       </Card>
+      <RecoveryFundPanel />
     </div>
+  );
+}
+
+function RecoveryFundPanel() {
+  const [activity, setActivity] = useState<AdminRow[]>([]);
+  const [users, setUsers] = useState<AdminRow[]>([]);
+  const [query, setQuery] = useState("");
+  const [amount, setAmount] = useState("");
+  const [usageType, setUsageType] = useState<"User Recovery" | "Platform Recovery" | "Other">("User Recovery");
+  const [targetUserId, setTargetUserId] = useState("");
+  const [reason, setReason] = useState("");
+  const [reference, setReference] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const load = async () => {
+    try {
+      const [rows, profiles] = await Promise.all([
+        getRecoveryFundActivity(),
+        db.from("profiles").select("id, public_uid, full_name, username, email").order("created_at", { ascending: false }),
+      ]);
+      setActivity(rows);
+      setUsers((profiles.data ?? []) as AdminRow[]);
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to load Recovery Fund activity.");
+    }
+  };
+  useEffect(() => { void load(); }, []);
+  const filteredUsers = users.filter((user) => `${user.full_name ?? ""} ${user.username ?? ""} ${user.email ?? ""} ${user.public_uid ?? ""}`.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0 || !reason.trim() || (usageType === "User Recovery" && !targetUserId)) {
+      setError("Enter a valid amount, reason, and target user when required.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await useRecoveryFund({ amount: value, usageType, targetUserId: usageType === "User Recovery" ? targetUserId : null, reason, reference });
+      setAmount(""); setTargetUserId(""); setReason(""); setReference(""); setQuery("");
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to use Recovery Fund.");
+    } finally { setBusy(false); }
+  }
+  return (
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
+      <Card>
+        <CardHeader><CardTitle>Use Recovery Fund</CardTitle><p className="text-sm text-muted-foreground">Record an auditable debit against the collected Recovery Fund.</p></CardHeader>
+        <CardContent>
+          <form className="grid gap-4" onSubmit={submit}>
+            <label className="grid gap-2 text-sm font-medium">Amount (PKR)<Input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
+            <label className="grid gap-2 text-sm font-medium">Usage Type<select className="h-10 rounded-md border bg-background px-3 text-sm" value={usageType} onChange={(event) => setUsageType(event.target.value as typeof usageType)}><option>User Recovery</option><option>Platform Recovery</option><option>Other</option></select></label>
+            {usageType === "User Recovery" ? <div className="grid gap-2"><label className="text-sm font-medium" htmlFor="recovery-user-search">Search user</label><Input id="recovery-user-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, username, email, or UID" /><select className="h-10 rounded-md border bg-background px-3 text-sm" value={targetUserId} onChange={(event) => setTargetUserId(event.target.value)} required><option value="">Select a user</option>{filteredUsers.map((user) => <option key={String(user.id)} value={String(user.id)}>{String(user.full_name ?? user.username ?? user.email ?? user.public_uid ?? user.id)}</option>)}</select></div> : null}
+            <label className="grid gap-2 text-sm font-medium">Reason / Note<textarea className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm" value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
+            <label className="grid gap-2 text-sm font-medium">Reference (optional)<Input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Ticket, incident, or internal reference" /></label>
+            {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
+            <Button type="submit" disabled={busy}>{busy ? "Recording…" : "Use Recovery Fund"}</Button>
+          </form>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle>Recovery Fund Activity</CardTitle><p className="text-sm text-muted-foreground">Debits are immutable and require a reason.</p></CardHeader>
+        <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Date</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4">Reason</th><th className="p-4">Reference</th><th className="p-4 text-right">Balance After</th></tr></thead><tbody>{activity.length ? activity.map((row) => <tr className="border-b last:border-0" key={String(row.id)}><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4">{formatValue(row.usage_type)}</td><td className="p-4 text-right tabular-nums">-{formatValue(row.amount)} PKR</td><td className="max-w-[220px] truncate p-4" title={String(row.reason)}>{formatValue(row.reason)}</td><td className="p-4 text-muted-foreground">{formatValue(row.reference)}</td><td className="p-4 text-right tabular-nums">{formatValue(row.balance_after)} PKR</td></tr>) : <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No Recovery Fund activity yet.</td></tr>}</tbody></table></CardContent>
+      </Card>
+    </section>
   );
 }
 
