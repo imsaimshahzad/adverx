@@ -796,7 +796,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     // not lost when the source uses a different reward type or table.
     const isAdmin = ["admin", "super_admin", "moderator"].includes(state.user?.role ?? "");
     const adminWalletBalance = state.adminProfitSummary
-      ? num(state.adminProfitSummary.admin_own_balance) + num(state.adminProfitSummary.unassigned_referral)
+      ? num(state.adminProfitSummary.admin_own_balance)
       : null;
     const availableBalance = isAdmin && adminWalletBalance !== null
       ? Math.max(0, adminWalletBalance)
