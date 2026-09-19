@@ -52,11 +52,22 @@ function AdsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const [startingAdId, setStartingAdId] = useState<string | null>(null);
-  const watchedIds = new Set(
+  const [completedAdIds, setCompletedAdIds] = useState<Set<string>>(new Set());
+  const persistedWatchedIds = new Set(
     state.adViews
       .filter((v) => pakistanDate(v.completedAt) === pakistanDate(new Date()))
       .map((v) => v.adId),
   );
+  const watchedIds = new Set([...persistedWatchedIds, ...completedAdIds]);
+
+  useEffect(() => {
+    setCompletedAdIds((current) => {
+      const next = new Set(current);
+      for (const adId of persistedWatchedIds) next.delete(adId);
+      return next;
+    });
+  }, [state.user?.id, state.adViews.length]);
+
   const dailyLimitReached = adsCompletedToday >= dailyAdLimit;
   const remainingAds = Math.max(0, dailyAdLimit - adsCompletedToday);
 
@@ -166,7 +177,11 @@ function AdsPage() {
                           }
                         }}
                       >
-                        {startingAdId === ad.id ? "Starting…" : done ? "Completed" : disabledReason ?? "Watch"}
+                        {startingAdId === ad.id
+                          ? "Starting…"
+                          : done
+                            ? "✓ Ad Watched"
+                            : disabledReason ?? "Watch"}
                         {!disabled && <Play className="size-4" />}
                       </Button>
                     </div>
@@ -186,11 +201,21 @@ function AdsPage() {
           setCompleting(true);
           try {
             const reward = await completeAd(sessionId);
+            if (openAd) {
+              setCompletedAdIds((current) => new Set(current).add(openAd.id));
+            }
             setOpenAd(null);
             setSessionId(null);
             toast.success(`Reward credited: ${money(reward)}`);
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Reward could not be credited");
+            const message = error instanceof Error ? error.message : "Reward could not be credited";
+            if (message.toLowerCase().includes("already completed today") && openAd) {
+              setCompletedAdIds((current) => new Set(current).add(openAd.id));
+              setOpenAd(null);
+              setSessionId(null);
+              return;
+            }
+            toast.error(message);
           } finally {
             setCompleting(false);
           }
