@@ -167,14 +167,6 @@ const pakistanDate = (value: number | Date = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
 const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   const num = (value: unknown) => Number(value ?? 0);
-  const USER_TRANSACTION_TYPES = new Set([
-    "DEPOSIT",
-    "TASK_REWARD",
-    "REFERRAL_REWARD",
-    "WITHDRAWAL",
-    "WITHDRAWAL_FEE",
-    "REFUND",
-  ]);
   const BALANCE_TRANSACTION_TYPES = new Set([
     "TASK_REWARD",
     "REFERRAL_REWARD",
@@ -265,7 +257,7 @@ async function loadState(user: {
     { data: userPlanSnapshot },
     { data: ads, error: adsError },
     { data: deposits },
-    { data: walletTransactions },
+    { data: ledger },
     { data: withdrawals },
     { data: completions },
     { data: notifications },
@@ -302,7 +294,7 @@ async function loadState(user: {
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
     db
-      .from("wallet_transactions")
+      .from("ledger_entries")
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
@@ -470,11 +462,10 @@ async function loadState(user: {
       status: d.status,
       createdAt: new Date(d.created_at).getTime(),
     })),
-    ledger: ((walletTransactions ?? []) as any[])
-      // User history comes from wallet_transactions. Exclude reserve/accounting
-      // and plan-activation rows; those must never become user earnings.
-      .filter((e) => USER_TRANSACTION_TYPES.has(String(e.type ?? "").toUpperCase()))
-      .filter((e) => e.status !== "cancelled" && e.status !== "reversed" && e.status !== "failed")
+    ledger: ((ledger ?? []) as any[])
+      // ledger_entries is the existing authoritative user balance source.
+      // Reserve/accounting data is intentionally not rendered as a separate UI value.
+      .filter((e) => e.status !== "cancelled" && e.status !== "reversed")
       .map((e) => {
         const rawType = String(e.type ?? "").toUpperCase();
         return {
