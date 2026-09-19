@@ -392,10 +392,18 @@ async function loadState(user: {
   );
   const profileRow = profile as any;
   const snapshotRow = userPlanSnapshot as any;
+  // Supabase may return the user_plans row without its nested plan relation.
+  // Resolve the plan by id as a fallback so the member account stays linked to
+  // the same plan that the admin panel displays.
   const snapshotPlan = snapshotRow?.plan as any;
-  const profilePlan = (plans ?? []).find((candidate: any) => candidate.id === profileRow?.plan_id && candidate.active === true && candidate.status === "active") as any;
-  const activePlanRow = profilePlan ?? (snapshotPlan?.status === "active" ? snapshotPlan : null);
-  const activePlanConfig = snapshotPlan ?? activePlanRow;
+  const snapshotPlanFromCatalog = (plans ?? []).find(
+    (candidate: any) => candidate.id === snapshotRow?.plan_id && candidate.active === true && candidate.status === "active",
+  ) as any;
+  const profilePlan = (plans ?? []).find(
+    (candidate: any) => candidate.id === profileRow?.plan_id && candidate.active === true && candidate.status === "active",
+  ) as any;
+  const activePlanRow = profilePlan ?? snapshotPlan ?? snapshotPlanFromCatalog;
+  const activePlanConfig = snapshotPlan ?? snapshotPlanFromCatalog ?? activePlanRow;
   const activePlan = activePlanRow
     ? {
         id: activePlanRow.id,
@@ -769,9 +777,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       .reduce((total, entry) => total + entry.credit, 0);
     // Count the same completed ad rewards used by Today earnings, using the
     // Asia/Karachi calendar day rather than the browser's UTC date.
-    const adsCompletedToday = completedRewardTransactions.filter(
-      (entry) => entry.type === "ad_reward" && isToday(entry.createdAt),
-    ).length;
+    // Completion records are the source of truth for the daily ad counter.
+    // Reward ledger rows can be delayed or absent, which previously made the
+    // dashboard show 0 / limit even when the member had completed ads.
+    const adsCompletedToday = state.adViews.filter((view) => isToday(view.completedAt)).length;
     const dailyAdLimit = plan?.dailyAdLimit ?? 0;
     const score = Math.min(
       100,
