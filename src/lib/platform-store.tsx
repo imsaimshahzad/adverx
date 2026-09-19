@@ -174,6 +174,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "AD_REWARD",
   "REWARD",
   "REFERRAL_REWARD",
+  "REFERRAL_COMMISSION",
   "WITHDRAWAL",
   "WITHDRAWAL_FEE",
   "REFUND",
@@ -506,6 +507,9 @@ async function loadState(user: {
       .filter((e) => e.status !== "cancelled" && e.status !== "reversed")
       .map((e) => {
         const rawType = String(e.type ?? "").toUpperCase();
+        const hasCreditDebit = e.credit != null || e.debit != null;
+        const credit = hasCreditDebit ? num(e.credit) : num(e.amount) > 0 ? num(e.amount) : 0;
+        const debit = hasCreditDebit ? num(e.debit) : num(e.amount) < 0 ? Math.abs(num(e.amount)) : 0;
         return {
           id: e.id,
           type:
@@ -513,7 +517,7 @@ async function loadState(user: {
               ? "deposit"
               : rawType === "WITHDRAWAL" || rawType === "WITHDRAWAL_FEE"
                 ? "withdrawal"
-                : rawType === "REFERRAL_REWARD"
+                : rawType === "REFERRAL_REWARD" || rawType === "REFERRAL_COMMISSION"
                   ? "referral_reward"
                     : rawType === "REFUND"
                       ? "refund"
@@ -526,7 +530,7 @@ async function loadState(user: {
               ? "Deposit"
               : rawType === "WITHDRAWAL" || rawType === "WITHDRAWAL_FEE"
                 ? "Withdrawal"
-                : rawType === "REFERRAL_REWARD"
+                : rawType === "REFERRAL_REWARD" || rawType === "REFERRAL_COMMISSION"
                   ? "Referral Reward"
                     : rawType === "REFUND"
                       ? "Refund"
@@ -534,8 +538,8 @@ async function loadState(user: {
                         ? "Wallet Adjustment"
                         : "Ad Reward",
 
-          credit: num(e.amount) > 0 ? num(e.amount) : 0,
-          debit: num(e.amount) < 0 ? Math.abs(num(e.amount)) : 0,
+          credit,
+          debit,
           status: e.status === "completed" ? "Credited" : e.status,
           createdAt: new Date(e.created_at).getTime(),
           reference: e.reference_id,
