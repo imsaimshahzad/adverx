@@ -50,3 +50,15 @@
 .admin-shell tr[class*="fff8f2"]:hover { background:#f8fafc; }
 .admin-button:hover { background:#4f46e5; }
 @media (prefers-reduced-motion:reduce) { .admin-shell * { transition-duration:.01ms!important; } }
+
+/* Admin is a separate command workspace: dense, grouped, and detached from the page edge. */
+@media (min-width:1024px) {
+  .admin-shell > .admin-sidebar { position:fixed; inset:1rem 1rem auto 1rem; z-index:30; width:auto; height:auto; max-height:calc(100vh - 2rem); border:1px solid rgb(226 232 240 / 80%); border-radius:1.25rem; background:rgb(255 255 255 / 82%); box-shadow:0 18px 45px rgb(15 23 42 / 12%); backdrop-filter:blur(22px); }
+  .admin-shell > .admin-sidebar > a { display:inline-flex; padding:.85rem 1rem; }
+  .admin-shell > .admin-sidebar > p { display:none; }
+  .admin-shell > .admin-sidebar > nav { display:flex; flex-wrap:wrap; gap:.35rem; padding:.45rem .75rem .75rem; }
+  .admin-shell > .admin-sidebar .admin-nav-item { width:auto; border:1px solid transparent; border-radius:.65rem; padding:.5rem .65rem; white-space:nowrap; }
+  .admin-shell > .admin-sidebar .admin-nav-item[data-active="true"] { border-color:#c7d2fe; box-shadow:none; }
+  .admin-shell > main { padding-top:6.5rem; }
+  .admin-shell > main > header { margin:0 1rem; border:1px solid #e2e8f0; border-radius:1rem; }
+}
