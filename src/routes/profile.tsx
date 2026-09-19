@@ -1,12 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, Copy, LogOut, Pencil, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { money, usePlatform } from "@/lib/platform-store";
+import { usePlatform } from "@/lib/platform-store";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -30,13 +29,8 @@ export const Route = createFileRoute("/profile")({
 function ProfilePage() {
   const {
     state,
-    plan,
     logout,
-    activityLevel,
     updateProfile,
-    availableBalance,
-    totalWithdrawn,
-    todaysEarnings,
   } = usePlatform();
   const navigate = useNavigate();
   const user = state.user;
@@ -85,70 +79,29 @@ function ProfilePage() {
         </div>
       </div>
 
-      <div className="mx-auto grid w-full max-w-2xl gap-3">
-        <div className="grid gap-3 sm:grid-cols-3" aria-label="Personal wallet summary">
-          <Metric label="Available balance" value={money(availableBalance)} />
-          <Metric label="Total withdrawn" value={money(totalWithdrawn)} />
-          <Metric label="Today&apos;s earnings" value={money(todaysEarnings)} />
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+        <div className="surface flex items-start gap-3 p-4">
+          <ShieldCheck className="mt-0.5 size-5 text-success" />
+          <div>
+            <p className="text-sm font-medium">Account security</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Your identity details are protected and account activity is recorded securely.
+            </p>
+          </div>
         </div>
-
-      <div className="surface mt-3 p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Account status</p>
-          <Badge variant={user?.status === "active" ? "default" : "secondary"}>
-            {user?.status === "active" ? "Active" : "Pending verification"}
-          </Badge>
-        </div>
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-sm font-medium">Activity level</p>
-          <Badge variant="secondary">{activityLevel}</Badge>
-        </div>
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-sm font-medium">Plan</p>
-          <span className="text-sm text-muted-foreground">
-            {plan ? `${plan.name} · ${money(plan.price)}` : "None"}
-          </span>
-        </div>
-        <Button asChild variant="outline" size="sm" className="mt-4 w-full">
-          <Link to="/plans">{plan ? "Change plan" : "Activate a plan"}</Link>
+        <Button
+          variant="ghost"
+          className="w-full text-destructive"
+          onClick={() => {
+            void logout()
+              .then(() => navigate({ to: "/auth", replace: true }))
+              .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to sign out."));
+          }}
+        >
+          <LogOut className="size-4" /> Sign out
         </Button>
-        {user?.role && ["admin", "super_admin", "moderator"].includes(user.role) ? (
-          <Button asChild variant="secondary" size="sm" className="mt-2 w-full">
-            <Link to="/admin">Open Admin Panel</Link>
-          </Button>
-        ) : null}
-      </div>
-
-      <div className="surface mt-3 flex items-start gap-3 p-4">
-        <ShieldCheck className="mt-0.5 size-5 text-success" />
-        <p className="text-xs text-muted-foreground">
-          Balances are computed from a verified transaction ledger. They can never be edited
-          from the app and every credit or debit is recorded.
-        </p>
-      </div>
-
-      <Button
-        variant="ghost"
-        className="mt-3 w-full text-destructive"
-        onClick={() => {
-          void logout()
-            .then(() => navigate({ to: "/auth", replace: true }))
-            .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to sign out."));
-        }}
-      >
-        <LogOut className="size-4" /> Sign out
-      </Button>
       </div>
     </AppShell>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="surface p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
-    </div>
   );
 }
 
