@@ -182,15 +182,10 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "ADMIN_ADJUSTMENT",
   ]);
   const BALANCE_TRANSACTION_TYPES = new Set([
-  "TASK_REWARD",
-  "AD_REWARD",
-  "REWARD",
-  "REFERRAL_REWARD",
-  "REFERRAL_COMMISSION",
-  "WITHDRAWAL",
-  "WITHDRAWAL_FEE",
-  "REFUND",
   "ADMIN_ADJUSTMENT",
+  "REFERRAL_COMMISSION",
+  "TASK_REWARD",
+  "WITHDRAWAL",
   ]);
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
   
@@ -759,11 +754,13 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         .filter((transaction) => !["PLAN_PURCHASE", "PLATFORM_PROFIT", "PLAN_AD_BUDGET"].includes(String(transaction.type ?? "").toUpperCase()))
         .filter((transaction) => BALANCE_TRANSACTION_TYPES.has(String(transaction.type ?? "").toUpperCase()))
         .filter((transaction) => !["cancelled", "reversed"].includes(String(transaction.status ?? "").toLowerCase()))
-        .reduce(
-          (total, transaction) =>
-            total + (transaction.amount != null ? num(transaction.amount) : num(transaction.credit) - num(transaction.debit)),
-          0,
-        ),
+        .reduce((total, transaction) => {
+          const type = String(transaction.type ?? "").toUpperCase();
+          const amount = transaction.amount != null
+            ? num(transaction.amount)
+            : num(transaction.credit) - num(transaction.debit);
+          return total + (type === "WITHDRAWAL" ? -Math.abs(amount) : amount);
+        }, 0),
     );
     const totalWithdrawn = state.withdrawals
       .filter((w) => w.status === "paid")
