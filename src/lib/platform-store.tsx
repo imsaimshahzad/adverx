@@ -166,9 +166,11 @@ export const money = (n: number) =>
 const pakistanDate = (value: number | Date = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
 const isToday = (value: number) => pakistanDate(value) === pakistanDate();
-const num = (value: unknown) => Number(value ?? 0);
-
-async function loadCatalog() {
+  const num = (value: unknown) => Number(value ?? 0);
+  const USER_LEDGER_TYPES = new Set(["DEPOSIT", "AD_REWARD", "REFERRAL_REWARD", "WITHDRAWAL", "WITHDRAWAL_FEE"]);
+  const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
+  
+  async function loadCatalog() {
   const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }] = await Promise.all([
     db
       .from("ads")
@@ -455,31 +457,37 @@ async function loadState(user: {
       createdAt: new Date(d.created_at).getTime(),
     })),
     ledger: ((ledger ?? []) as any[])
+      // Only expose real user wallet transactions. Reserve/accounting rows are
+      // intentionally ignored instead of falling through to Ad Reward.
+      .filter((e) => USER_LEDGER_TYPES.has(String(e.type ?? "").toUpperCase()))
       .filter((e) => e.status !== "cancelled" && e.status !== "reversed")
-      .map((e) => ({
-        id: e.id,
-        type:
-          e.type === "DEPOSIT"
-            ? "deposit"
-            : e.type === "WITHDRAWAL" || e.type === "WITHDRAWAL_FEE"
-              ? "withdrawal"
-              : e.type === "REFERRAL_REWARD"
-                ? "referral_reward"
-                : "ad_reward",
-        label:
-          e.type === "DEPOSIT"
-            ? "Deposit"
-            : e.type === "WITHDRAWAL" || e.type === "WITHDRAWAL_FEE"
-              ? "Withdrawal"
-              : e.type === "REFERRAL_REWARD"
-                ? "Referral Reward"
-                : "Ad Reward",
-        credit: num(e.amount) > 0 ? num(e.amount) : 0,
-        debit: num(e.amount) < 0 ? Math.abs(num(e.amount)) : 0,
-        status: e.status === "completed" ? "Credited" : e.status,
-        createdAt: new Date(e.created_at).getTime(),
-        reference: e.reference_id,
-      })),
+      .map((e) => {
+        const rawType = String(e.type ?? "").toUpperCase();
+        return {
+          id: e.id,
+          type:
+            rawType === "DEPOSIT"
+              ? "deposit"
+              : rawType === "WITHDRAWAL" || rawType === "WITHDRAWAL_FEE"
+                ? "withdrawal"
+                : rawType === "REFERRAL_REWARD"
+                  ? "referral_reward"
+                  : "ad_reward",
+          label:
+            rawType === "DEPOSIT"
+              ? "Deposit"
+              : rawType === "WITHDRAWAL" || rawType === "WITHDRAWAL_FEE"
+                ? "Withdrawal"
+                : rawType === "REFERRAL_REWARD"
+                  ? "Referral Reward"
+                  : "Ad Reward",
+          credit: num(e.amount) > 0 ? num(e.amount) : 0,
+          debit: num(e.amount) < 0 ? Math.abs(num(e.amount)) : 0,
+          status: e.status === "completed" ? "Credited" : e.status,
+          createdAt: new Date(e.created_at).getTime(),
+          reference: e.reference_id,
+        };
+      }),
     withdrawals: ((withdrawals ?? []) as any[]).map((w) => ({
       id: w.id,
       amount: num(w.amount),
@@ -694,14 +702,18 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const totalWithdrawn = state.withdrawals
       .filter((w) => w.status === "paid")
       .reduce((a, w) => a + w.amount, 0);
-    const todaysEarnings = state.ledger
-      .filter((e) => e.type !== "deposit" && isToday(e.createdAt))
-      .reduce((a, e) => a + e.credit, 0);
-  // Count the same credited ad rewards used by Today earnings, using the
-  // Asia/Karachi calendar day rather than the browser's UTC date.
-  const adsCompletedToday = state.ledger.filter(
-    (entry) => entry.type === "ad_reward" && isToday(entry.createdAt),
-
+    const completedRewardTransactions = state.ledger.filter(
+      (entry) =>
+        (entry.type === "ad_reward" || entry.type === "referral_reward") &&
+        COMPLETED_REWARD_STATUSES.has(String(entry.status).toLowerCase()),
+    );
+    const todaysEarnings = completedRewardTransactions
+      .filter((entry) => isToday(entry.createdAt))
+      .reduce((total, entry) => total + entry.credit, 0);
+    // Count the same completed ad rewards used by Today earnings, using the
+    // Asia/Karachi calendar day rather than the browser's UTC date.
+    const adsCompletedToday = completedRewardTransactions.filter(
+      (entry) => entry.type === "ad_reward" && isToday(entry.createdAt),
     ).length;
     const dailyAdLimit = plan?.dailyAdLimit ?? 0;
     const score = Math.min(
