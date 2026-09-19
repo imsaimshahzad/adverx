@@ -79,17 +79,18 @@ function AdsPage() {
       {!plan && (
         <div className="surface flex flex-col items-center gap-3 p-8 text-center">
           <Lock className="size-6 text-muted-foreground" />
-          <p className="text-sm font-medium">Ad tasks are locked</p>
+          <p className="text-sm font-medium">Ad Tasks Locked</p>
           <p className="text-xs text-muted-foreground">
-            Activate a plan to unlock daily ad tasks.
+            Activate a plan to unlock daily ad tasks and start earning rewards.
           </p>
           <Button asChild size="sm">
-            <Link to="/plans">View plans</Link>
+            <Link to="/plans">View Plans</Link>
           </Button>
         </div>
       )}
 
-      <>
+      {plan ? (
+        <>
         <div className="glass-panel flex items-center justify-between gap-3 p-4">
             <div className="flex items-center gap-3"><ShieldCheck className="size-5 text-success" />
             <p className="text-xs text-muted-foreground">
@@ -190,7 +191,8 @@ function AdsPage() {
               );
             })}
           </div>
-      </>
+        </>
+      ) : null}
 
       <AdPlayer
         ad={openAd}
