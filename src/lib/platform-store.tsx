@@ -758,8 +758,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
               ? "REFERRAL_REWARD"
               : entry.type === "withdrawal"
                 ? "WITHDRAWAL"
-                : entry.type === "refund"
-                  ? "REFUND"
+              : entry.type === "refund"
+                ? "REFUND"
+                : entry.type === "adjustment"
+                  ? "ADMIN_ADJUSTMENT"
                   : "",
         ))
         .reduce((total, entry) => total + entry.credit - entry.debit, 0),
