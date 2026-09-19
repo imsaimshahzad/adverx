@@ -825,7 +825,7 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
           ) : active === "support" ? (
             <SupportTicketPanel admin />
           ) : active === "revenue" ? (
-            <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} />
+            <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} onRefresh={load} />
           ) : (
             <ModuleTable
               active={active}
@@ -1062,10 +1062,12 @@ function RevenueDashboard({
   summary,
   overview,
   ledger,
+  onRefresh,
 }: {
   summary: AdminRow;
   overview: Record<string, number>;
   ledger: AdminRow[];
+  onRefresh: () => Promise<void>;
 }) {
   const metric = (value: unknown) =>
     value === undefined || value === null ? "—" : Number(value).toLocaleString();
@@ -1141,12 +1143,12 @@ function RevenueDashboard({
           </table>
         </CardContent>
       </Card>
-      <RecoveryFundPanel />
+      <RecoveryFundPanel remaining={Number(overview.remaining_recovery_fund ?? 0)} onRefresh={onRefresh} />
     </div>
   );
 }
 
-function RecoveryFundPanel() {
+function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefresh: () => Promise<void> }) {
   const [activity, setActivity] = useState<AdminRow[]>([]);
   const [users, setUsers] = useState<AdminRow[]>([]);
   const [query, setQuery] = useState("");
@@ -1182,9 +1184,10 @@ function RecoveryFundPanel() {
     setBusy(true);
     setError("");
     try {
-      await useRecoveryFund({ amount: value, usageType, targetUserId: usageType === "User Recovery" ? targetUserId : null, reason, reference });
+      const result = await useRecoveryFund({ amount: value, usageType, targetUserId: usageType === "User Recovery" ? targetUserId : null, reason, reference });
       setAmount(""); setTargetUserId(""); setReason(""); setReference(""); setQuery("");
-      await load();
+      await Promise.all([load(), onRefresh()]);
+      toast.success(`Recovery Fund used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to use Recovery Fund.");
     } finally { setBusy(false); }
@@ -1194,7 +1197,12 @@ function RecoveryFundPanel() {
       <Card>
         <CardHeader><CardTitle>Use Recovery Fund</CardTitle><p className="text-sm text-muted-foreground">Record an auditable debit against the collected Recovery Fund.</p></CardHeader>
         <CardContent>
-          <form className="grid gap-4" onSubmit={submit}>
+            <form className="grid gap-4" onSubmit={submit}>
+            <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 text-sm sm:grid-cols-3">
+              <div><p className="text-muted-foreground">Current remaining</p><p className="mt-1 font-semibold tabular-nums">{remaining.toLocaleString()} PKR</p></div>
+              <div><p className="text-muted-foreground">Amount to use</p><p className="mt-1 font-semibold tabular-nums">{amount ? `${Number(amount).toLocaleString()} PKR` : "—"}</p></div>
+              <div><p className="text-muted-foreground">Balance after</p><p className="mt-1 font-semibold tabular-nums">Confirmed by database after submit</p></div>
+            </div>
             <label className="grid gap-2 text-sm font-medium">Amount (PKR)<Input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
             <label className="grid gap-2 text-sm font-medium">Usage Type<select className="h-10 rounded-md border bg-background px-3 text-sm" value={usageType} onChange={(event) => setUsageType(event.target.value as typeof usageType)}><option>User Recovery</option><option>Platform Recovery</option><option>Other</option></select></label>
             {usageType === "User Recovery" ? <div className="grid gap-2"><label className="text-sm font-medium" htmlFor="recovery-user-search">Search user</label><Input id="recovery-user-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, username, email, or UID" /><select className="h-10 rounded-md border bg-background px-3 text-sm" value={targetUserId} onChange={(event) => setTargetUserId(event.target.value)} required><option value="">Select a user</option>{filteredUsers.map((user) => <option key={String(user.id)} value={String(user.id)}>{String(user.full_name ?? user.username ?? user.email ?? user.public_uid ?? user.id)}</option>)}</select></div> : null}
@@ -1207,7 +1215,7 @@ function RecoveryFundPanel() {
       </Card>
       <Card>
         <CardHeader><CardTitle>Recovery Fund Activity</CardTitle><p className="text-sm text-muted-foreground">Debits are immutable and require a reason.</p></CardHeader>
-        <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Date</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4">Reason</th><th className="p-4">Reference</th><th className="p-4 text-right">Balance After</th></tr></thead><tbody>{activity.length ? activity.map((row) => <tr className="border-b last:border-0" key={String(row.id)}><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4">{formatValue(row.usage_type)}</td><td className="p-4 text-right tabular-nums">-{formatValue(row.amount)} PKR</td><td className="max-w-[220px] truncate p-4" title={String(row.reason)}>{formatValue(row.reason)}</td><td className="p-4 text-muted-foreground">{formatValue(row.reference)}</td><td className="p-4 text-right tabular-nums">{formatValue(row.balance_after)} PKR</td></tr>) : <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No Recovery Fund activity yet.</td></tr>}</tbody></table></CardContent>
+        <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Date</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4">Target user</th><th className="p-4">Reason</th><th className="p-4">Reference</th><th className="p-4 text-right">Balance After</th></tr></thead><tbody>{activity.length ? activity.map((row) => <tr className="border-b last:border-0" key={String(row.id)}><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4">{formatValue(row.usage_type)}</td><td className="p-4 text-right tabular-nums">-{formatValue(row.amount)} PKR</td><td className="max-w-[180px] truncate p-4" title={String(row.target_user_id ?? "—")}>{formatValue(row.target_user_id)}</td><td className="max-w-[220px] truncate p-4" title={String(row.reason)}>{formatValue(row.reason)}</td><td className="p-4 text-muted-foreground">{formatValue(row.reference)}</td><td className="p-4 text-right tabular-nums">{formatValue(row.balance_after)} PKR</td></tr>) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Recovery Fund activity yet.</td></tr>}</tbody></table></CardContent>
       </Card>
     </section>
   );
