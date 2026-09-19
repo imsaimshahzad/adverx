@@ -83,6 +83,30 @@ export const Route = createFileRoute("/admin")({
   component: AdminRoute,
 });
 type Icon = typeof Users;
+type UserPartition = "all" | "paid" | "unpaid" | "starter" | "growth" | "pro";
+
+type UserClassification = {
+  paid: boolean;
+  plan: "starter" | "growth" | "pro" | null;
+};
+
+function classifyUser(row: AdminRow): UserClassification {
+  const role = String(row.role ?? row.account_role ?? "").toLowerCase();
+  const accountType = String(row.account_type ?? row.user_type ?? "").toLowerCase();
+  const isSystemAccount = row.is_admin === true || row.is_system === true || ["admin", "super_admin", "moderator", "system"].includes(role) || ["admin", "system"].includes(accountType);
+  if (isSystemAccount) return { paid: false, plan: null };
+
+  const nestedPlan = row.plan && typeof row.plan === "object" ? row.plan as Record<string, unknown> : null;
+  const planName = String(
+    row.active_plan_name ?? row.plan_name ?? row.plan_title ?? row.plan_name_snapshot ?? nestedPlan?.name ?? row.plan ?? "",
+  ).toLowerCase();
+  const plan = planName.includes("starter") ? "starter" : planName.includes("growth") ? "growth" : planName.includes("pro") ? "pro" : null;
+  const planStatus = String(row.user_plan_status ?? row.plan_status ?? row.subscription_status ?? row.payment_status ?? "").toLowerCase();
+  const hasActivePlan = row.has_active_plan === true || row.active_plan === true || row.is_active === true || row.plan_active === true || Boolean(row.plan_id && (row.plan_status === undefined || row.plan_status === "active"));
+  const paid = row.is_paid === true || row.paid === true || (hasActivePlan && Boolean(plan)) || ["paid", "active", "subscribed", "approved"].includes(planStatus);
+  return { paid: Boolean(paid && plan), plan: paid ? plan : null };
+}
+
 const menu: Array<[AdminModule, string, Icon]> = [
   ["overview", "Overview", LayoutDashboard],
   ["users", "Users", Users],
@@ -393,12 +417,11 @@ function AdminRoute() {
   const filtered = useMemo(() => {
     const partitionedRows = currentRows.filter((row) => {
       if (active === "users") {
+        const classification = classifyUser(row);
         if (userPartition === "all") return true;
-        const plan = String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase();
-        const paid = row.is_paid === true || row.paid === true || ["paid", "active", "subscribed"].includes(String(row.payment_status ?? row.account_status ?? "").toLowerCase());
-        if (userPartition === "paid") return paid;
-        if (userPartition === "unpaid") return !paid;
-        return plan.includes(userPartition);
+        if (userPartition === "paid") return classification.paid;
+        if (userPartition === "unpaid") return !classification.paid;
+        return classification.plan === userPartition;
       }
       if (active === "tasks") {
         const status = String(row.status ?? "").toLowerCase();
@@ -753,14 +776,17 @@ function AdminRoute() {
               actions={statusActions[active] ?? []}
               statusPartition={statusPartition}
               userPartition={userPartition}
-              userCounts={active === "users" ? {
-                all: currentRows.length,
-                paid: currentRows.filter((row) => row.is_paid === true || row.paid === true || ["paid", "active", "subscribed"].includes(String(row.payment_status ?? row.account_status ?? "").toLowerCase())).length,
-                unpaid: currentRows.filter((row) => !(row.is_paid === true || row.paid === true || ["paid", "active", "subscribed"].includes(String(row.payment_status ?? row.account_status ?? "").toLowerCase()))).length,
-                starter: currentRows.filter((row) => String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase().includes("starter")).length,
-                growth: currentRows.filter((row) => String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase().includes("growth")).length,
-                pro: currentRows.filter((row) => String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase().includes("pro")).length,
-              } : undefined}
+              userCounts={active === "users" ? currentRows.reduce((counts, row) => {
+                const classification = classifyUser(row);
+                counts.all += 1;
+                if (classification.paid) {
+                  counts.paid += 1;
+                  if (classification.plan) counts[classification.plan] += 1;
+                } else {
+                  counts.unpaid += 1;
+                }
+                return counts;
+              }, { all: 0, paid: 0, unpaid: 0, starter: 0, growth: 0, pro: 0 }) : undefined}
               onUserPartition={(value) => {
                 setUserPartition(value);
                 setPage(1);
