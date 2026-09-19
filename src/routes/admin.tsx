@@ -117,7 +117,11 @@ function mapUserForDisplay(row: AdminRow): AdminRow {
   return {
     ...row,
     user: row.full_name ?? row.email ?? row.username ?? "Unknown user",
-    plan: classification.plan ? `${classification.plan.slice(0, 1).toUpperCase()}${classification.plan.slice(1)}` : "No Plan",
+    plan: classification.system
+      ? "Pro / System"
+      : classification.plan
+        ? `${classification.plan.slice(0, 1).toUpperCase()}${classification.plan.slice(1)}`
+        : "No Plan",
     payment: classification.system ? "System/Admin" : classification.paid ? "Paid" : "Unpaid",
   };
 }
