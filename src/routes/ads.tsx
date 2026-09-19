@@ -43,7 +43,6 @@ function AdsPage() {
     state,
     adsCompletedToday,
     dailyAdLimit,
-    todaysEarnings,
     catalogReady,
     catalogError,
     startAd,
@@ -52,15 +51,13 @@ function AdsPage() {
   const [openAd, setOpenAd] = useState<Ad | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [startingAdId, setStartingAdId] = useState<string | null>(null);
   const watchedIds = new Set(
     state.adViews
       .filter((v) => pakistanDate(v.completedAt) === pakistanDate(new Date()))
       .map((v) => v.adId),
   );
   const dailyLimitReached = adsCompletedToday >= dailyAdLimit;
-  const earningsLimitReached = Boolean(
-    plan?.dailyRewardLimit && todaysEarnings >= plan.dailyRewardLimit,
-  );
   const remainingAds = Math.max(0, dailyAdLimit - adsCompletedToday);
 
   return (
@@ -121,9 +118,7 @@ function AdsPage() {
                   ? "Completed today"
                   : dailyLimitReached
                     ? "Daily limit reached"
-                    : earningsLimitReached
-                      ? "Earnings limit reached"
-                      : null;
+                    : null;
               const disabled = Boolean(disabledReason);
 
               return (
@@ -156,18 +151,22 @@ function AdsPage() {
                       <Button
                         size="sm"
                         variant={disabled ? "secondary" : "default"}
-                        disabled={disabled}
+                        disabled={disabled || startingAdId !== null}
                         onClick={async () => {
+                          if (startingAdId) return;
+                          setStartingAdId(ad.id);
                           try {
                             const id = await startAd(ad.id);
                             setSessionId(id);
                             setOpenAd(ad);
                           } catch (error) {
                             toast.error(error instanceof Error ? error.message : "Ad could not start");
+                          } finally {
+                            setStartingAdId(null);
                           }
                         }}
                       >
-                        {done ? "Completed" : disabledReason ?? "Watch"}
+                        {startingAdId === ad.id ? "Starting…" : done ? "Completed" : disabledReason ?? "Watch"}
                         {!disabled && <Play className="size-4" />}
                       </Button>
                     </div>

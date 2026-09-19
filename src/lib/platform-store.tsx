@@ -189,7 +189,7 @@ async function loadCatalog() {
     advertiser: a.advertiser ?? "Advertiser",
     description: a.description ?? "Complete this verified task.",
     category: a.category ?? "General",
-    watchSeconds: a.required_watch_seconds ?? a.duration_seconds ?? 15,
+      watchSeconds: num(a.duration_seconds),
     reward: num(a.reward),
   })));
 
@@ -703,7 +703,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     (entry) => entry.type === "ad_reward" && isToday(entry.createdAt),
 
     ).length;
-    const dailyAdLimit = plan ? Math.max(plan.dailyAdLimit, 10) : 0;
+    const dailyAdLimit = plan?.dailyAdLimit ?? 0;
     const score = Math.min(
       100,
       Math.round(
@@ -804,18 +804,20 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   }
   }, []);
   const startAd = useCallback(async (adId: string) => {
-    const { data, error } = await db.rpc("start_task_session", { _task_id: adId });
+    const { data, error } = await db.rpc("start_ad_view", { p_ad_id: adId });
     if (error) throw new Error(error.message);
+    if (!data) throw new Error("The ad session could not be started.");
     return String(data);
   }, []);
   const completeAd = useCallback(async (sessionId: string) => {
-    const { data, error } = await db.rpc("complete_task_session", {
-      _session_id: sessionId,
+    const { data, error } = await db.rpc("complete_ad_view", {
+      p_session_id: sessionId,
+      p_idempotency_key: crypto.randomUUID(),
     });
     if (error) throw new Error(error.message);
     const { data: authData } = await supabase.auth.getUser();
     if (authData.user) await refresh(authData.user);
-    return num((data as any)?.reward);
+    return num(data);
   }, [refresh]);
   const requestWithdrawal = useCallback(async (input: any) => {
     const { error } = await db.rpc("request_withdrawal", {
@@ -845,7 +847,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         state,
         plan,
         ...derived,
-  dailyAdLimit: plan?.dailyAdLimit || 10,
+  dailyAdLimit: plan?.dailyAdLimit ?? 0,
 
         unreadCount: state.notifications.filter((n) => !n.read).length,
         register,
