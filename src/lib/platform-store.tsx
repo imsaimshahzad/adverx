@@ -283,7 +283,6 @@ async function loadState(user: {
   const uid = user.id;
   const [
     { data: profile, error: profileError },
-    { data: userRole },
     { data: plans, error: plansError },
     { data: userPlanSnapshot },
     { data: ads, error: adsError },
@@ -409,7 +408,7 @@ async function loadState(user: {
   );
   const profileRow = profile as any;
   const snapshotRow = userPlanSnapshot as any;
-  const roleValue = (userRole as any)?.role;
+  const roleValue = profileRow?.role;
   const role = ["admin", "super_admin", "moderator", "user"].includes(roleValue)
     ? roleValue
     : "user";
