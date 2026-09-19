@@ -283,6 +283,7 @@ async function loadState(user: {
   const uid = user.id;
   const [
     { data: profile, error: profileError },
+    { data: roleRow },
     { data: plans, error: plansError },
     { data: userPlanSnapshot },
     { data: ads, error: adsError },
