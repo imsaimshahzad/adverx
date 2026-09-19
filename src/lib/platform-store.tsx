@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAdminProfitSummary, type AdminProfitSummary } from "@/lib/admin-service";
 import { toast } from "sonner";
 import {
   createContext,
@@ -160,6 +161,7 @@ const EMPTY = {
   network: [],
   notifications: [],
   recoveries: [],
+  adminProfitSummary: null,
 } as const;
 type State = {
   user: User | null;
@@ -171,6 +173,7 @@ type State = {
   network: NetworkMember[];
   notifications: Notification[];
   recoveries: Array<{ id: string; amount: number; status: string; createdAt: number; referredId: string }>;
+  adminProfitSummary: AdminProfitSummary | null;
 };
 const DAY = 86400000;
 export const money = (n: number) =>
@@ -476,6 +479,14 @@ async function loadState(user: {
   const planById = new Map<string, any>((referredPlans ?? []).map((row: any) => [row.user_id, PLANS.find((plan) => plan.id === row.plan_id)]));
   const commissionByUser = new Map<string, number>();
   for (const row of commissions ?? []) commissionByUser.set(row.source_user_id, (commissionByUser.get(row.source_user_id) ?? 0) + num(row.amount));
+  let adminProfitSummary: AdminProfitSummary | null = null;
+  if (["admin", "super_admin", "moderator"].includes(role)) {
+    try {
+      adminProfitSummary = await getAdminProfitSummary();
+    } catch (error) {
+      console.error("[v0] Admin profit summary failed", error);
+    }
+  }
   return {
     walletTransactions: (walletTransactions ?? []) as any[],
     user: {
@@ -616,6 +627,7 @@ async function loadState(user: {
       createdAt: new Date(r.created_at).getTime(),
       referredId: r.referred_id,
     })),
+    adminProfitSummary,
   };
 }
 
@@ -783,7 +795,12 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     // wallet transactions with legacy ledger rows by id, so credited rewards are
     // not lost when the source uses a different reward type or table.
     const isAdmin = ["admin", "super_admin", "moderator"].includes(state.user?.role ?? "");
-    const availableBalance = Math.max(
+    const adminWalletBalance = state.adminProfitSummary
+      ? num(state.adminProfitSummary.admin_own_balance) + num(state.adminProfitSummary.unassigned_referral)
+      : null;
+    const availableBalance = isAdmin && adminWalletBalance !== null
+      ? Math.max(0, adminWalletBalance)
+      : Math.max(
       0,
       state.ledger
         .filter((entry) =>
