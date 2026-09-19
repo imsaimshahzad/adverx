@@ -149,6 +149,7 @@ function AdminRoute() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [statusPartition, setStatusPartition] = useState<"pending" | "approved" | "rejected">("pending");
+  const [userPartition, setUserPartition] = useState<"all" | "paid" | "unpaid" | "starter" | "growth" | "pro">("all");
   const [refreshing, setRefreshing] = useState(false);
   const [adsFilter, setAdsFilter] = useState<"active" | "archived" | "all">("active");
   const [receipt, setReceipt] = useState<{
@@ -276,7 +277,7 @@ function AdminRoute() {
       }
       if (active === "users") {
         try {
-          const userRows = await getUsersPage(query, "", page, 20);
+          const userRows = await getUsersPage(query, "", 1, 1000);
           setUserPageRows(userRows);
           setUserTotal(Number(userRows[0]?.total_count ?? 0));
         } catch {
@@ -391,6 +392,14 @@ function AdminRoute() {
   const currentRows = active === "users" ? userPageRows : currentTable ? (rows[currentTable] ?? []) : [];
   const filtered = useMemo(() => {
     const partitionedRows = currentRows.filter((row) => {
+      if (active === "users") {
+        if (userPartition === "all") return true;
+        const plan = String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase();
+        const paid = row.is_paid === true || row.paid === true || ["paid", "active", "subscribed"].includes(String(row.payment_status ?? row.account_status ?? "").toLowerCase());
+        if (userPartition === "paid") return paid;
+        if (userPartition === "unpaid") return !paid;
+        return plan.includes(userPartition);
+      }
       if (active === "tasks") {
         const status = String(row.status ?? "").toLowerCase();
         return adsFilter === "all" || status === adsFilter;
@@ -731,6 +740,7 @@ function AdminRoute() {
             <ModuleTable
               active={active}
               rows={filtered}
+              totalRecords={active === "users" ? userTotal : undefined}
               query={query}
               setQuery={(value) => {
                 setQuery(value);
@@ -742,6 +752,19 @@ function AdminRoute() {
               setSelectedUser={setSelectedUser}
               actions={statusActions[active] ?? []}
               statusPartition={statusPartition}
+              userPartition={userPartition}
+              userCounts={active === "users" ? {
+                all: currentRows.length,
+                paid: currentRows.filter((row) => row.is_paid === true || row.paid === true || ["paid", "active", "subscribed"].includes(String(row.payment_status ?? row.account_status ?? "").toLowerCase())).length,
+                unpaid: currentRows.filter((row) => !(row.is_paid === true || row.paid === true || ["paid", "active", "subscribed"].includes(String(row.payment_status ?? row.account_status ?? "").toLowerCase()))).length,
+                starter: currentRows.filter((row) => String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase().includes("starter")).length,
+                growth: currentRows.filter((row) => String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase().includes("growth")).length,
+                pro: currentRows.filter((row) => String(row.plan_name ?? row.plan ?? row.plan_title ?? "").toLowerCase().includes("pro")).length,
+              } : undefined}
+              onUserPartition={(value) => {
+                setUserPartition(value);
+                setPage(1);
+              }}
               adsFilter={adsFilter}
               onAdsFilter={(value) => {
                 setAdsFilter(value);
@@ -1454,6 +1477,8 @@ function ModuleTable({
   setSelectedUser,
   actions,
   statusPartition,
+  userPartition,
+  onUserPartition,
   onStatusPartition,
   adsFilter,
   onAdsFilter,
@@ -1472,6 +1497,7 @@ function ModuleTable({
 }: {
   active: AdminModule;
   rows: AdminRow[];
+  totalRecords?: number;
   query: string;
   setQuery: (value: string) => void;
   page: number;
@@ -1480,7 +1506,10 @@ function ModuleTable({
   setSelectedUser: (row: AdminRow | null) => void;
   actions: string[];
   statusPartition?: "pending" | "approved" | "rejected";
+  userPartition?: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro";
+  onUserPartition?: (value: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro") => void;
   onStatusPartition?: (value: "pending" | "approved" | "rejected") => void;
+  userCounts?: { all: number; paid: number; unpaid: number; starter: number; growth: number; pro: number };
   adsFilter?: "active" | "archived" | "all";
   onAdsFilter?: (value: "active" | "archived" | "all") => void;
   adsCounts?: { active: number; archived: number; all: number };
@@ -1542,10 +1571,18 @@ function ModuleTable({
         <div>
           <CardTitle>{active.replaceAll("-", " ")}</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            {rows.length} live records from Supabase.
+            {totalRecords ?? rows.length} live records from Supabase.
           </p>
         </div>
-        {adsCounts && onAdsFilter ? (
+        {active === "users" && userCounts && onUserPartition ? (
+          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="User filters">
+            {(["all", "paid", "unpaid", "starter", "growth", "pro"] as const).map((filter) => (
+              <Button key={filter} type="button" size="sm" variant={userPartition === filter ? "default" : "outline"} role="tab" aria-selected={userPartition === filter} onClick={() => onUserPartition(filter)} className="shrink-0 capitalize">
+                {filter} ({userCounts[filter]})
+              </Button>
+            ))}
+          </div>
+        ) : adsCounts && onAdsFilter ? (
           <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Ads status">
             {(["active", "archived", "all"] as const).map((status) => (
               <Button key={status} type="button" size="sm" variant={adsFilter === status ? "default" : "outline"} role="tab" aria-selected={adsFilter === status} onClick={() => onAdsFilter(status)} className="shrink-0 capitalize">
