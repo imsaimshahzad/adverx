@@ -49,43 +49,43 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: #f7f8fa;
-  --foreground: #111827;
+  --radius: 0.9rem;
+  --background: #f5f7f7;
+  --foreground: #102a2a;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #102a2a;
   --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #4f46e5;
+  --popover-foreground: #102a2a;
+  --primary: #087f7b;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #1f2937;
-  --muted: #f1f5f9;
-  --muted-foreground: #4b5563;
-  --accent: #eef2ff;
-  --accent-foreground: #3730a3;
-  --destructive: #dc2626;
+  --secondary: #e8f2f0;
+  --secondary-foreground: #164e4a;
+  --muted: #edf3f2;
+  --muted-foreground: #58706f;
+  --accent: #fff3e5;
+  --accent-foreground: #9a4e16;
+  --destructive: #c2413e;
   --destructive-foreground: #ffffff;
-  --success: #16a34a;
+  --success: #16866b;
   --success-foreground: #ffffff;
-  --warning: #d97706;
+  --warning: #b86b19;
   --warning-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #cbd5e1;
-  --ring: #6366f1;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #111827;
-  --sidebar-primary: #6366f1;
+  --border: #d9e5e3;
+  --input: #bfd2cf;
+  --ring: #16a6a0;
+  --sidebar: #fbfdfc;
+  --sidebar-foreground: #102a2a;
+  --sidebar-primary: #087f7b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef2ff;
-  --sidebar-accent-foreground: #3730a3;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #6366f1;
-  --chart-1: #6366f1;
-  --chart-2: #06b6d4;
-  --chart-3: #16a34a;
-  --chart-4: #d97706;
-  --chart-5: #dc2626;
+  --sidebar-accent: #e7f4f1;
+  --sidebar-accent-foreground: #08645f;
+  --sidebar-border: #d9e5e3;
+  --sidebar-ring: #16a6a0;
+  --chart-1: #087f7b;
+  --chart-2: #e28b3d;
+  --chart-3: #16866b;
+  --chart-4: #4f8c9a;
+  --chart-5: #c2413e;
 }
 
 * { border-color: var(--border); }
@@ -99,6 +99,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 button, a, input, textarea, select { transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease, transform 180ms ease; }
+button:not([data-slot="checkbox"]):not([data-slot="radio-group-item"]), [role="button"] { min-height: 2.5rem; }
+.surface { border-color: var(--border); }
+@media (max-width: 640px) { .surface { border-radius: 1rem; } }
+
 
 /* Unified table surfaces keep rows, cells, hover states, and rounded boundaries visually connected. */
 .adverx-table-wrapper {
