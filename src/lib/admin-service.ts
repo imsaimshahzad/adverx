@@ -277,15 +277,26 @@ export type OperationsOverview = {
 };
 
 export type AdminProfitSummary = AdminRow & {
-  platform_profit_total?: number;
-  platform_profit_today?: number;
-  platform_profit_month?: number;
-  available_platform_balance?: number;
-  unassigned_referral_total?: number;
-  retained_reward_budget_total?: number;
-  user_reward_reserve_total?: number;
-  recovery_fund_total?: number;
+  total_admin_profit?: number;
+  total_profit?: number;
+  platform_profit?: number;
+  today_profit?: number;
+  month_profit?: number;
+  unassigned_referral?: number;
+  total_unassigned_referral?: number;
+  admin_platform_total?: number;
+  retained_reward_budget?: number;
+  available_balance?: number;
+  total_withdrawn?: number;
+  withdrawn_balance?: number;
+  pending_withdrawals?: number;
+  pending_balance?: number;
+  total_owed_to_users?: number;
+  users_with_balance?: number;
+  users_in_debt?: number;
   admin_own_balance?: number;
+  platform_withdrawn_paid?: number;
+  platform_withdrawals_pending?: number;
 };
 
 export async function getOperationsOverview() {
