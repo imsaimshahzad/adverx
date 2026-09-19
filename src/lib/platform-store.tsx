@@ -176,6 +176,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "WITHDRAWAL",
   "WITHDRAWAL_FEE",
   "REFUND",
+  "ADMIN_ADJUSTMENT",
   ]);
   const BALANCE_TRANSACTION_TYPES = new Set([
   "TASK_REWARD",
@@ -185,6 +186,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "WITHDRAWAL",
   "WITHDRAWAL_FEE",
   "REFUND",
+  "ADMIN_ADJUSTMENT",
   ]);
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
   
@@ -490,9 +492,12 @@ async function loadState(user: {
                 ? "withdrawal"
                 : rawType === "REFERRAL_REWARD"
                   ? "referral_reward"
-                  : rawType === "REFUND"
-                    ? "refund"
-                    : "ad_reward",
+                    : rawType === "REFUND"
+                      ? "refund"
+                      : rawType === "ADMIN_ADJUSTMENT"
+                        ? "adjustment"
+                        : "ad_reward",
+
           label:
             rawType === "DEPOSIT"
               ? "Deposit"
@@ -500,9 +505,12 @@ async function loadState(user: {
                 ? "Withdrawal"
                 : rawType === "REFERRAL_REWARD"
                   ? "Referral Reward"
-                  : rawType === "REFUND"
-                    ? "Refund"
-                    : "Ad Reward",
+                    : rawType === "REFUND"
+                      ? "Refund"
+                      : rawType === "ADMIN_ADJUSTMENT"
+                        ? "Wallet Adjustment"
+                        : "Ad Reward",
+
           credit: num(e.amount) > 0 ? num(e.amount) : 0,
           debit: num(e.amount) < 0 ? Math.abs(num(e.amount)) : 0,
           status: e.status === "completed" ? "Credited" : e.status,

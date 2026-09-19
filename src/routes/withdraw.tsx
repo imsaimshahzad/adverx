@@ -46,12 +46,8 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function WithdrawPage() {
-  const { plan, state, requestWithdrawal } = usePlatform();
+  const { plan, state, availableBalance, requestWithdrawal } = usePlatform();
   const userDb = supabase as any;
-  const availableBalance = state.ledger.reduce(
-    (total, entry) => total + entry.credit - entry.debit,
-    0,
-  );
   const min = plan?.minWithdrawal ?? 500;
   const [amount, setAmount] = useState("");
   const [methodId, setMethodId] = useState("");
