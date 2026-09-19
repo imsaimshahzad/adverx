@@ -156,6 +156,10 @@ function AdminRoute() {
     state: "loading" | "ready" | "unavailable" | "expired";
   } | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminRow | null>(null);
+  const [balanceTarget, setBalanceTarget] = useState<AdminRow | null>(null);
+  const [balanceMode, setBalanceMode] = useState<"add" | "deduct">("add");
+  const [balanceAmount, setBalanceAmount] = useState("");
+  const [balanceReason, setBalanceReason] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [statusConfirm, setStatusConfirm] = useState<{
     row: AdminRow;
@@ -451,6 +455,31 @@ function AdminRoute() {
     setStatusConfirm({ row, status });
     setRejectionReason("");
   }
+  async function confirmBalanceAdjustment() {
+    if (!balanceTarget?.id || actionBusy) return;
+    const parsedAmount = Number(balanceAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      toast.error("Enter an amount greater than 0.");
+      return;
+    }
+    if (!balanceReason.trim()) {
+      toast.error("A reason is required.");
+      return;
+    }
+    setActionBusy(true);
+    try {
+      await adjustLedger(String(balanceTarget.id), balanceMode === "add" ? parsedAmount : -parsedAmount, balanceReason.trim());
+      toast.success(`${balanceMode === "add" ? "Added" : "Deducted"} PKR ${parsedAmount.toLocaleString()} successfully.`);
+      setBalanceTarget(null);
+      setBalanceAmount("");
+      setBalanceReason("");
+      await load();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Unable to adjust this balance.");
+    } finally {
+      setActionBusy(false);
+    }
+  }
   async function signOut() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
@@ -737,6 +766,12 @@ function AdminRoute() {
                 },
               } : {})}
               onStatus={setStatus}
+              onAdjustBalance={(row) => {
+                setBalanceTarget(row);
+                setBalanceMode("add");
+                setBalanceAmount("");
+                setBalanceReason("");
+              }}
               onReply={(row) => { setReplyTarget(row); setReplyText(String(row.admin_reply ?? "")); }}
               createOpen={createOpen}
               setCreateOpen={setCreateOpen}
@@ -785,6 +820,46 @@ function AdminRoute() {
                     : "Receipt unavailable"}
                 </div>
               )}
+            </DialogContent>
+          </Dialog>
+          <Dialog
+            open={Boolean(balanceTarget)}
+            onOpenChange={(open) => {
+              if (!open && !actionBusy) {
+                setBalanceTarget(null);
+                setBalanceAmount("");
+                setBalanceReason("");
+              }
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adjust user balance</DialogTitle>
+                <DialogDescription>
+                  {balanceMode === "add" ? "Add funds to" : "Deduct funds from"} {String(balanceTarget?.full_name ?? balanceTarget?.username ?? balanceTarget?.email ?? "this user")}.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+                  <p className="font-medium">{String(balanceTarget?.full_name ?? "User")}</p>
+                  <p className="text-muted-foreground">{String(balanceTarget?.username ?? balanceTarget?.email ?? "")}</p>
+                  <p className="mt-2">Current available balance: <strong>PKR {Number(balanceTarget?.available_balance ?? balanceTarget?.balance ?? balanceTarget?.wallet_balance ?? 0).toLocaleString()}</strong></p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="button" variant={balanceMode === "add" ? "default" : "outline"} onClick={() => setBalanceMode("add")}>Add balance</Button>
+                  <Button type="button" variant={balanceMode === "deduct" ? "default" : "outline"} onClick={() => setBalanceMode("deduct")}>Deduct balance</Button>
+                </div>
+                <label className="grid gap-2 text-sm font-medium" htmlFor="balance-amount">Amount (PKR)
+                  <Input id="balance-amount" type="number" min="0.01" step="0.01" value={balanceAmount} onChange={(event) => setBalanceAmount(event.target.value)} placeholder="500" />
+                </label>
+                <label className="grid gap-2 text-sm font-medium" htmlFor="balance-reason">Reason / note
+                  <textarea id="balance-reason" required className="min-h-24 rounded-md border bg-background px-3 py-2 text-sm" value={balanceReason} onChange={(event) => setBalanceReason(event.target.value)} placeholder="Promotional credit or manual correction" />
+                </label>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" disabled={actionBusy} onClick={() => setBalanceTarget(null)}>Cancel</Button>
+                <Button disabled={actionBusy} onClick={() => void confirmBalanceAdjustment()}>{actionBusy ? <LoadingButtonContent label="Processing" /> : "Confirm adjustment"}</Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
           <Dialog
@@ -1385,6 +1460,7 @@ function ModuleTable({
   adsCounts,
   statusCounts,
   onStatus,
+  onAdjustBalance,
   onReply,
   createOpen,
   setCreateOpen,
@@ -1410,6 +1486,7 @@ function ModuleTable({
   adsCounts?: { active: number; archived: number; all: number };
   statusCounts?: { pending: number; approved: number; rejected: number };
   onStatus: (row: AdminRow, status: string) => void;
+  onAdjustBalance: (row: AdminRow) => void;
   onReply: (row: AdminRow) => void;
   createOpen: boolean;
   setCreateOpen: (open: boolean) => void;
@@ -1616,7 +1693,8 @@ function ModuleTable({
                         </div>
                       </td>
   ) : actions.length || managementTable || active === "support" ? (
-  <td className="px-3 py-4">
+                        <td className="px-3 py-4">
+                        {active === "users" ? <Button size="sm" variant="outline" className="mb-2" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button> : null}
                         {managementTable ? <div className="mb-2 flex gap-2"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</div> : null}
                         {active === "support" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
                         {actions.length ? <select

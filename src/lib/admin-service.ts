@@ -52,7 +52,7 @@ export async function adjustLedger(
   const { data, error } = await db.rpc("admin_adjust_ledger", {
     p_user_id: userId,
     p_amount: value,
-    p_note: note,
+    p_reason: note,
   });
   if (error) throw error;
   return data as AdminRow;
