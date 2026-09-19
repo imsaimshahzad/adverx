@@ -143,6 +143,7 @@ export const ADS: Ad[] = [];
 
 const EMPTY = {
   user: null,
+  walletTransactions: [],
   deposits: [],
   ledger: [],
   withdrawals: [],
