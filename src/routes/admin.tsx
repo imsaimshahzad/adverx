@@ -114,16 +114,42 @@ function classifyUser(row: AdminRow): UserClassification {
 
 function mapUserForDisplay(row: AdminRow): AdminRow {
   const classification = classifyUser(row);
+  const name = String(row.full_name ?? row.username ?? row.email ?? "Unknown user").trim() || "Unknown user";
+  const safeUid = String(row.public_uid ?? row.username ?? row.email ?? "").trim() || "User";
+  const planLabel = classification.system
+    ? "Pro / System"
+    : classification.plan
+      ? `${classification.plan.slice(0, 1).toUpperCase()}${classification.plan.slice(1)}`
+      : "No Plan";
   return {
     ...row,
-    user: row.full_name ?? row.email ?? row.username ?? "Unknown user",
-    plan: classification.system
-      ? "Pro / System"
-      : classification.plan
-        ? `${classification.plan.slice(0, 1).toUpperCase()}${classification.plan.slice(1)}`
-        : "No Plan",
+    user: name,
+    user_name: name,
+    user_uid: safeUid,
+    plan: planLabel,
     payment: classification.system ? "System/Admin" : classification.paid ? "Paid" : "Unpaid",
   };
+}
+
+function userSearchText(row: AdminRow) {
+  const classification = classifyUser(row);
+  return [
+    row.full_name,
+    row.username,
+    row.email,
+    row.phone,
+    row.public_uid,
+    row.role,
+    row.account_role,
+    row.active_plan_name,
+    classification.plan,
+    classification.system ? "system admin" : classification.paid ? "paid" : "unpaid",
+    row.plan,
+    row.payment,
+  ]
+    .filter((value) => value !== null && value !== undefined)
+    .join(" ")
+    .toLowerCase();
 }
 
 const menu: Array<[AdminModule, string, Icon]> = [
@@ -320,9 +346,9 @@ function AdminRoute() {
       }
       if (active === "users") {
         try {
-          const userRows = (await getUsersPage(query, "", 1, 1000)).map(mapUserForDisplay);
-          setUserPageRows(userRows);
-          setUserTotal(Number(userRows[0]?.total_count ?? 0));
+const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
+  setUserPageRows(userRows);
+  setUserTotal(userRows.length);
         } catch {
           setUserPageRows([]);
           setUserTotal(0);
@@ -433,7 +459,24 @@ function AdminRoute() {
   }, [load, location.pathname, navigate]);
   const currentTable = tableFor[active];
   const currentRows = active === "users" ? userPageRows : currentTable ? (rows[currentTable] ?? []) : [];
+  const userCounts = useMemo<UserCounts | undefined>(() => {
+    if (active !== "users") return undefined;
+    return currentRows.reduce<UserCounts>((next, row) => {
+      const classification = classifyUser(row);
+      next.all += 1;
+      if (classification.system) return next;
+      if (classification.paid) {
+        next.paid += 1;
+        if (classification.plan) next[classification.plan] += 1;
+      } else {
+        next.unpaid += 1;
+      }
+      return next;
+    }, { all: 0, paid: 0, unpaid: 0, starter: 0, growth: 0, pro: 0 });
+  }, [active, currentRows]);
+
   const filtered = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
     const partitionedRows = currentRows.filter((row) => {
       if (active === "users") {
         const classification = classifyUser(row);
@@ -453,14 +496,17 @@ function AdminRoute() {
         : status === statusPartition;
     });
     return partitionedRows
-      .filter((row) => JSON.stringify(row).toLowerCase().includes(query.toLowerCase()))
+      .filter((row) => {
+        const searchable = active === "users" ? userSearchText(row) : JSON.stringify(row).toLowerCase();
+        return !normalizedQuery || searchable.includes(normalizedQuery);
+      })
       .sort((a, b) => {
         const aTime = Date.parse(String(a.created_at ?? ""));
         const bTime = Date.parse(String(b.created_at ?? ""));
         return (Number.isFinite(aTime) ? aTime : Number.MAX_SAFE_INTEGER) -
           (Number.isFinite(bTime) ? bTime : Number.MAX_SAFE_INTEGER);
       });
-  }, [active, adsFilter, currentRows, query, statusPartition]);
+  }, [active, adsFilter, currentRows, query, statusPartition, userPartition]);
   const metrics = useMemo(
     () => [
       { label: "Total users", value: Number(overview.total_users ?? 0) },
@@ -795,20 +841,7 @@ function AdminRoute() {
               actions={statusActions[active] ?? []}
               statusPartition={statusPartition}
               userPartition={userPartition}
-              userCounts={active === "users" ? currentRows.reduce((counts: UserCounts, row) => {
-                const classification = classifyUser(row);
-                counts.all += 1;
-                if (classification.system) return counts;
-                if (classification.paid) {
-                  counts.paid += 1;
-                  if (classification.plan === "starter") counts.starter += 1;
-                  if (classification.plan === "growth") counts.growth += 1;
-                  if (classification.plan === "pro") counts.pro += 1;
-                } else {
-                  counts.unpaid += 1;
-                }
-                return counts;
-              }, { all: 0, paid: 0, unpaid: 0, starter: 0, growth: 0, pro: 0 } as { all: number; paid: number; unpaid: number; starter: number; growth: number; pro: number }) : undefined}
+              userCounts={userCounts}
               onUserPartition={(value) => {
                 setUserPartition(value);
                 setPage(1);
