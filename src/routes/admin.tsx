@@ -823,7 +823,7 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
           ) : active === "support" ? (
             <SupportTicketPanel admin />
           ) : active === "revenue" ? (
-            <RevenueDashboard summary={profitSummary} ledger={profitLedger} />
+            <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} />
           ) : (
             <ModuleTable
               active={active}
@@ -1056,21 +1056,27 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
   );
 }
 
-function RevenueDashboard({ summary, ledger }: { summary: AdminRow; ledger: AdminRow[] }) {
-  const metric = (key: string) => {
-    const value = summary[key];
-    return value === undefined || value === null ? "—" : Number(value).toLocaleString();
-  };
-  const cards: Array<[string, string]> = [
-    ["Platform Profit", "platform_profit_total"],
-    ["Today", "platform_profit_today"],
-    ["This month", "platform_profit_month"],
-    ["Available Platform Profit", "available_platform_balance"],
-    ["Unassigned Referral", "unassigned_referral_total"],
-    ["Retained Reward Budget", "retained_reward_budget_total"],
-    ["User Reward Reserve", "user_reward_reserve_total"],
-    ["Recovery Fund Remaining", "recovery_fund_remaining"],
-    ["Admin Own Balance", "admin_own_balance"],
+function RevenueDashboard({
+  summary,
+  overview,
+  ledger,
+}: {
+  summary: AdminRow;
+  overview: Record<string, number>;
+  ledger: AdminRow[];
+}) {
+  const metric = (value: unknown) =>
+    value === undefined || value === null ? "—" : Number(value).toLocaleString();
+  const cards: Array<[string, unknown]> = [
+    ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit],
+    ["Today", summary.today_profit],
+    ["This month", summary.month_profit],
+    ["Available Platform Funds", summary.available_balance],
+    ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral],
+    ["Retained Reward Budget", summary.retained_reward_budget],
+    ["User Reward Reserve", overview.total_remaining_user_reward_reserves],
+    ["Recovery Fund Remaining", overview.remaining_recovery_fund],
+    ["Admin Own Balance", summary.admin_own_balance],
   ];
   return (
     <div className="flex flex-col gap-5">
