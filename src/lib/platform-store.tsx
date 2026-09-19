@@ -167,12 +167,24 @@ const pakistanDate = (value: number | Date = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
 const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   const num = (value: unknown) => Number(value ?? 0);
+  const USER_LEDGER_TYPES = new Set([
+  "DEPOSIT",
+  "TASK_REWARD",
+  "AD_REWARD",
+  "REWARD",
+  "REFERRAL_REWARD",
+  "WITHDRAWAL",
+  "WITHDRAWAL_FEE",
+  "REFUND",
+  ]);
   const BALANCE_TRANSACTION_TYPES = new Set([
-    "TASK_REWARD",
-    "REFERRAL_REWARD",
-    "WITHDRAWAL",
-    "WITHDRAWAL_FEE",
-    "REFUND",
+  "TASK_REWARD",
+  "AD_REWARD",
+  "REWARD",
+  "REFERRAL_REWARD",
+  "WITHDRAWAL",
+  "WITHDRAWAL_FEE",
+  "REFUND",
   ]);
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
   
@@ -463,8 +475,9 @@ async function loadState(user: {
       createdAt: new Date(d.created_at).getTime(),
     })),
     ledger: ((ledger ?? []) as any[])
-      // ledger_entries is the existing authoritative user balance source.
-      // Reserve/accounting data is intentionally not rendered as a separate UI value.
+      // Keep the wallet ledger as the source of truth, but never let reserve or
+      // plan-accounting rows fall through to a user-facing transaction type.
+      .filter((e) => USER_LEDGER_TYPES.has(String(e.type ?? "").toUpperCase()))
       .filter((e) => e.status !== "cancelled" && e.status !== "reversed")
       .map((e) => {
         const rawType = String(e.type ?? "").toUpperCase();
