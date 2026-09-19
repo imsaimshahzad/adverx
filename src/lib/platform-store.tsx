@@ -46,7 +46,16 @@ export type Deposit = {
   createdAt: number;
 };
 export type LedgerType =
-  "deposit" | "ad_reward" | "referral_reward" | "withdrawal" | "refund" | "adjustment";
+  | "deposit"
+  | "ad_reward"
+  | "referral_reward"
+  | "withdrawal"
+  | "refund"
+  | "adjustment"
+  | "platform_admin_profit"
+  | "unassigned_referral"
+  | "admin_adjustment"
+  | "withdrawal_refund";
 export type LedgerEntry = {
   id: string;
   type: LedgerType;
@@ -181,7 +190,10 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "WITHDRAWAL_FEE",
   "REFUND",
   "ADMIN_ADJUSTMENT",
-  ]);
+  "PLATFORM_ADMIN_PROFIT",
+  "UNASSIGNED_REFERRAL",
+  "WITHDRAWAL_REFUND",
+]);
   const BALANCE_TRANSACTION_TYPES = new Set([
   "ADMIN_ADJUSTMENT",
   "REFERRAL_COMMISSION",
@@ -523,7 +535,13 @@ async function loadState(user: {
                       ? "refund"
                       : rawType === "ADMIN_ADJUSTMENT"
                         ? "adjustment"
-                        : "ad_reward",
+                        : rawType === "PLATFORM_ADMIN_PROFIT"
+                          ? "platform_admin_profit"
+                          : rawType === "UNASSIGNED_REFERRAL"
+                            ? "unassigned_referral"
+                            : rawType === "WITHDRAWAL_REFUND"
+                              ? "withdrawal_refund"
+                              : "ad_reward",
 
           label:
             rawType === "DEPOSIT"
@@ -536,7 +554,13 @@ async function loadState(user: {
                       ? "Refund"
                       : rawType === "ADMIN_ADJUSTMENT"
                         ? "Wallet Adjustment"
-                        : "Ad Reward",
+                        : rawType === "PLATFORM_ADMIN_PROFIT"
+                          ? "Platform Profit"
+                          : rawType === "UNASSIGNED_REFERRAL"
+                            ? "Unassigned Referral"
+                            : rawType === "WITHDRAWAL_REFUND"
+                              ? "Withdrawal Refund"
+                              : "Ad Reward",
 
           credit,
           debit,
@@ -752,10 +776,21 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     // `state.ledger` is the normalized, de-duplicated user ledger. It combines
     // wallet transactions with legacy ledger rows by id, so credited rewards are
     // not lost when the source uses a different reward type or table.
+    const isAdmin = ["admin", "super_admin", "moderator"].includes(state.user?.role ?? "");
     const availableBalance = Math.max(
       0,
       state.ledger
-        .filter((entry) => ["ad_reward", "referral_reward", "refund", "adjustment", "withdrawal"].includes(entry.type))
+        .filter((entry) =>
+          isAdmin
+            ? [
+                "platform_admin_profit",
+                "unassigned_referral",
+                "adjustment",
+                "withdrawal",
+                "withdrawal_refund",
+              ].includes(entry.type)
+            : ["ad_reward", "referral_reward", "refund", "adjustment", "withdrawal"].includes(entry.type),
+        )
         .filter((entry) => {
           const status = String(entry.status ?? "").toLowerCase();
           if (entry.type === "withdrawal") {
