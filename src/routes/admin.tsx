@@ -1088,9 +1088,55 @@ function RevenueDashboard({
         {cards.map(([label, key]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p></CardContent></Card>)}
       </section>
       <Card>
-        <CardHeader><CardTitle>Platform Wallet Activity</CardTitle><p className="text-sm text-muted-foreground">Each entry identifies its accounting category and source. Historical rows are not reclassified automatically.</p></CardHeader>
+        <CardHeader>
+          <CardTitle>Platform Wallet Activity</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Each entry identifies its accounting category and source. Historical rows are not reclassified automatically.
+          </p>
+        </CardHeader>
         <CardContent className="overflow-x-auto p-0">
-          <table className="w-full min-w-[900px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Purchase</th><th className="p-4">User</th><th className="p-4">Plan</th><th className="p-4">Category</th><th className="p-4">Amount</th><th className="p-4">Source</th><th className="p-4">Date</th></tr></thead><tbody>{ledger.length ? ledger.map((row, index) => <tr key={String(row.id ?? index)} className="border-b last:border-0"><td className="p-4 font-mono text-xs">{formatValue(row.deposit_id ?? row.purchase_id ?? row.id)}</td><td className="p-4">{formatValue(row.user_display ?? "User")}</td><td className="p-4">{formatValue(row.plan_name ?? row.plan_id)}</td><td className="p-4"><Badge variant="outline">{formatValue(row.category ?? row.status)}</Badge></td><td className="p-4 font-medium">{formatValue(row.amount ?? row.profit_amount ?? row.admin_profit)} PKR</td><td className="p-4">{formatValue(row.source)}</td><td className="p-4 text-muted-foreground">{formatValue(row.created_at)}</td></tr>) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}</tbody></table>
+          <table className="w-full min-w-[900px] table-fixed text-sm">
+            <colgroup>
+              <col className="w-[17%]" />
+              <col className="w-[15%]" />
+              <col className="w-[13%]" />
+              <col className="w-[17%]" />
+              <col className="w-[12%]" />
+              <col className="w-[16%]" />
+              <col className="w-[10%]" />
+            </colgroup>
+            <thead>
+              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th scope="col" className="p-4 font-medium">Purchase</th>
+                <th scope="col" className="p-4 font-medium">User</th>
+                <th scope="col" className="p-4 font-medium">Plan</th>
+                <th scope="col" className="p-4 font-medium">Category</th>
+                <th scope="col" className="p-4 text-right font-medium">Amount</th>
+                <th scope="col" className="p-4 font-medium">Source</th>
+                <th scope="col" className="p-4 font-medium">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ledger.length ? ledger.map((row, index) => {
+                const purchaseId = String(row.deposit_id ?? row.purchase_id ?? row.id ?? "—");
+                const category = String(row.category ?? row.status ?? "—");
+                const categoryLabel = category.replaceAll("_", " ");
+                return (
+                  <tr key={String(row.id ?? index)} className="border-b align-middle last:border-0 hover:bg-muted/30">
+                    <td className="max-w-0 p-4">
+                      <span className="block truncate font-mono text-xs" title={purchaseId}>{purchaseId}</span>
+                    </td>
+                    <td className="max-w-0 p-4"><span className="block truncate" title={String(row.user_display ?? "User")}>{formatValue(row.user_display ?? "User")}</span></td>
+                    <td className="max-w-0 p-4"><span className="block truncate" title={String(row.plan_name ?? row.plan_id ?? "—")}>{formatValue(row.plan_name ?? row.plan_id)}</span></td>
+                    <td className="p-4"><Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/5 capitalize">{categoryLabel}</Badge></td>
+                    <td className="p-4 text-right font-medium tabular-nums whitespace-nowrap">{formatValue(row.amount ?? row.profit_amount ?? row.admin_profit)} PKR</td>
+                    <td className="max-w-0 p-4"><span className="block truncate text-muted-foreground" title={String(row.source ?? "—")}>{formatValue(row.source)}</span></td>
+                    <td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td>
+                  </tr>
+                );
+              }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}
+            </tbody>
+          </table>
         </CardContent>
       </Card>
     </div>
