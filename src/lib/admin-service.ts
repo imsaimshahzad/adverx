@@ -321,16 +321,27 @@ export async function getRecoveryFundActivity() {
   const { data, error } = await db
     .from("recovery_fund_ledger")
     .select("id, entry_type, amount_pkr, reference_id, user_id, plan_id, note, created_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true });
   if (error) throw new Error(`Unable to load Recovery Fund activity: ${error.message}`);
-  return (data ?? []).map((row) => ({
-    ...row,
-    amount: row.amount_pkr,
-    usage_type: row.entry_type,
-    target_user_id: row.user_id,
-    reason: row.note,
-    reference: row.reference_id,
-  })) as AdminRow[];
+
+  let balance = 0;
+  const chronological = (data ?? []).map((row) => {
+    const entryType = String(row.entry_type ?? "").toLowerCase();
+    const amount = Math.abs(Number(row.amount_pkr ?? 0));
+    balance += entryType === "debit" ? -amount : amount;
+
+    return {
+      ...row,
+      amount: row.amount_pkr,
+      usage_type: row.entry_type,
+      target_user_id: row.user_id,
+      reason: row.note,
+      reference: row.reference_id,
+      balance_after: balance,
+    };
+  });
+
+  return chronological.reverse() as AdminRow[];
 }
 
 export async function useRecoveryFund(values: {
