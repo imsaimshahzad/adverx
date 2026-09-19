@@ -308,7 +308,7 @@ async function loadState(user: {
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
     db
-      .from("ledger_entries")
+      .from("wallet_transactions")
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
