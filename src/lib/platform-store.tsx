@@ -280,6 +280,7 @@ async function loadState(user: {
   const uid = user.id;
   const [
     { data: profile, error: profileError },
+    { data: userRole },
     { data: plans, error: plansError },
     { data: userPlanSnapshot },
     { data: ads, error: adsError },
@@ -295,6 +296,7 @@ async function loadState(user: {
     { data: recoveries },
   ] = await Promise.all([
     db.from("profiles").select("*").eq("id", uid).maybeSingle(),
+    db.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
     db
       .from("plans")
       .select("*")
@@ -404,6 +406,10 @@ async function loadState(user: {
   );
   const profileRow = profile as any;
   const snapshotRow = userPlanSnapshot as any;
+  const roleValue = (userRole as any)?.role;
+  const role = ["admin", "super_admin", "moderator", "user"].includes(roleValue)
+    ? roleValue
+    : "user";
   // Supabase may return the user_plans row without its nested plan relation.
   // Resolve the plan by id as a fallback so the member account stays linked to
   // the same plan that the admin panel displays.
@@ -493,7 +499,7 @@ async function loadState(user: {
         ? new Date(profileRow.plan_activated_at).getTime()
         : null,
       status: profileRow?.status ?? "active",
-      role: profileRow?.role ?? "user",
+      role,
       createdAt: profileRow?.created_at
         ? new Date(profileRow.created_at).getTime()
         : Date.now(),
