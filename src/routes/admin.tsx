@@ -653,11 +653,17 @@ function AdminRoute() {
               <RefreshCw className={`size-4 sm:mr-2 ${refreshing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Avatar>
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {adminName.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <Link
+              to="/profile"
+              aria-label="Open admin profile and user account"
+              className="rounded-full ring-offset-background transition-shadow hover:ring-2 hover:ring-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Avatar>
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {adminName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
             <Button
               variant="ghost"
               size="icon"

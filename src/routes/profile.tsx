@@ -28,7 +28,16 @@ export const Route = createFileRoute("/profile")({
 });
 
 function ProfilePage() {
-  const { state, plan, logout, activityLevel, updateProfile } = usePlatform();
+  const {
+    state,
+    plan,
+    logout,
+    activityLevel,
+    updateProfile,
+    availableBalance,
+    totalWithdrawn,
+    todaysEarnings,
+  } = usePlatform();
   const navigate = useNavigate();
   const user = state.user;
   const [editing, setEditing] = useState(false);
@@ -77,6 +86,11 @@ function ProfilePage() {
       </div>
 
       <div className="mx-auto grid w-full max-w-2xl gap-3">
+        <div className="grid gap-3 sm:grid-cols-3" aria-label="Personal wallet summary">
+          <Metric label="Available balance" value={money(availableBalance)} />
+          <Metric label="Total withdrawn" value={money(totalWithdrawn)} />
+          <Metric label="Today&apos;s earnings" value={money(todaysEarnings)} />
+        </div>
 
       <div className="surface mt-3 p-4">
         <div className="flex items-center justify-between">
@@ -98,6 +112,11 @@ function ProfilePage() {
         <Button asChild variant="outline" size="sm" className="mt-4 w-full">
           <Link to="/plans">{plan ? "Change plan" : "Activate a plan"}</Link>
         </Button>
+        {user?.role && ["admin", "super_admin", "moderator"].includes(user.role) ? (
+          <Button asChild variant="secondary" size="sm" className="mt-2 w-full">
+            <Link to="/admin">Open Admin Panel</Link>
+          </Button>
+        ) : null}
       </div>
 
       <div className="surface mt-3 flex items-start gap-3 p-4">
