@@ -83,11 +83,10 @@ export const startImpersonation = createServerFn({ method: "POST" })
     const { error: auditError } = await (supabaseAdmin as any)
       .from("audit_logs")
       .insert({
+        actor_id: admin.id,
         action: "impersonation_started",
-        admin_id: admin.id,
-        target_id: target.id,
-        target_type: "user",
-        reason: "Admin login as user",
+        entity_type: "profiles",
+        entity_id: target.id,
         metadata: {
           admin_id: admin.id,
           user_id: target.id,
