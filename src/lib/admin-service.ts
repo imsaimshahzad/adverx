@@ -295,6 +295,8 @@ export type AdminProfitSummary = AdminRow & {
   users_with_balance?: number;
   users_in_debt?: number;
   admin_own_balance?: number;
+  unallocated_recovery?: number;
+  unallocated_recovery_withdrawable?: boolean;
   platform_withdrawn_paid?: number;
   platform_withdrawals_pending?: number;
 };
@@ -321,14 +323,15 @@ export async function getRecoveryFundActivity() {
   const { data, error } = await db
     .from("recovery_fund_ledger")
     .select("id, entry_type, amount_pkr, reference_id, user_id, plan_id, note, created_at")
+    .is("user_id", null)
     .order("created_at", { ascending: true });
-  if (error) throw new Error(`Unable to load Recovery Fund activity: ${error.message}`);
+  if (error) throw new Error(`Unable to load Unallocated Recovery activity: ${error.message}`);
 
   let balance = 0;
   const chronological = (data ?? []).map((row: AdminRow) => {
     const entryType = String(row.entry_type ?? "").toLowerCase();
     const amount = Math.abs(Number(row.amount_pkr ?? 0));
-    balance += entryType === "debit" ? -amount : amount;
+    balance += entryType === "debit" ? -amount : entryType === "reversal" ? amount : amount;
 
     return {
       ...row,
@@ -342,6 +345,15 @@ export async function getRecoveryFundActivity() {
   });
 
   return chronological.reverse() as AdminRow[];
+}
+
+export async function getRevenuePlans() {
+  const { data, error } = await db
+    .from("plans")
+    .select("id, name, title, price_pkr, admin_profit_pct, direct_referral_pct, recovery_fund_pct, ad_budget_pct")
+    .order("price_pkr", { ascending: true });
+  if (error) throw new Error(`Unable to load plan allocation details: ${error.message}`);
+  return (data ?? []) as AdminRow[];
 }
 
 export async function useRecoveryFund(values: {
