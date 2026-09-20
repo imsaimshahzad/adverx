@@ -53,7 +53,7 @@ import { HomepageHeroSettings } from "@/components/HomepageHeroSettings";
 import { SupportTicketPanel } from "@/components/SupportTicketPanel";
 import "@/admin-design.css";
 import "@/morphic-system.css";
-import { supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
+import { isImpersonating, supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
 import { checkRouteAccess } from "@/lib/auth-guard.functions";
 import {
   AdminModule,
@@ -91,6 +91,9 @@ export const Route = createFileRoute("/admin")({
   pendingMs: 0,
   pendingMinMs: 250,
   beforeLoad: async ({ location }) => {
+    if (isImpersonating()) {
+      throw redirect({ to: "/auth", search: { redirect: location.href }, replace: true });
+    }
     if (location.pathname === "/admin/login") return;
     await ensureSupabaseSessionReady();
     const access = await checkRouteAccess({ data: { admin: true } });
