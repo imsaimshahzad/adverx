@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { put } from "@vercel/blob";
+import { requireAdminUser } from "@/lib/auth.server";
 
 export const Route = createFileRoute("/api/upload-hero")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        try {
+          await requireAdminUser();
+        } catch {
+          return Response.json({ error: "Forbidden" }, { status: 403 });
+        }
         const formData = await request.formData();
         const file = formData.get("file");
         if (!(file instanceof File)) return Response.json({ error: "Image file is required." }, { status: 400 });
