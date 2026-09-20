@@ -1079,17 +1079,24 @@ function RevenueDashboard({
     ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral],
     ["Retained Reward Budget", summary.retained_reward_budget],
     ["User Reward Reserve", overview.total_remaining_user_reward_reserves],
-    ["Recovery Fund Remaining", overview.remaining_recovery_fund],
+    ["Referrer Recovery Reserve", overview.remaining_recovery_fund],
     ["Admin Own Balance", summary.admin_own_balance],
   ];
+  const cardDescription = (label: string) => {
+    if (label === "Unassigned Referral") return "Referral commission from purchases with no eligible referrer.";
+    if (label === "Referrer Recovery Reserve") return "Reserved for eligible referrer earning capacity; separate from Unassigned Referral.";
+    if (label === "Available Platform Funds") return "Available to the admin/platform under the existing accounting logic.";
+    if (label === "Admin Own Balance") return "Admin-owned balance shown separately from platform profit.";
+    return undefined;
+  };
   return (
     <div className="flex flex-col gap-5">
       <div>
         <h2 className="text-2xl font-semibold">Platform Wallet</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Reserves, budgets, and unassigned referrals are not platform profit.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Unassigned Referral is available to the admin/platform under existing accounting logic, but is not Platform Profit.</p>
       </div>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, key]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p></CardContent></Card>)}
+        {cards.map(([label, key]) => <Card key={label}><CardContent className="p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="When a purchase has no eligible referrer, its allocated referral commission becomes Unassigned Referral instead of being credited to a referrer." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}</CardContent></Card>)}
       </section>
       <Card>
         <CardHeader>
@@ -1111,13 +1118,12 @@ function RevenueDashboard({
             </colgroup>
             <thead>
               <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th scope="col" className="p-4 font-medium">Purchase</th>
+                <th scope="col" className="p-4 font-medium">Date</th>
                 <th scope="col" className="p-4 font-medium">User</th>
                 <th scope="col" className="p-4 font-medium">Plan</th>
                 <th scope="col" className="p-4 font-medium">Category</th>
                 <th scope="col" className="p-4 text-right font-medium">Amount</th>
-                <th scope="col" className="p-4 font-medium">Source</th>
-                <th scope="col" className="p-4 font-medium">Date</th>
+                <th scope="col" className="p-4 font-medium">Source / Reason</th>
               </tr>
             </thead>
             <tbody>
@@ -1127,15 +1133,12 @@ function RevenueDashboard({
                 const categoryLabel = category.replaceAll("_", " ");
                 return (
                   <tr key={String(row.id ?? index)} className="border-b align-middle last:border-0 hover:bg-muted/30">
-                    <td className="max-w-0 p-4">
-                      <span className="block truncate font-mono text-xs" title={purchaseId}>{purchaseId}</span>
-                    </td>
+                    <td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.user_display ?? "User")}>{formatValue(row.user_display ?? "User")}</span></td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.plan_name ?? row.plan_id ?? "—")}>{formatValue(row.plan_name ?? row.plan_id)}</span></td>
                     <td className="p-4"><Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/5 capitalize">{categoryLabel}</Badge></td>
                     <td className="p-4 text-right font-medium tabular-nums whitespace-nowrap">{formatValue(row.amount ?? row.profit_amount ?? row.admin_profit)} PKR</td>
-                    <td className="max-w-0 p-4"><span className="block truncate text-muted-foreground" title={String(row.source ?? "—")}>{formatValue(row.source)}</span></td>
-                    <td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td>
+                    <td className="max-w-0 p-4"><span className="block truncate text-muted-foreground" title={String(row.source ?? "No eligible referrer")}>{category.toLowerCase().includes("unassigned") ? "No eligible referrer" : formatValue(row.source)}</span></td>
                   </tr>
                 );
               }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}
@@ -1143,79 +1146,69 @@ function RevenueDashboard({
           </table>
         </CardContent>
       </Card>
-      <RecoveryFundPanel remaining={Number(overview.remaining_recovery_fund ?? 0)} onRefresh={onRefresh} />
+      <RecoveryFundPanel remaining={Number(overview.unassigned_referral ?? overview.total_unassigned_referral ?? 0)} onRefresh={onRefresh} />
     </div>
   );
 }
 
 function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefresh: () => Promise<void> }) {
   const [activity, setActivity] = useState<AdminRow[]>([]);
-  const [users, setUsers] = useState<AdminRow[]>([]);
-  const [query, setQuery] = useState("");
   const [amount, setAmount] = useState("");
-  const [usageType, setUsageType] = useState<"User Recovery" | "Platform Recovery" | "Other">("User Recovery");
-  const [targetUserId, setTargetUserId] = useState("");
+  const [usageType] = useState<"Platform Recovery">("Platform Recovery");
   const [reason, setReason] = useState("");
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const load = async () => {
     try {
-      const [rows, profiles] = await Promise.all([
-        getRecoveryFundActivity(),
-        db.from("profiles").select("id, public_uid, full_name, username, email").order("created_at", { ascending: false }),
-      ]);
+      const rows = await getRecoveryFundActivity();
       setActivity(rows);
-      setUsers((profiles.data ?? []) as AdminRow[]);
       setError("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load Recovery Fund activity.");
+      setError(cause instanceof Error ? cause.message : "Unable to load Unassigned Referral activity.");
     }
   };
   useEffect(() => { void load(); }, []);
-  const filteredUsers = users.filter((user) => `${user.full_name ?? ""} ${user.username ?? ""} ${user.email ?? ""} ${user.public_uid ?? ""}`.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0 || !reason.trim() || (usageType === "User Recovery" && !targetUserId)) {
-      setError("Enter a valid amount, reason, and target user when required.");
+    if (!Number.isFinite(value) || value <= 0 || !reason.trim()) {
+      setError("Enter a valid amount and purpose / reason.");
       return;
     }
     setBusy(true);
     setError("");
     try {
-      const result = await useRecoveryFund({ amount: value, usageType, targetUserId: usageType === "User Recovery" ? targetUserId : null, reason, reference });
-      setAmount(""); setTargetUserId(""); setReason(""); setReference(""); setQuery("");
+      const result = await useRecoveryFund({ amount: value, usageType, targetUserId: null, reason, reference });
+      setAmount(""); setReason(""); setReference("");
       await Promise.all([load(), onRefresh()]);
-      toast.success(`Recovery Fund used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
+      toast.success(`Unassigned Referral used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to use Recovery Fund.");
+      setError(cause instanceof Error ? cause.message : "Unable to use Unassigned Referral.");
     } finally { setBusy(false); }
   }
   return (
     <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
       <Card>
-        <CardHeader><CardTitle>Use Recovery Fund</CardTitle><p className="text-sm text-muted-foreground">Record an auditable debit against the collected Recovery Fund.</p></CardHeader>
+        <CardHeader><CardTitle>Use Unassigned Referral</CardTitle><p className="text-sm text-muted-foreground">Record an auditable debit against Unassigned Referral. Referrer Recovery Reserve remains separate.</p></CardHeader>
         <CardContent>
             <form className="grid gap-4" onSubmit={submit}>
             <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 text-sm sm:grid-cols-3">
-              <div><p className="text-muted-foreground">Current remaining</p><p className="mt-1 font-semibold tabular-nums">{remaining.toLocaleString()} PKR</p></div>
+              <div><p className="text-muted-foreground">Current Unassigned Referral Balance</p><p className="mt-1 font-semibold tabular-nums">{remaining.toLocaleString()} PKR</p></div>
               <div><p className="text-muted-foreground">Amount to use</p><p className="mt-1 font-semibold tabular-nums">{amount ? `${Number(amount).toLocaleString()} PKR` : "—"}</p></div>
               <div><p className="text-muted-foreground">Balance after</p><p className="mt-1 font-semibold tabular-nums">Confirmed by database after submit</p></div>
             </div>
             <label className="grid gap-2 text-sm font-medium">Amount (PKR)<Input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
-            <label className="grid gap-2 text-sm font-medium">Usage Type<select className="h-10 rounded-md border bg-background px-3 text-sm" value={usageType} onChange={(event) => setUsageType(event.target.value as typeof usageType)}><option>User Recovery</option><option>Platform Recovery</option><option>Other</option></select></label>
-            {usageType === "User Recovery" ? <div className="grid gap-2"><label className="text-sm font-medium" htmlFor="recovery-user-search">Search user</label><Input id="recovery-user-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, username, email, or UID" /><select className="h-10 rounded-md border bg-background px-3 text-sm" value={targetUserId} onChange={(event) => setTargetUserId(event.target.value)} required><option value="">Select a user</option>{filteredUsers.map((user) => <option key={String(user.id)} value={String(user.id)}>{String(user.full_name ?? user.username ?? user.email ?? user.public_uid ?? user.id)}</option>)}</select></div> : null}
-            <label className="grid gap-2 text-sm font-medium">Reason / Note<textarea className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm" value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
+            <label className="grid gap-2 text-sm font-medium">Purpose / Reason<textarea className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm" value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
             <label className="grid gap-2 text-sm font-medium">Reference (optional)<Input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Ticket, incident, or internal reference" /></label>
             {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
-            <Button type="submit" disabled={busy}>{busy ? "Recording…" : "Use Recovery Fund"}</Button>
+            <Button type="submit" disabled={busy}>{busy ? "Recording…" : "Use Unassigned Referral"}</Button>
           </form>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Recovery Fund Activity</CardTitle><p className="text-sm text-muted-foreground">Debits are immutable and require a reason.</p></CardHeader>
-        <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Date</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4">Target user</th><th className="p-4">Reason</th><th className="p-4">Reference</th><th className="p-4 text-right">Balance After</th></tr></thead><tbody>{activity.length ? activity.map((row) => { const entryType = String(row.entry_type ?? row.usage_type ?? "").toLowerCase(); const amountPkr = Number(row.amount_pkr ?? row.amount ?? 0); const signedAmount = entryType === "debit" ? -Math.abs(amountPkr) : entryType === "credit" || entryType === "reversal" ? Math.abs(amountPkr) : amountPkr; return <tr className="border-b last:border-0" key={String(row.id)}><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td><td className="p-4 text-right tabular-nums">{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td><td className="max-w-[180px] truncate p-4" title={String(row.target_user_id ?? "—")}>{formatValue(row.target_user_id)}</td><td className="max-w-[220px] truncate p-4" title={String(row.reason)}>{formatValue(row.reason)}</td><td className="p-4 text-muted-foreground">{formatValue(row.reference)}</td><td className="p-4 text-right tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td></tr>; }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Recovery Fund activity yet.</td></tr>}</tbody></table></CardContent>
+        <CardHeader><CardTitle>Unassigned Referral Activity</CardTitle><p className="text-sm text-muted-foreground">Credits come from purchases with no eligible referrer; debits are admin use.</p></CardHeader>
+        <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Date</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4">Purpose / Reason</th><th className="p-4">Reference</th><th className="p-4 text-right">Balance After</th></tr></thead><tbody>{activity.length ? activity.map((row) => { const entryType = String(row.entry_type ?? row.usage_type ?? "").toLowerCase(); const amountPkr = Number(row.amount_pkr ?? row.amount ?? 0); const signedAmount = entryType === "debit" ? -Math.abs(amountPkr) : entryType === "credit" || entryType === "reversal" ? Math.abs(amountPkr) : amountPkr; return <tr className="border-b last:border-0" key={String(row.id)}><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td><td className="p-4 text-right tabular-nums">{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td><td className="max-w-[180px] truncate p-4" title={String(row.target_user_id ?? "—")}>{formatValue(row.target_user_id)}</td><td className="max-w-[220px] truncate p-4" title={String(row.reason)}>{formatValue(row.reason)}</td><td className="p-4 text-muted-foreground">{formatValue(row.reference)}</td><td className="p-4 text-right tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td></tr>; }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Recovery Fund activity yet.</td></tr>}</tbody></table></CardContent>
       </Card>
     </section>
   );
