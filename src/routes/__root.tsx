@@ -137,7 +137,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       });
     }
 
-    return { auth: access };
+    return;
   },
   head: () => ({
     meta: [
