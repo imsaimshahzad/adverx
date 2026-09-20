@@ -44,7 +44,8 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
-  const impersonationMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("impersonate") === "1";\n  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  const impersonationMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("impersonate") === "1";
+  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
     },
