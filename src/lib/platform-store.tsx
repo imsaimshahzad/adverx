@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { ensureSupabaseSessionReady, isImpersonating, supabase } from "@/integrations/supabase/client";
 import { getAdminProfitSummary, type AdminProfitSummary } from "@/lib/admin-service";
 import { toast } from "sonner";
 import {
@@ -746,7 +746,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
       inactivityTimer.current = setTimeout(() => {
         toast.error("Your session expired due to inactivity.");
-        void supabase.auth.signOut();
+        void supabase.auth.signOut({ scope: "local" });
       }, 15 * 60 * 1000);
     };
     activityEvents.forEach((event) => window.addEventListener(event, resetInactivityTimer, { passive: true }));
@@ -905,6 +905,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     throw new Error("Use Supabase authentication from the sign-in form.");
   }, []);
   const updateProfile = useCallback(async (input: { fullName: string; username: string; email: string; phone: string }) => {
+    if (isImpersonating()) throw new Error("Profile, email and account-detail changes are disabled while viewing as another user.");
     if (!state.user) throw new Error("Please sign in again.");
     const fullName = input.fullName.trim();
     const username = input.username.trim();
@@ -925,7 +926,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     if (data.user) await refresh(data.user);
   }, [refresh, state.user]);
   const logout = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) throw new Error(`Sign out failed: ${error.message}`);
     setState(EMPTY as unknown as State);
     setDataError(null);
@@ -974,6 +975,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return num(data);
   }, [refresh]);
   const requestWithdrawal = useCallback(async (input: any) => {
+    if (isImpersonating()) throw new Error("Withdrawals are disabled while viewing as another user.");
     const { error } = await db.rpc("request_withdrawal", {
       p_amount: input.amount,
       p_method: input.method,
