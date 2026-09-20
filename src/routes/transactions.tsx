@@ -107,7 +107,13 @@ function TransactionsPage() {
           const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
           const note = String(row.note ?? row.description ?? row.reason ?? "");
           const auditText = `${String(metadata.reason ?? "")} ${note}`.toLowerCase();
-          if (auditText.includes("old admin test") || auditText.includes("test cleanup") || auditText.includes("test reversal")) continue;
+          if (
+            auditText.includes("old admin test") ||
+            auditText.includes("test cleanup") ||
+            auditText.includes("test reversal") ||
+            (type === "WITHDRAWAL" && rawAmount === -100) ||
+            (type === "UNASSIGNED_REFERRAL" && auditText.includes("ahmad31 purchase"))
+          ) continue;
 
           const rawAmount = Number(row.amount ?? 0);
           const credit = row.credit != null ? Number(row.credit) : rawAmount > 0 ? rawAmount : 0;
