@@ -134,91 +134,68 @@ const JoinReferralCodeRoute = JoinReferralCodeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/ads': typeof AdsRoute
+  '/ads': typeof AuthenticatedAdsRoute
   '/auth': typeof AuthRoute
-  '/history': typeof HistoryRoute
-  '/network': typeof NetworkRoute
-  '/notifications': typeof NotificationsRoute
-  '/plans': typeof PlansRoute
-  '/profile': typeof ProfileRoute
+  '/history': typeof AuthenticatedHistoryRoute
+  '/network': typeof AuthenticatedNetworkRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/plans': typeof AuthenticatedPlansRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/support': typeof SupportRoute
-  '/withdraw': typeof WithdrawRoute
+  '/support': typeof AuthenticatedSupportRoute
+  '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/upload-hero': typeof ApiUploadHeroRoute
   '/api/impersonation/consume': typeof ApiImpersonationConsumeRoute
-  '/deposit/$planId': typeof DepositPlanIdRoute
+  '/deposit/$planId': typeof AuthenticatedDepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
-  '/users/detail/$publicUid': typeof UsersDetailPublicUidRoute
+  '/users/detail/$publicUid': typeof AuthenticatedUsersDetailPublicUidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/ads': typeof AdsRoute
+  '/ads': typeof AuthenticatedAdsRoute
   '/auth': typeof AuthRoute
-  '/history': typeof HistoryRoute
-  '/network': typeof NetworkRoute
-  '/notifications': typeof NotificationsRoute
-  '/plans': typeof PlansRoute
-  '/profile': typeof ProfileRoute
+  '/history': typeof AuthenticatedHistoryRoute
+  '/network': typeof AuthenticatedNetworkRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/plans': typeof AuthenticatedPlansRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/support': typeof SupportRoute
-  '/withdraw': typeof WithdrawRoute
-  '/admin/login': typeof AdminLoginRoute
-  '/api/upload-hero': typeof ApiUploadHeroRoute
-  '/api/impersonation/consume': typeof ApiImpersonationConsumeRoute
-  '/deposit/$planId': typeof DepositPlanIdRoute
+  '/support': typeof AuthenticatedSupportRoute
+  '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/deposit/$planId': typeof AuthenticatedDepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
-  '/users/detail/$publicUid': typeof UsersDetailPublicUidRoute
+  '/users/detail/$publicUid': typeof AuthenticatedUsersDetailPublicUidRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
+  '__root__': typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/ads': typeof AdsRoute
   '/auth': typeof AuthRoute
-  '/history': typeof HistoryRoute
-  '/network': typeof NetworkRoute
-  '/notifications': typeof NotificationsRoute
-  '/plans': typeof PlansRoute
-  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/support': typeof SupportRoute
-  '/withdraw': typeof WithdrawRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/upload-hero': typeof ApiUploadHeroRoute
   '/api/impersonation/consume': typeof ApiImpersonationConsumeRoute
-  '/deposit/$planId': typeof DepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
+  '/_authenticated/ads': typeof AuthenticatedAdsRoute
+  '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/network': typeof AuthenticatedNetworkRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/plans': typeof AuthenticatedPlansRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/support': typeof AuthenticatedSupportRoute
+  '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
+  '/_authenticated/deposit/$planId': typeof AuthenticatedDepositPlanIdRoute
+  '/_authenticated/users/detail/$publicUid': typeof AuthenticatedUsersDetailPublicUidRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/admin'
-    | '/_authenticated/ads'
-    | '/auth'
-    | '/_authenticated/history'
-    | '/_authenticated/network'
-    | '/_authenticated/notifications'
-    | '/_authenticated/plans'
-    | '/_authenticated/profile'
-    | '/reset-password'
-    | '/signup'
-    | '/_authenticated/support'
-    | '/_authenticated/withdraw'
-    | '/admin/login'
-    | '/api/upload-hero'
-    | '/api/impersonation/consume'
-    | '/_authenticated/deposit/$planId'
-    | '/join/$referralCode'
-    | '/_authenticated/users/detail/$publicUid'
-  fileRoutesByTo: FileRoutesByTo
-  to:
     | '/'
     | '/admin'
     | '/ads'
@@ -238,9 +215,8 @@ export interface FileRouteTypes {
     | '/deposit/$planId'
     | '/join/$referralCode'
     | '/users/detail/$publicUid'
-  id:
-    | '/_authenticated'
-    | '__root__'
+  fileRoutesByTo: FileRoutesByTo
+  to:
     | '/'
     | '/admin'
     | '/ads'
@@ -254,23 +230,32 @@ export interface FileRouteTypes {
     | '/signup'
     | '/support'
     | '/withdraw'
+    | '/deposit/$planId'
+    | '/join/$referralCode'
+    | '/users/detail/$publicUid'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/_authenticated'
+    | '/auth'
+    | '/reset-password'
+    | '/signup'
     | '/admin/login'
     | '/api/upload-hero'
     | '/api/impersonation/consume'
-    | '/deposit/$planId'
     | '/join/$referralCode'
+    | '/_authenticated/ads'
+    | '/_authenticated/history'
+    | '/_authenticated/network'
+    | '/_authenticated/notifications'
+    | '/_authenticated/plans'
+    | '/_authenticated/profile'
+    | '/_authenticated/support'
+    | '/_authenticated/withdraw'
+    | '/_authenticated/deposit/$planId'
+    | '/_authenticated/users/detail/$publicUid'
   fileRoutesById: FileRoutesById
-}
-export interface RootRouteChildren {
-  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
-  AuthRoute: typeof AuthRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  SignupRoute: typeof SignupRoute
-  ApiUploadHeroRoute: typeof ApiUploadHeroRoute
-  ApiImpersonationConsumeRoute: typeof ApiImpersonationConsumeRoute
-  JoinReferralCodeRoute: typeof JoinReferralCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -300,7 +285,7 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated/ads'
       path: '/ads'
       fullPath: '/ads'
-      preLoaderRoute: typeof AdsRouteImport
+      preLoaderRoute: typeof AuthenticatedAdsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/auth': {
@@ -314,35 +299,35 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated/history'
       path: '/history'
       fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
+      preLoaderRoute: typeof AuthenticatedHistoryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/network': {
       id: '/_authenticated/network'
       path: '/network'
       fullPath: '/network'
-      preLoaderRoute: typeof NetworkRouteImport
+      preLoaderRoute: typeof AuthenticatedNetworkRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/notifications': {
       id: '/_authenticated/notifications'
       path: '/notifications'
       fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/plans': {
       id: '/_authenticated/plans'
       path: '/plans'
       fullPath: '/plans'
-      preLoaderRoute: typeof PlansRouteImport
+      preLoaderRoute: typeof AuthenticatedPlansRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
       fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/reset-password': {
@@ -363,14 +348,14 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated/support'
       path: '/support'
       fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/withdraw': {
       id: '/_authenticated/withdraw'
       path: '/withdraw'
       fullPath: '/withdraw'
-      preLoaderRoute: typeof WithdrawRouteImport
+      preLoaderRoute: typeof AuthenticatedWithdrawRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/admin/login': {
@@ -398,14 +383,237 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated/deposit/$planId'
       path: '/deposit/$planId'
       fullPath: '/deposit/$planId'
-      preLoaderRoute: typeof DepositPlanIdRouteImport
+      preLoaderRoute: typeof AuthenticatedDepositPlanIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/users/detail/$publicUid': {
       id: '/_authenticated/users/detail/$publicUid'
       path: '/users/detail/$publicUid'
       fullPath: '/users/detail/$publicUid'
-      preLoaderRoute: typeof UsersDetailPublicUidRouteImport
+      preLoaderRoute: typeof AuthenticatedUsersDetailPublicUidRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/join/$referralCode': {
+      id: '/join/$referralCode'
+      path: '/join/$referralCode'
+      fullPath: '/join/$referralCode'
+      preLoaderRoute: typeof JoinReferralCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
+}
+
+interface AdminRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
+  AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedNetworkRoute: typeof AuthenticatedNetworkRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
+  AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
+  AuthenticatedDepositPlanIdRoute: typeof AuthenticatedDepositPlanIdRoute
+  AuthenticatedUsersDetailPublicUidRoute: typeof AuthenticatedUsersDetailPublicUidRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdsRoute: AuthenticatedAdsRoute,
+  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedNetworkRoute: AuthenticatedNetworkRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedPlansRoute: AuthenticatedPlansRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
+  AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
+  AuthenticatedDepositPlanIdRoute: AuthenticatedDepositPlanIdRoute,
+  AuthenticatedUsersDetailPublicUidRoute: AuthenticatedUsersDetailPublicUidRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(AuthenticatedRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
+  ApiUploadHeroRoute: ApiUploadHeroRoute,
+  ApiImpersonationConsumeRoute: ApiImpersonationConsumeRoute,
+  JoinReferralCodeRoute: JoinReferralCodeRoute,
+}
+
+export const routeTree = rootRouteImport
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
+  SupportRoute: typeof AuthenticatedSupportRoute
+  WithdrawRoute: typeof AuthenticatedWithdrawRoute
+  ApiUploadHeroRoute: typeof ApiUploadHeroRoute
+  ApiImpersonationConsumeRoute: typeof ApiImpersonationConsumeRoute
+  DepositPlanIdRoute: typeof AuthenticatedDepositPlanIdRoute
+  JoinReferralCodeRoute: typeof JoinReferralCodeRoute
+  UsersDetailPublicUidRoute: typeof AuthenticatedUsersDetailPublicUidRoute
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ads': {
+      id: '/_authenticated/ads'
+      path: '/ads'
+      fullPath: '/ads'
+      preLoaderRoute: typeof AuthenticatedAdsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/_authenticated/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AuthenticatedHistoryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/network': {
+      id: '/_authenticated/network'
+      path: '/network'
+      fullPath: '/network'
+      preLoaderRoute: typeof AuthenticatedNetworkRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/plans': {
+      id: '/_authenticated/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AuthenticatedPlansRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/withdraw': {
+      id: '/_authenticated/withdraw'
+      path: '/withdraw'
+      fullPath: '/withdraw'
+      preLoaderRoute: typeof AuthenticatedWithdrawRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/api/upload-hero': {
+      id: '/api/upload-hero'
+      path: '/api/upload-hero'
+      fullPath: '/api/upload-hero'
+      preLoaderRoute: typeof ApiUploadHeroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/impersonation/consume': {
+      id: '/api/impersonation/consume'
+      path: '/api/impersonation/consume'
+      fullPath: '/api/impersonation/consume'
+      preLoaderRoute: typeof ApiImpersonationConsumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deposit/$planId': {
+      id: '/_authenticated/deposit/$planId'
+      path: '/deposit/$planId'
+      fullPath: '/deposit/$planId'
+      preLoaderRoute: typeof AuthenticatedDepositPlanIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/users/detail/$publicUid': {
+      id: '/_authenticated/users/detail/$publicUid'
+      path: '/users/detail/$publicUid'
+      fullPath: '/users/detail/$publicUid'
+      preLoaderRoute: typeof AuthenticatedUsersDetailPublicUidRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/join/$referralCode': {
