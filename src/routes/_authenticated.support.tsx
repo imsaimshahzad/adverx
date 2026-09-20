@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { SupportTicketPanel } from "@/components/SupportTicketPanel";
 
-export const Route = createFileRoute("/support")({
+export const Route = createFileRoute("/_authenticated/support")({
   head: () => ({ meta: [{ title: "Support — AdverX" }] }),
   component: SupportPage,
 });
