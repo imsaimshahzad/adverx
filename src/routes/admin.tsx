@@ -262,10 +262,10 @@ function AdminRoute() {
   const [detailData, setDetailData] = useState<AdminRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const openUserDetails = useCallback((userId: string) => {
-    window.history.pushState({}, "", `/admin?user=${encodeURIComponent(userId)}`);
-    setDetailUserId(userId);
-    setDetailData(null);
-  }, []);
+    const row = rows.users?.find((item) => String(item.id) === userId);
+    const publicUid = String(row?.public_uid ?? userId);
+    navigate({ to: "/users/detail/$publicUid", params: { publicUid } });
+  }, [navigate, rows.users]);
   const closeUserDetails = useCallback(() => {
     window.history.pushState({}, "", "/admin");
     setDetailUserId(null);
