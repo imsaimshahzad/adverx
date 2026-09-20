@@ -416,7 +416,7 @@ export async function getUserDetails(identifier: string) {
   if (profileResult.error || !profileResult.data) throw new Error("User not found.");
   const profile = profileResult.data as AdminRow;
   const userId = String(profile.id);
-  const [{ data: userPlans, error: plansError }, { data: userPlans, error: plansError }, { data: planRows, error: planRowsError }, { data: deposits, error: depositsError }, { data: withdrawals, error: withdrawalsError }, { data: commissions, error: commissionsError }, { data: ledger, error: ledgerError }] = await Promise.all([
+  const [{ data: userPlans, error: userPlansError }, { data: planRows, error: planRowsError }, { data: deposits, error: depositsError }, { data: withdrawals, error: withdrawalsError }, { data: commissions, error: commissionsError }, { data: ledger, error: ledgerError }] = await Promise.all([
     db.from("user_plans").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
     db.from("plans").select("id, name"),
     db.from("deposits").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
@@ -425,7 +425,7 @@ export async function getUserDetails(identifier: string) {
     db.from("ledger_entries").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
   ]);
 
-  if (plansError || planRowsError || depositsError || withdrawalsError || commissionsError || ledgerError) {
+  if (userPlansError || planRowsError || depositsError || withdrawalsError || commissionsError || ledgerError) {
     throw new Error("Unable to load user details.");
   }
 
@@ -456,6 +456,8 @@ export async function getUserDetails(identifier: string) {
       referral_commission: completedCommissions.reduce((sum: number, row: AdminRow) => sum + Number(row.amount ?? 0), 0),
     },
   } as AdminRow;
+}
+
 export async function getUsersPage(search = "", status = "", page = 1, pageSize = 25) {
   const [{ data: profiles, error: profilesError }, { data: activePlans, error: plansError }, { data: plans, error: planNamesError }] = await Promise.all([
     db.from("profiles").select("*").order("created_at", { ascending: false }),
