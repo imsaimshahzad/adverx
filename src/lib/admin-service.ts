@@ -408,6 +408,51 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   return data as AdminRow;
 }
 
+export async function getUserDetails(userId: string) {
+  const [{ data: profile, error: profileError }, { data: userPlans, error: plansError }, { data: planRows, error: planRowsError }, { data: deposits, error: depositsError }, { data: withdrawals, error: withdrawalsError }, { data: commissions, error: commissionsError }, { data: ledger, error: ledgerError }] = await Promise.all([
+    db.from("profiles").select("*").eq("id", userId).maybeSingle(),
+    db.from("user_plans").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    db.from("plans").select("id, name"),
+    db.from("deposits").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    db.from("withdrawals").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    db.from("referral_commissions").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    db.from("ledger_entries").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+  ]);
+
+  if (profileError || plansError || planRowsError || depositsError || withdrawalsError || commissionsError || ledgerError) {
+    throw new Error("Unable to load user details.");
+  }
+  if (!profile) throw new Error("User not found.");
+
+  const planById = new Map((planRows ?? []).map((row: AdminRow) => [String(row.id), row]));
+  const mappedPlans = (userPlans ?? []).map((row: AdminRow) => ({
+    ...row,
+    plan_display_name: row.plan_name_snapshot ?? planById.get(String(row.plan_id))?.name ?? "—",
+  }));
+
+  const approvedDeposits = (deposits ?? []).filter((row: AdminRow) => row.status === "approved");
+  const paidWithdrawals = (withdrawals ?? []).filter((row: AdminRow) => row.status === "paid");
+  const completedCommissions = (commissions ?? []).filter((row: AdminRow) => row.status === "completed");
+  const balance = (ledger ?? []).reduce((sum: number, row: AdminRow) => sum + Number(row.amount ?? 0), 0);
+
+  return {
+    profile,
+    plans: mappedPlans,
+    deposits: deposits ?? [],
+    withdrawals: withdrawals ?? [],
+    commissions: commissions ?? [],
+    ledger: ledger ?? [],
+    summary: {
+      balance,
+      deposits: approvedDeposits.reduce((sum: number, row: AdminRow) => sum + Number(row.amount ?? 0), 0),
+      withdrawals: paidWithdrawals.reduce((sum: number, row: AdminRow) => sum + Number(row.amount ?? 0), 0),
+      transactions: ledger?.length ?? 0,
+      total_invest: mappedPlans.reduce((sum: number, row: AdminRow) => sum + Number(row.purchase_price_pkr ?? 0), 0),
+      referral_commission: completedCommissions.reduce((sum: number, row: AdminRow) => sum + Number(row.amount ?? 0), 0),
+    },
+  } as AdminRow;
+}
+
 export async function getUsersPage(search = "", status = "", page = 1, pageSize = 25) {
   const [{ data: profiles, error: profilesError }, { data: activePlans, error: plansError }, { data: plans, error: planNamesError }] = await Promise.all([
     db.from("profiles").select("*").order("created_at", { ascending: false }),
