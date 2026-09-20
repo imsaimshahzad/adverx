@@ -24,6 +24,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as WithdrawRouteImport } from './routes/withdraw'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiUploadHeroRouteImport } from './routes/api.upload-hero'
+import { Route as ApiImpersonationConsumeRouteImport } from './routes/api.impersonation.consume'
 import { Route as DepositPlanIdRouteImport } from './routes/deposit.$planId'
 import { Route as JoinReferralCodeRouteImport } from './routes/join.$referralCode'
 import { Route as UsersDetailPublicUidRouteImport } from './routes/users.detail.$publicUid'
@@ -161,6 +162,7 @@ export interface FileRoutesByTo {
   '/withdraw': typeof WithdrawRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/upload-hero': typeof ApiUploadHeroRoute
+  '/api/impersonation/consume': typeof ApiImpersonationConsumeRoute
   '/deposit/$planId': typeof DepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
   '/users/detail/$publicUid': typeof UsersDetailPublicUidRoute
@@ -182,6 +184,7 @@ export interface FileRoutesById {
   '/withdraw': typeof WithdrawRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/upload-hero': typeof ApiUploadHeroRoute
+  '/api/impersonation/consume': typeof ApiImpersonationConsumeRoute
   '/deposit/$planId': typeof DepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
 }
