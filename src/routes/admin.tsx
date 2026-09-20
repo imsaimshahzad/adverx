@@ -1846,7 +1846,7 @@ function ModuleTable({
             ))}
           </div>
         ) : null}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-2">
           <Input
             className="sm:max-w-xs"
             value={query}
@@ -1870,18 +1870,18 @@ function ModuleTable({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[720px] table-auto text-sm">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr className="border-b border-slate-200/80 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   {columns.map((column) => (
-                    <th className="px-3 py-3" key={column}>
+                    <th className="whitespace-nowrap px-2.5 py-2" key={column}>
                       {active === "plans" && column === "ads_per_day"
                         ? "Daily Ads Limit"
                         : column.replaceAll("_", " ")}
                     </th>
                   ))}
   {actions.length || managementTable || active === "support" ? (
-  <th className="px-3 py-3">Actions</th>
+  <th className="whitespace-nowrap px-2.5 py-2">Actions</th>
 
                   ) : null}
                 </tr>
@@ -1895,7 +1895,7 @@ function ModuleTable({
                   >
                     {columns.map((column) => (
                       <td
-                        className="max-w-[220px] truncate px-3 py-4"
+                        className="max-w-[220px] truncate px-2.5 py-2.5 align-middle"
                         key={column}
                       >
                         {active === "audit-logs" && column === "metadata" ? (
@@ -1910,8 +1910,8 @@ function ModuleTable({
                       </td>
                     ))}
                     {active === "deposits" ? (
-                      <td className="px-3 py-4">
-                        <div className="flex flex-wrap items-center gap-2">
+                      <td className="whitespace-nowrap px-2.5 py-2.5 align-middle">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <Button
                             variant="outline"
                             size="sm"
@@ -1968,9 +1968,9 @@ function ModuleTable({
                         </div>
                       </td>
   ) : actions.length || managementTable || active === "support" ? (
-                        <td className="px-3 py-4">
+                        <td className="whitespace-nowrap px-2.5 py-2.5 align-middle">
                         {active === "users" ? <Button size="sm" variant="outline" className="mb-2" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button> : null}
-                        {managementTable ? <div className="mb-2 flex gap-2"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</div> : null}
+                        {managementTable ? <div className="mb-1 flex items-center gap-1.5 whitespace-nowrap"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</div> : null}
                         {active === "support" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
                         {actions.length ? <select
                           aria-label={`Change status for ${String(row.full_name ?? row.id ?? "record")}`}
