@@ -18,7 +18,7 @@ import { ADS, money, usePlatform, type Ad } from "@/lib/platform-store";
 
 const pakistanDate = (value: number | Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
 
-export const Route = createFileRoute("/ads")({
+export const Route = createFileRoute("/_authenticated/ads")({
   head: () => ({
     meta: [
       { title: "Ad tasks — AdverX" },
