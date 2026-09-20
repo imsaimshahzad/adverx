@@ -2062,7 +2062,24 @@ function ModuleTable({
                         className="max-w-[180px] truncate px-2 py-1.5 align-middle text-xs"
                         key={column}
                       >
-                        {active === "audit-logs" && column === "metadata" ? (
+                        {active === "users" ? (
+                          column === "user" ? (
+                            <div className="min-w-0">
+                              <div className="truncate font-medium text-slate-900">{String(row.full_name ?? row.username ?? "Unknown user")}</div>
+                              <div className="truncate text-[11px] text-slate-500">UID {String(row.public_uid ?? "—")} · @{String(row.username ?? "—")}</div>
+                            </div>
+                          ) : column === "plan" ? (
+                            <span>{String(row.active_plan_name ?? "No Plan") || "No Plan"}</span>
+                          ) : column === "payment" ? (
+                            <span>{String(row.payment ?? "Unpaid")}</span>
+                          ) : column === "status" ? (
+                            <span>{String(row.status ?? "—")}</span>
+                          ) : column === "role" ? (
+                            <span>{String(row.role ?? "member")}</span>
+                          ) : (
+                            <span>{String(row[column] ?? "—")}</span>
+                          )
+                        ) : active === "audit-logs" && column === "metadata" ? (
                           <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-indigo-700 hover:bg-indigo-50" onClick={(event) => { event.stopPropagation(); setMetadataRow(row); }}>
                             <Eye className="size-3.5" /> View details
                           </Button>
