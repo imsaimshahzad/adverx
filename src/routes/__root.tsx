@@ -109,6 +109,8 @@ function requiresAdmin(pathname: string) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  pendingMs: 0,
+  pendingMinMs: 250,
   beforeLoad: async ({ location }) => {
     // Supabase's normal browser session is restored from client storage, so
     // there is no trustworthy server-side session to inspect during SSR.
