@@ -471,7 +471,7 @@ async function loadState(user: {
   const referredIds = referralRows.map((row) => row.id).filter(Boolean);
   const [{ data: referredPlans }, { data: commissions }] = referredIds.length
     ? await Promise.all([
-        db.from("user_plans").select("user_id, plan_id, is_active").in("user_id", referredIds).eq("is_active", true),
+        db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active"),
         db.from("referral_commissions").select("source_user_id, amount").eq("user_id", uid),
       ])
     : [{ data: [] }, { data: [] }];
