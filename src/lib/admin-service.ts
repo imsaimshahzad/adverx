@@ -325,7 +325,7 @@ export async function getRecoveryFundActivity() {
   if (error) throw new Error(`Unable to load Recovery Fund activity: ${error.message}`);
 
   let balance = 0;
-  const chronological = (data ?? []).map((row) => {
+  const chronological = (data ?? []).map((row: AdminRow) => {
     const entryType = String(row.entry_type ?? "").toLowerCase();
     const amount = Math.abs(Number(row.amount_pkr ?? 0));
     balance += entryType === "debit" ? -amount : amount;

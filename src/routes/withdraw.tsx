@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function WithdrawPage() {
-  const { plan, state, availableBalance, requestWithdrawal } = usePlatform();
+  const { plan, state, availableBalance, ready, requestWithdrawal } = usePlatform();
   const userDb = supabase as any;
   const min = plan?.minWithdrawal ?? 500;
   const [amount, setAmount] = useState("");
@@ -76,18 +77,21 @@ function WithdrawPage() {
   const amountOutsideMethodLimits = Boolean(selectedMethod && (requestedPaise < methodMinPaise || requestedPaise > methodMaxPaise));
 
   return (
-    <AppShell
-      title="Withdraw"
-      subtitle={`Available ${money(availableBalance)}`}
-    >
+    <AppShell title="Withdraw">
+      <div className="mb-3 surface px-4 py-3 sm:px-5">
+        <p className="text-sm font-medium">Withdrawable Balance</p>
+        <div className="mt-1 flex min-h-7 items-center gap-2">
+          {ready ? <p className="num text-xl font-semibold">{money(availableBalance)}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
+        </div>
+      </div>
       <div className="glass-panel space-y-3 p-4 sm:p-5">
         <div className="space-y-1.5">
-          <Label className="text-xs">Amount</Label>
+          <Label className="text-xs">Withdrawal Amount</Label>
           <Input
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder={`Minimum ${money(min)}`}
+            placeholder="Enter amount here"
           />
           <p className="text-xs text-muted-foreground">
             Processing fee 2% · You receive {money(Math.max(0, value - fee))}
