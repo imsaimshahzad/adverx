@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { usePlatform } from "@/lib/platform-store";
 
-export const Route = createFileRoute("/notifications")({
+export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
     meta: [
       { title: "Notifications — AdverX" },
