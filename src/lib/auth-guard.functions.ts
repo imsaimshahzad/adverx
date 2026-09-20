@@ -99,7 +99,11 @@ export const startImpersonation = createServerFn({ method: "POST" })
       });
 
     if (auditError) {
-      console.error("[auth] Failed to write impersonation audit log", auditError);
+      await (supabaseAdmin as any)
+        .from("impersonation_grants")
+        .delete()
+        .eq("token_digest", tokenDigest);
+      throw new Error("Unable to record the impersonation audit event.");
     }
 
     return { tokenHash };
