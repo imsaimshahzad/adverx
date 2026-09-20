@@ -83,18 +83,20 @@ function createBrowserClient(impersonating: boolean) {
 let normalClient: ReturnType<typeof createBrowserClient> | undefined;
 let impersonationClient: ReturnType<typeof createBrowserClient> | undefined;
 
-function bootstrapImpersonationFlag() {
+function initializeImpersonationTab() {
   if (typeof window === "undefined") return;
-
-  // The URL is only an initial bootstrap signal. All client selection after
-  // this point is based exclusively on the sessionStorage flag.
   if (
-    !sessionStorage.getItem(IMPERSONATION_FLAG) &&
+    sessionStorage.getItem(IMPERSONATION_FLAG) !== "1" &&
     new URL(window.location.href).searchParams.has(IMPERSONATION_TOKEN_PARAM)
   ) {
     sessionStorage.setItem(IMPERSONATION_FLAG, "1");
   }
 }
+
+// Bootstrap the per-tab flag before any code can request a Supabase client.
+// After this synchronous initialization, client selection is controlled only
+// by sessionStorage; the URL is never consulted by getSupabase().
+initializeImpersonationTab();
 
 export function isImpersonating() {
   return (
@@ -104,7 +106,6 @@ export function isImpersonating() {
 }
 
 export function getSupabase() {
-  bootstrapImpersonationFlag();
 
   if (isImpersonating()) {
     impersonationClient ??= createBrowserClient(true);
@@ -120,7 +121,7 @@ export async function ensureSupabaseSessionReady() {
     return getSupabase().auth.getSession();
   }
 
-  bootstrapImpersonationFlag();
+  initializeImpersonationTab();
 
   if (isImpersonating()) {
     const url = new URL(window.location.href);
