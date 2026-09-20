@@ -17,6 +17,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : "/",
+  }),
   head: () => ({
     meta: [
       { title: "Sign in or create account — AdverX" },
@@ -42,6 +45,7 @@ export const Route = createFileRoute("/auth")({
 export function AuthPage() {
   const { state, ready, dataError, logout } = usePlatform();
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [form, setForm] = useState({
     fullName: "",
     username: "",
@@ -56,8 +60,19 @@ export function AuthPage() {
   const [resetRequested, setResetRequested] = useState(false);
 
   useEffect(() => {
-    if (ready && state.user) navigate({ to: "/", replace: true });
-  }, [ready, state.user, navigate]);
+    if (!ready || !state.user) return;
+
+    try {
+      const target = new URL(redirect || "/", window.location.origin);
+      if (target.origin !== window.location.origin) {
+        window.location.replace("/");
+        return;
+      }
+      window.location.replace(target.pathname + target.search + target.hash);
+    } catch {
+      navigate({ to: "/", replace: true });
+    }
+  }, [ready, state.user, redirect, navigate]);
 
   useEffect(() => {
     const referralCodeFromLink = captureReferralFromLocation();
