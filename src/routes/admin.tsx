@@ -1861,7 +1861,7 @@ function ModuleTable({
           />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0 pb-0">
         {!rows.length ? (
           <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
             <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-indigo-50 text-indigo-700"><Inbox className="size-5" /></div>
