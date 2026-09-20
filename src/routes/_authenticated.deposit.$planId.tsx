@@ -12,13 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { money, PAYMENT_METHODS, type Plan, usePlatform } from "@/lib/platform-store";
 
-export const Route = createFileRoute("/deposit/$planId")({
+export const Route = createFileRoute("/_authenticated/deposit/$planId")({
   head: () => ({ meta: [{ title: "Submit deposit — AdverX" }] }),
   component: DepositPage,
 });
 
 function DepositPage() {
-  const { planId } = useParams({ from: "/deposit/$planId" });
+  const { planId } = useParams({ from: "/_authenticated/deposit/$planId" });
   const navigate = useNavigate();
   const { submitDeposit } = usePlatform();
   const [plan, setPlan] = useState<Plan | null>(null);
