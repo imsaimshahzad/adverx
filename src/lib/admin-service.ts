@@ -263,6 +263,8 @@ export type OperationsOverview = {
   total_rewards_issued: number;
   total_remaining_user_reward_reserves: number;
   total_referral_commissions: number;
+  total_withdrawals_paid: number;
+  tracked_cash_retained: number;
   today_ad_completions: number;
   pending_support_tickets: number;
   risk_alerts: number;
