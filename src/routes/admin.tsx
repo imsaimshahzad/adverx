@@ -1088,8 +1088,9 @@ function RevenueDashboard({
     ["Admin Own Balance", summary.admin_own_balance],
   ];
   const cardDescription = (label: string) => {
-    if (label === "Unassigned Referral") return "Referral commission from purchases with no eligible referrer.";
-    if (label === "Referrer Recovery Reserve") return "Reserved for eligible referrer earning capacity; separate from Unassigned Referral.";
+    if (label === "Unassigned Referral") return "Referral commission from a purchase where no eligible referrer existed. This amount is automatically assigned to Admin.";
+    if (label === "Unallocated Recovery") return "Recovery allocation from purchases where no eligible referrer existed. Normally this amount would go to the eligible referrer's Recovery Reserve; without a referrer, it remains in this separate platform-use fund.";
+    if (label === "Referrer Recovery Reserve") return "Recovery reserves belonging to eligible referrers and supporting their future ad earning capacity.";
     if (label === "Available Withdrawable Balance") return "Admin/platform balance currently available for withdrawal.";
     if (label === "Admin Own Balance") return "Admin-owned balance shown separately from platform profit.";
     return undefined;
@@ -1101,7 +1102,7 @@ function RevenueDashboard({
         <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Unassigned Referral is available to the admin/platform under existing accounting logic, but is not Platform Profit.</p>
       </div>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, key]) => <Card key={label}><CardContent className="p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="When a purchase has no eligible referrer, its allocated referral commission becomes Unassigned Referral instead of being credited to a referrer." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}</CardContent></Card>)}
+        {cards.map(([label, key]) => <Card key={label}><CardContent className="flex h-full flex-col p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="This is the referral allocation, not Platform Profit." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{label === "Unallocated Recovery" ? <Badge variant="outline" className="mt-3 w-fit border-destructive/30 text-destructive">NOT WITHDRAWABLE</Badge> : null}{label === "Referrer Recovery Reserve" ? <Badge variant="outline" className="mt-3 w-fit border-primary/30 text-primary">Not Admin Funds</Badge> : null}{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}{label === "Unallocated Recovery" ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Used only for campaigns, promotions, incentives and approved platform expenses.</p> : null}</CardContent></Card>)}
       </section>
       <Card>
         <CardHeader>
@@ -1118,8 +1119,7 @@ function RevenueDashboard({
               <col className="w-[13%]" />
               <col className="w-[17%]" />
               <col className="w-[12%]" />
-              <col className="w-[16%]" />
-              <col className="w-[10%]" />
+              <col className="w-[26%]" />
             </colgroup>
             <thead>
               <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -1146,7 +1146,7 @@ function RevenueDashboard({
                     <td className="max-w-0 p-4"><span className="block truncate text-muted-foreground" title={String(row.source ?? "No eligible referrer")}>{category.toLowerCase().includes("unassigned") ? "No eligible referrer" : formatValue(row.source)}</span></td>
                   </tr>
                 );
-              }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}
+              }) : <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}
             </tbody>
           </table>
         </CardContent>
@@ -1187,7 +1187,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
       const result = await useRecoveryFund({ amount: value, usageType, targetUserId: null, reason, reference });
       setAmount(""); setReason(""); setReference("");
       await Promise.all([load(), onRefresh()]);
-      toast.success(`Unassigned Referral used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
+      toast.success(`Unallocated Recovery used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to use Unallocated Recovery.");
     } finally { setBusy(false); }
@@ -1201,10 +1201,11 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
             <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 text-sm sm:grid-cols-3">
               <div><p className="text-muted-foreground">Current Unallocated Recovery</p><p className="mt-1 font-semibold tabular-nums">{remaining.toLocaleString()} PKR</p></div>
               <div><p className="text-muted-foreground">Amount to use</p><p className="mt-1 font-semibold tabular-nums">{amount ? `${Number(amount).toLocaleString()} PKR` : "—"}</p></div>
-              <div><p className="text-muted-foreground">Balance after</p><p className="mt-1 font-semibold tabular-nums">Confirmed by database after submit</p></div>
+              <div><p className="text-muted-foreground">Balance after</p><p className="mt-1 font-semibold text-muted-foreground">Confirmed by database after submit</p></div>
             </div>
             <label className="grid gap-2 text-sm font-medium">Amount (PKR)<Input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
-            <label className="grid gap-2 text-sm font-medium">Purpose / Reason<textarea className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm" value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
+            <label className="grid gap-2 text-sm font-medium">Purpose<select className="h-10 rounded-md border bg-background px-3 py-2 text-sm font-normal" value={usageType} onChange={() => undefined} aria-label="Purpose"><option value="Platform Recovery">Platform Recovery</option></select></label>
+            <label className="grid gap-2 text-sm font-medium">Reason / Note<textarea className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm font-normal" value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
             <label className="grid gap-2 text-sm font-medium">Reference (optional)<Input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Ticket, incident, or internal reference" /></label>
             {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
             <Button type="submit" disabled={busy}>{busy ? "Recording…" : "Use Unallocated Recovery"}</Button>
@@ -1212,8 +1213,8 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Unallocated Recovery Activity</CardTitle><p className="text-sm text-muted-foreground">Credits come from purchases with no eligible referrer; debits are admin use.</p></CardHeader>
-        <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-4">Date</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4">Purpose / Reason</th><th className="p-4">Reference</th><th className="p-4 text-right">Balance After</th></tr></thead><tbody>{activity.length ? activity.map((row) => { const entryType = String(row.entry_type ?? row.usage_type ?? "").toLowerCase(); const amountPkr = Number(row.amount_pkr ?? row.amount ?? 0); const signedAmount = entryType === "debit" ? -Math.abs(amountPkr) : entryType === "credit" || entryType === "reversal" ? Math.abs(amountPkr) : amountPkr; return <tr className="border-b last:border-0" key={String(row.id)}><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td><td className="p-4 text-right tabular-nums">{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td><td className="max-w-[180px] truncate p-4" title={String(row.target_user_id ?? "—")}>{formatValue(row.target_user_id)}</td><td className="max-w-[220px] truncate p-4" title={String(row.reason)}>{formatValue(row.reason)}</td><td className="p-4 text-muted-foreground">{formatValue(row.reference)}</td><td className="p-4 text-right tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td></tr>; }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Unallocated Recovery activity yet.</td></tr>}</tbody></table></CardContent>
+        <CardHeader><CardTitle>Unallocated Recovery Activity</CardTitle><p className="text-sm text-muted-foreground">Credits come from purchases with no eligible referrer; debits represent approved platform use.</p></CardHeader>
+        <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[820px] table-fixed text-sm"><colgroup><col className="w-[17%]" /><col className="w-[13%]" /><col className="w-[14%]" /><col className="w-[24%]" /><col className="w-[16%]" /><col className="w-[16%]" /></colgroup><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th scope="col" className="p-4">Date</th><th scope="col" className="p-4">Type</th><th scope="col" className="p-4 text-right">Amount</th><th scope="col" className="p-4">Purpose / Reason</th><th scope="col" className="p-4">Reference</th><th scope="col" className="p-4 text-right">Balance After</th></tr></thead><tbody>{activity.length ? activity.map((row) => { const entryType = String(row.entry_type ?? row.usage_type ?? "").toLowerCase(); const amountPkr = Number(row.amount_pkr ?? row.amount ?? 0); const signedAmount = entryType === "debit" ? -Math.abs(amountPkr) : entryType === "credit" || entryType === "reversal" ? Math.abs(amountPkr) : amountPkr; return <tr className="border-b last:border-0" key={String(row.id)}><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td><td className="p-4 text-right tabular-nums whitespace-nowrap">{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td><td className="max-w-0 p-4"><span className="block truncate" title={String(row.reason ?? "—")}>{formatValue(row.reason)}</span></td><td className="max-w-0 p-4"><span className="block truncate" title={String(row.reference ?? "—")}>{formatValue(row.reference)}</span></td><td className="p-4 text-right tabular-nums whitespace-nowrap">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td></tr>; }) : <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No Unallocated Recovery activity yet.</td></tr>}</tbody></table></CardContent>
       </Card>
     </section>
   );
