@@ -87,6 +87,7 @@ import {
 const db = supabase as any;
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   pendingMs: 0,
   pendingMinMs: 250,
   beforeLoad: async ({ location }) => {
