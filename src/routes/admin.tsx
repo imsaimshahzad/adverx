@@ -1159,7 +1159,7 @@ function RevenueDashboard({
 function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefresh: () => Promise<void> }) {
   const [activity, setActivity] = useState<AdminRow[]>([]);
   const [amount, setAmount] = useState("");
-  const [usageType] = useState<"Platform Recovery">("Platform Recovery");
+  const [usageType, setUsageType] = useState("");
   const [reason, setReason] = useState("");
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1177,8 +1177,8 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0 || !reason.trim()) {
-      setError("Enter a valid amount and purpose / reason.");
+    if (!Number.isFinite(value) || value <= 0 || !usageType || !reason.trim()) {
+      setError("Enter a valid amount, purpose, and reason.");
       return;
     }
     setBusy(true);
@@ -1204,7 +1204,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
               <div><p className="text-muted-foreground">Balance after</p><p className="mt-1 font-semibold text-muted-foreground">Confirmed by database after submit</p></div>
             </div>
             <label className="grid gap-2 text-sm font-medium">Amount (PKR)<Input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
-            <label className="grid gap-2 text-sm font-medium">Purpose<select className="h-10 rounded-md border bg-background px-3 py-2 text-sm font-normal" value={usageType} onChange={() => undefined} aria-label="Purpose"><option value="Platform Recovery">Platform Recovery</option></select></label>
+            <label className="grid gap-2 text-sm font-medium" htmlFor="recovery-purpose">Purpose<select id="recovery-purpose" className="h-10 rounded-md border bg-background px-3 py-2 text-sm font-normal" value={usageType} onChange={(event) => setUsageType(event.target.value)} required><option value="">Select purpose</option><option value="Campaign">Campaign</option><option value="Promotion">Promotion</option><option value="Platform Incentive">Platform Incentive</option><option value="Approved Platform Expense">Approved Platform Expense</option><option value="Platform Recovery">Platform Recovery</option><option value="Other">Other</option></select></label>
             <label className="grid gap-2 text-sm font-medium">Reason / Note<textarea className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm font-normal" value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
             <label className="grid gap-2 text-sm font-medium">Reference (optional)<Input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Ticket, incident, or internal reference" /></label>
             {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
