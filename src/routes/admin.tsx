@@ -1971,26 +1971,28 @@ function ModuleTable({
                       </td>
   ) : actions.length || managementTable || active === "support" ? (
                         <td className="whitespace-nowrap px-2 py-2 align-middle">
-                        {active === "users" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button> : null}
-                        {managementTable ? <div className="flex items-center gap-1.5 whitespace-nowrap"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" className="bg-rose-600 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" className="bg-rose-600 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</div> : null}
-                        {active === "support" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
-                        {actions.length ? <select
-                          aria-label={`Change status for ${String(row.full_name ?? row.id ?? "record")}`}
-                          className="h-9 rounded-md border bg-background px-2 text-sm"
-                          value=""
-                          onClick={(event) => event.stopPropagation()}
-                          onChange={(event) =>
-                            event.target.value &&
-                            onStatus(row, event.target.value)
-                          }
-                        >
-                          <option value="">Change status</option>
-                          {actions.map((action) => (
-                            <option key={action} value={action}>
-                              {action}
-                            </option>
-                          ))}
-                        </select> : null}
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          {active === "users" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button> : null}
+                          {managementTable ? <><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" className="bg-rose-600 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" className="bg-rose-600 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</> : null}
+                          {active === "support" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
+                          {actions.length ? <select
+                            aria-label={`Change status for ${String(row.full_name ?? row.id ?? "record")}`}
+                            className="h-9 shrink-0 rounded-md border bg-background px-2 text-sm"
+                            value=""
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={(event) =>
+                              event.target.value &&
+                              onStatus(row, event.target.value)
+                            }
+                          >
+                            <option value="">Change status</option>
+                            {actions.map((action) => (
+                              <option key={action} value={action}>
+                                {action}
+                              </option>
+                            ))}
+                          </select> : null}
+                        </div>
                       </td>
                     ) : null}
                   </tr>
