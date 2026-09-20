@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { UserDetailPage } from "./admin";
 import { getUserDetails } from "@/lib/admin-service";
-import { supabase, db } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import type { AdminRow } from "@/lib/admin-service";
 
 export const Route = createFileRoute("/users/detail/$publicUid")({
@@ -27,7 +27,7 @@ function UserDetailRoute() {
           navigate({ to: "/admin/login", replace: true });
           return;
         }
-        const { data: profile } = await db.from("profiles").select("role").eq("id", auth.user.id).maybeSingle();
+        const { data: profile } = await (supabase as any).from("profiles").select("role").eq("id", auth.user.id).maybeSingle();
         if (!profile || !["admin", "super_admin", "moderator"].includes(String(profile.role))) {
           navigate({ to: "/admin/login", replace: true });
           return;
