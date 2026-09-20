@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { UserDetailPage } from "./admin";
 import { getUserDetails } from "@/lib/admin-service";
-import { supabase } from "@/integrations/supabase/client";
+import { startImpersonation } from "@/lib/auth-guard.functions";
 import type { AdminRow } from "@/lib/admin-service";
 
 export const Route = createFileRoute("/users/detail/$publicUid")({
@@ -22,16 +22,6 @@ function UserDetailRoute() {
     let cancelled = false;
     void (async () => {
       try {
-        const { data: auth } = await supabase.auth.getUser();
-        if (!auth.user) {
-          navigate({ to: "/admin/login", replace: true });
-          return;
-        }
-        const { data: profile } = await (supabase as any).from("profiles").select("role").eq("id", auth.user.id).maybeSingle();
-        if (!profile || !["admin", "super_admin", "moderator"].includes(String(profile.role))) {
-          navigate({ to: "/admin/login", replace: true });
-          return;
-        }
         const result = await getUserDetails(publicUid);
         if (!cancelled) setData(result);
       } catch (cause) {
@@ -47,12 +37,10 @@ function UserDetailRoute() {
     const tab = window.open("about:blank", "_blank");
     try {
       if (!tab) throw new Error("Please allow pop-ups for AdverX.");
-      const { data: result, error } = await supabase.functions.invoke("admin-impersonate", { body: { user_id: userId } });
-      if (error || !result?.action_link) {
-        tab.close();
-        throw new Error(error?.message || "Unable to start user session.");
-      }
-      tab.location.href = result.action_link;
+      const result = await startImpersonation({ data: { userId } });
+      const url = new URL("/", window.location.origin);
+      url.searchParams.set("impersonation_token", result.tokenHash);
+      tab.location.href = url.toString();
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Unable to login as user.");
     }
