@@ -262,10 +262,14 @@ function AdminRoute() {
   const [detailData, setDetailData] = useState<AdminRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const openUserDetails = useCallback((userId: string) => {
-    const row = rows.users?.find((item) => String(item.id) === userId);
-    const publicUid = String(row?.public_uid ?? userId);
+    const row = userPageRows.find((item) => String(item.id) === userId);
+    const publicUid = String(row?.public_uid ?? userId).trim();
+    if (!publicUid) {
+      toast.error("Unable to identify this user.");
+      return;
+    }
     navigate({ to: "/users/detail/$publicUid", params: { publicUid } });
-  }, [navigate, rows.users]);
+  }, [navigate, userPageRows]);
   const closeUserDetails = useCallback(() => {
     window.history.pushState({}, "", "/admin");
     setDetailUserId(null);
