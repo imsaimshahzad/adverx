@@ -1746,14 +1746,22 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
   const commissions = (data.commissions ?? []) as AdminRow[];
   const displayName = String(profile.full_name ?? profile.username ?? "User");
   const money = (value: unknown) => `PKR ${Number(value ?? 0).toLocaleString()}`;
-  const date = (value: unknown) => value ? new Date(String(value)).toLocaleDateString() : "—";
+  const date = (value: unknown) => value ? new Date(String(value)).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
   const status = (value: unknown) => String(value ?? "—").replaceAll("_", " ");
 
   const activity = [
-    ...deposits.map((row) => ({ date: row.created_at, text: `Deposit ${money(row.amount)} · ${status(row.status)}` })),
-    ...withdrawals.map((row) => ({ date: row.created_at, text: `Withdrawal ${money(row.amount)} · ${status(row.status)}` })),
-    ...commissions.map((row) => ({ date: row.created_at, text: `Commission +${money(row.amount)} · ${status(row.status)}${row.level ? ` · ${status(row.level)}` : ""}` })),
-    ...plans.map((row) => ({ date: row.purchased_at ?? row.created_at, text: `Plan ${String(row.plan_display_name ?? "Plan")} · ${money(row.purchase_price_pkr)} · ${status(row.status)}` })),
+    ...deposits
+      .filter((row) => String(row.status).toLowerCase() === "approved" && Number(row.amount ?? 0) > 0)
+      .map((row) => ({ date: row.created_at, text: `Deposit ${money(row.amount)} · approved` })),
+    ...withdrawals
+      .filter((row) => String(row.status).toLowerCase() === "paid" && Number(row.amount ?? 0) > 0)
+      .map((row) => ({ date: row.created_at, text: `Withdrawal ${money(row.amount)} · paid` })),
+    ...commissions
+      .filter((row) => String(row.status).toLowerCase() === "completed" && Number(row.amount ?? 0) > 0)
+      .map((row) => ({ date: row.created_at, text: `Commission +${money(row.amount)}${row.level ? ` · ${status(row.level)}` : ""}` })),
+    ...plans
+      .filter((row) => Number(row.purchase_price_pkr ?? 0) > 0 && ["active", "completed"].includes(String(row.status).toLowerCase()))
+      .map((row) => ({ date: row.purchased_at ?? row.created_at, text: `Plan ${String(row.plan_display_name ?? "Plan")} · ${money(row.purchase_price_pkr)} · ${status(row.status)}` })),
   ].sort((a, b) => new Date(String(b.date ?? 0)).getTime() - new Date(String(a.date ?? 0)).getTime()).slice(0, 20);
 
   return (
