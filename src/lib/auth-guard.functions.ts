@@ -102,9 +102,5 @@ export const startImpersonation = createServerFn({ method: "POST" })
       console.error("[auth] Failed to write impersonation audit log", auditError);
     }
 
-    return {
-      tokenHash,
-      userId: target.id,
-      userName: target.full_name ?? target.username ?? authTarget.user.email,
-    };
+    return { tokenHash };
   });
