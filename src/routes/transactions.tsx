@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -96,7 +96,7 @@ function TransactionsPage() {
           rows.push({
             id: `${type}-${row.id}`,
             createdAt: new Date(row.created_at).getTime(),
-            category: labelMap[type] ?? (type.replaceAll("_", " ").replace(/\\b\\w/g, (m: string) => m.toUpperCase()) || "Transaction"),
+            category: labelMap[type] ?? (type.replaceAll("_", " ").replace(/\b\w/g, (m: string) => m.toUpperCase()) || "Transaction"),
             title: type === "PLAN_PURCHASE" ? (planName ? `${planName} Plan Purchase` : "Plan Purchase") : (labelMap[type] ?? "Account Transaction"),
             detail: deposit
               ? `${deposit.method ?? "Payment"} · ${deposit.status ?? "recorded"}${deposit.transaction_id ? ` · ${deposit.transaction_id}` : ""}`
