@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/admin/login")({
+  validateSearch: (search) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : "/admin",
+  }),
   head: () => ({
     meta: [
       { title: "Admin login — AdverX" },
@@ -22,6 +25,7 @@ export const Route = createFileRoute("/admin/login")({
 
 function AdminLoginPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -66,7 +70,16 @@ function AdminLoginPage() {
       return;
     }
     setSubmitting(false);
-    navigate({ to: "/admin", replace: true });
+    try {
+      const target = new URL(redirect || "/admin", window.location.origin);
+      if (target.origin !== window.location.origin) {
+        window.location.replace("/admin");
+      } else {
+        window.location.replace(target.pathname + target.search + target.hash);
+      }
+    } catch {
+      navigate({ to: "/admin", replace: true });
+    }
   }
 
   return (
