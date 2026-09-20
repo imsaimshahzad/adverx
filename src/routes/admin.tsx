@@ -8,6 +8,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+  ArrowLeft,
   BarChart3,
   Bell,
   Check,
@@ -66,6 +67,7 @@ import {
   getRevenuePlans,
   useRecoveryFund,
   getUsersPage,
+  getUserDetails,
   approveDeposit,
   deleteOrArchive,
   dispatchNotification,
@@ -256,6 +258,37 @@ function AdminRoute() {
   const [userPageRows, setUserPageRows] = useState<AdminRow[]>([]);
   const [userTotal, setUserTotal] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [detailUserId, setDetailUserId] = useState<string | null>(() => new URLSearchParams(window.location.search).get("user"));
+  const [detailData, setDetailData] = useState<AdminRow | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const openUserDetails = useCallback((userId: string) => {
+    window.history.pushState({}, "", `/admin?user=${encodeURIComponent(userId)}`);
+    setDetailUserId(userId);
+    setDetailData(null);
+  }, []);
+  const closeUserDetails = useCallback(() => {
+    window.history.pushState({}, "", "/admin");
+    setDetailUserId(null);
+    setDetailData(null);
+  }, []);
+  useEffect(() => {
+    const onPopState = () => {
+      setDetailUserId(new URLSearchParams(window.location.search).get("user"));
+      setDetailData(null);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+  useEffect(() => {
+    if (!detailUserId) return;
+    let cancelled = false;
+    setDetailLoading(true);
+    void getUserDetails(detailUserId)
+      .then((data) => { if (!cancelled) setDetailData(data); })
+      .catch((cause) => { if (!cancelled) toast.error(cause instanceof Error ? cause.message : "Unable to load user details."); })
+      .finally(() => { if (!cancelled) setDetailLoading(false); });
+    return () => { cancelled = true; };
+  }, [detailUserId]);
   const load = useCallback(async () => {
     if (location.pathname === "/admin/login") return;
     const requestVersion = ++loadVersion.current;
@@ -842,7 +875,9 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
               </CardContent>
             </Card>
           ) : null}
-          {active === "overview" ? (
+          {detailUserId ? (
+            <UserDetailPage data={detailData} loading={detailLoading} onBack={closeUserDetails} />
+          ) : active === "overview" ? (
             <Overview metrics={metrics} rows={rows} reserveSummary={reserveSummary} />
           ) : active === "settings" ? (
             <HomepageHeroSettings />
@@ -913,6 +948,7 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
               managementTable={Boolean(managementTable)}
               onEdit={setEditingRow}
               onDelete={setDeleteTarget}
+              onUserDetails={openUserDetails}
             />
           )}
           <Dialog
@@ -1682,6 +1718,74 @@ function ManagementEditDialog({
   );
 }
 
+function UserDetailPage({ data, loading, onBack }: { data: AdminRow | null; loading: boolean; onBack: () => void }) {
+  if (loading) {
+    return <div className="flex min-h-64 items-center justify-center"><LoadingIndicator size="md" label="Loading user details" /></div>;
+  }
+  if (!data) {
+    return <Card><CardContent className="flex flex-col items-center gap-4 p-10 text-center"><p className="font-medium">Unable to load this user.</p><Button variant="outline" onClick={onBack}>Back to users</Button></CardContent></Card>;
+  }
+
+  const profile = data.profile as AdminRow;
+  const summary = data.summary as AdminRow;
+  const plans = (data.plans ?? []) as AdminRow[];
+  const deposits = (data.deposits ?? []) as AdminRow[];
+  const withdrawals = (data.withdrawals ?? []) as AdminRow[];
+  const commissions = (data.commissions ?? []) as AdminRow[];
+  const ledger = (data.ledger ?? []) as AdminRow[];
+  const displayName = String(profile.full_name ?? profile.username ?? "User");
+
+  const money = (value: unknown) => `PKR ${Number(value ?? 0).toLocaleString()}`;
+  const info = [
+    ["Full name", profile.full_name],
+    ["Username", profile.username],
+    ["Public UID", profile.public_uid],
+    ["Referral code", profile.referral_code],
+    ["Referred by", profile.referred_by],
+    ["Status", profile.status],
+    ["Role", profile.role],
+    ["Verified", profile.verified],
+    ["Plan activated", profile.plan_activated_at],
+    ["Created at", profile.created_at],
+    ["Recovery reserve", profile.recovery_reserve_pkr],
+  ].filter(([, value]) => value !== null && value !== undefined && value !== "");
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 size-4" />Back to users</Button>
+        <Badge variant="outline">{String(profile.status ?? "unknown")}</Badge>
+      </div>
+      <div>
+        <h2 className="text-2xl font-semibold">{displayName}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">AdverX user profile and account activity.</p>
+      </div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {[
+          ["Balance", money(summary.balance)],
+          ["Deposits", money(summary.deposits)],
+          ["Withdrawals", money(summary.withdrawals)],
+          ["Transactions", Number(summary.transactions ?? 0).toLocaleString()],
+          ["Total Invest", money(summary.total_invest)],
+        ].map(([label, value]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-xl font-semibold tabular-nums">{value}</p></CardContent></Card>)}
+      </section>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card><CardHeader><CardTitle>Referral commission</CardTitle></CardHeader><CardContent><p className="text-2xl font-semibold tabular-nums">{money(summary.referral_commission)}</p><p className="mt-1 text-xs text-muted-foreground">Completed referral commissions credited to this user.</p></CardContent></Card>
+        <Card><CardHeader><CardTitle>Profile information</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2">{info.map(([label, value]) => <div key={label}><p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-sm font-medium">{formatValue(value)}</p></div>)}</CardContent></Card>
+      </section>
+      <Card><CardHeader><CardTitle>Plans</CardTitle></CardHeader><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-3">Plan</th><th className="p-3 text-right">Purchase</th><th className="p-3 text-right">Reward reserve</th><th className="p-3">Status</th><th className="p-3">Purchased</th></tr></thead><tbody>{plans.length ? plans.map((row) => <tr key={String(row.id)} className="border-b last:border-0"><td className="p-3 font-medium">{formatValue(row.plan_display_name)}</td><td className="p-3 text-right tabular-nums">{money(row.purchase_price_pkr)}</td><td className="p-3 text-right tabular-nums">{money(row.reward_budget_pkr)}</td><td className="p-3">{formatValue(row.status)}</td><td className="p-3">{formatValue(row.purchased_at ?? row.created_at)}</td></tr>) : <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No plan records.</td></tr>}</tbody></table></CardContent></Card>
+      <section className="grid gap-5 xl:grid-cols-3">
+        {[
+          ["Deposits", deposits, ["amount", "status", "method", "transaction_id", "created_at"]],
+          ["Withdrawals", withdrawals, ["amount", "status", "method", "fee", "created_at"]],
+          ["Referral commissions", commissions, ["amount", "level", "percentage", "source", "status", "created_at"]],
+        ].map(([title, items, fields]) => <Card key={String(title)}><CardHeader><CardTitle>{String(title)}</CardTitle></CardHeader><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[520px] text-xs"><thead><tr className="border-b text-left uppercase tracking-wide text-muted-foreground">{(fields as string[]).map((field) => <th key={field} className="p-3 whitespace-nowrap">{field.replaceAll("_", " ")}</th>)}</tr></thead><tbody>{(items as AdminRow[]).slice(0, 10).map((row) => <tr key={String(row.id)} className="border-b last:border-0"><td className="p-3">{formatValue(row[(fields as string[])[0]])}</td>{(fields as string[]).slice(1).map((field) => <td key={field} className="p-3">{formatValue(row[field])}</td>)}</tr>)}{!(items as AdminRow[]).length ? <tr><td colSpan={(fields as string[]).length} className="p-8 text-center text-muted-foreground">No records.</td></tr> : null}</tbody></table></CardContent></Card>)}
+      </section>
+      <Card><CardHeader><CardTitle>Wallet ledger</CardTitle><p className="text-sm text-muted-foreground">The same ledger entries used for this user's balance.</p></CardHeader><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3 text-right">Amount</th><th className="p-3">Note</th></tr></thead><tbody>{ledger.slice(0, 25).map((row) => <tr key={String(row.id)} className="border-b last:border-0"><td className="p-3 whitespace-nowrap">{formatValue(row.created_at)}</td><td className="p-3">{formatValue(row.entry_type)}</td><td className="p-3 text-right tabular-nums">{money(row.amount)}</td><td className="p-3">{formatValue(row.note)}</td></tr>)}{!ledger.length ? <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No ledger entries.</td></tr> : null}</tbody></table></CardContent></Card>
+    </div>
+  );
+}
+
 function shortId(value: unknown) {
   const text = String(value ?? "");
   return text.length > 14 ? `${text.slice(0, 8)}…${text.slice(-4)}` : text || "—";
@@ -1762,6 +1866,7 @@ function ModuleTable({
   managementTable: boolean;
   onEdit: (row: AdminRow) => void;
   onDelete: (row: AdminRow) => void;
+  onUserDetails: (userId: string) => void;
 }) {
   const pageSize = 20;
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -1974,7 +2079,7 @@ function ModuleTable({
   ) : actions.length || managementTable || active === "support" ? (
                         <td className="whitespace-nowrap px-2 py-2 align-middle">
                         <div className="flex items-center gap-2 whitespace-nowrap">
-                          {active === "users" ? <Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button> : null}
+                          {active === "users" ? <><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onUserDetails(String(row.id)); }}>Details</Button><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button></> : null}
                           {managementTable ? <><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" className="h-9 rounded-full bg-emerald-600 px-4 text-white hover:bg-emerald-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" className="h-9 rounded-full bg-rose-600 px-4 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" className="h-9 rounded-full bg-rose-600 px-4 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</> : null}
                           {active === "support" ? <Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
                           {actions.length ? <select
