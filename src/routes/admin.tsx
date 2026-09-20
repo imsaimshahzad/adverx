@@ -1754,8 +1754,19 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
       .filter((row) => String(row.status).toLowerCase() === "approved" && Number(row.amount ?? 0) > 0)
       .map((row) => ({ date: row.created_at, text: `Deposit ${money(row.amount)} · approved` })),
     ...withdrawals
-      .filter((row) => String(row.status).toLowerCase() === "paid" && Number(row.amount ?? 0) > 0)
-      .map((row) => ({ date: row.created_at, text: `Withdrawal ${money(row.amount)} · paid` })),
+      .filter((row) => {
+        if (Number(row.amount ?? 0) <= 0) return false;
+        const testWithdrawal = (data.ledger ?? []).some(
+          (entry: AdminRow) =>
+            String(entry.reference_id ?? "") === String(row.id ?? "") &&
+            String(entry.note ?? "").toLowerCase().includes("test"),
+        );
+        return !testWithdrawal;
+      })
+      .map((row) => ({
+        date: row.created_at,
+        text: `Withdrawal ${money(row.amount)} · ${status(row.status)}`,
+      })),
     ...commissions
       .filter((row) => String(row.status).toLowerCase() === "completed" && Number(row.amount ?? 0) > 0)
       .map((row) => ({ date: row.created_at, text: `Commission +${money(row.amount)}${row.level ? ` · ${status(row.level)}` : ""}` })),
