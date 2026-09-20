@@ -525,8 +525,10 @@ export function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "number") return value.toLocaleString();
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string" && value.includes("T"))
-    return new Date(value).toLocaleString();
+  if (typeof value === "string" && value.includes("T")) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+  }
   return String(value);
 }
 
