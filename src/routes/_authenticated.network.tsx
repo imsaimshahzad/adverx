@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { usePlatform } from "@/lib/platform-store";
 import { referralUrl } from "@/lib/referrals";
 
-export const Route = createFileRoute("/network")({
+export const Route = createFileRoute("/_authenticated/network")({
   head: () => ({
     meta: [
       { title: "My network — AdverX" },
