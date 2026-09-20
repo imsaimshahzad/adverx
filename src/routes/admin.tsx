@@ -876,7 +876,15 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
             </Card>
           ) : null}
           {detailUserId ? (
-            <UserDetailPage data={detailData} loading={detailLoading} onBack={closeUserDetails} onLoginAsUser={(userId) => { void (async () => {\n              try {\n                const tab = window.open("about:blank", "_blank");\n                if (!tab) throw new Error("Please allow pop-ups for AdverX.");\n                const { data, error } = await supabase.functions.invoke("admin-impersonate", { body: { user_id: userId } });\n                if (error || !data?.action_link) { tab.close(); throw new Error(error?.message || "Unable to start user session."); }\n                tab.location.href = data.action_link;\n              } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Unable to login as user."); }\n            })(); }} />
+            <UserDetailPage data={detailData} loading={detailLoading} onBack={closeUserDetails} onLoginAsUser={(userId) => { void (async () => {
+              try {
+                const tab = window.open("about:blank", "_blank");
+                if (!tab) throw new Error("Please allow pop-ups for AdverX.");
+                const { data, error } = await supabase.functions.invoke("admin-impersonate", { body: { user_id: userId } });
+                if (error || !data?.action_link) { tab.close(); throw new Error(error?.message || "Unable to start user session."); }
+                tab.location.href = data.action_link;
+              } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Unable to login as user."); }
+            })(); }} />
           ) : active === "overview" ? (
             <Overview metrics={metrics} rows={rows} reserveSummary={reserveSummary} />
           ) : active === "settings" ? (
