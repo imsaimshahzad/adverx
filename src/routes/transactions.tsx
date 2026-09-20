@@ -77,7 +77,9 @@ function TransactionsPage() {
         ] = await Promise.all([
           db.from("wallet_transactions").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
           db.from("ledger_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
-          db.from("deposits").select("id, plan_id, amount, status, method, transaction_id, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
+          isAdmin
+            ? db.from("deposits").select("id, user_id, plan_id, amount, status, method, transaction_id, created_at").order("created_at", { ascending: false })
+            : db.from("deposits").select("id, user_id, plan_id, amount, status, method, transaction_id, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
           db.from("withdrawals").select("id, amount, fee, method, status, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
         ]);
 
@@ -148,7 +150,11 @@ function TransactionsPage() {
                   ? "Platform profit from " + sourceDetail
                   : sourceDetail)
               : note || (type === "UNASSIGNED_REFERRAL" ? "Referral allocation received by platform" : type === "PLATFORM_ADMIN_PROFIT" ? "Platform profit from approved plan purchase" : "Account transaction"),
-            amount, direction, status: String(row.status ?? "recorded"),
+            amount,
+            direction,
+            status: (type === "PLATFORM_ADMIN_PROFIT" || type === "UNASSIGNED_REFERRAL")
+              ? "completed"
+              : String(row.status ?? "recorded"),
           });
         }
 
