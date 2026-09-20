@@ -21,6 +21,9 @@ export async function requireAuthenticatedUser() {
 }
 
 export async function requireAdminUser() {
+  if (getRequest().headers.get("x-adverx-impersonation") === "1") {
+    throw new Error("Admin actions are disabled while impersonating a user.");
+  }
   const user = await requireAuthenticatedUser();
   const { data: profile, error } = await supabaseAdmin
     .from("profiles")
