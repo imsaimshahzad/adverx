@@ -185,28 +185,12 @@ function WithdrawPage() {
         </p>
       </div>
 
-      <div className="glass-panel mt-3 divide-y divide-border/60 overflow-hidden">
-        <p className="px-4 py-3 text-sm font-medium">Your requests</p>
-        {state.withdrawals.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-            No withdrawal requests yet.
-          </p>
-        ) : (
-          state.withdrawals.map((w) => (
-            <div
-              key={w.id}
-              className="flex items-center justify-between px-4 py-3"
-            >
-              <div>
-                <p className="num text-sm font-semibold">{money(w.amount)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {w.method} · {new Date(w.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <Badge variant="secondary">{STATUS_LABEL[w.status]}</Badge>
-            </div>
-          ))
-        )}
+      <div className="surface mt-3 flex items-center justify-between gap-3 p-4">
+        <div>
+          <p className="text-sm font-medium">Transaction history</p>
+          <p className="mt-1 text-xs text-muted-foreground">View withdrawals, deposits, rewards, referral commissions and plan purchases in one place.</p>
+        </div>
+        <Button asChild variant="outline" size="sm"><a href="/transactions">View history</a></Button>
       </div>
     </AppShell>
   );
