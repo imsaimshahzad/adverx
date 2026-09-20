@@ -61,6 +61,10 @@ function ResetPasswordPage() {
   }, []);
 
   const updatePassword = async () => {
+    if (isImpersonating()) {
+      toast.error("Password changes are disabled while viewing as another user.");
+      return;
+    }
     if (password.length < 8) {
       toast.error("Your password must be at least 8 characters.");
       return;
@@ -78,7 +82,7 @@ function ResetPasswordPage() {
       return;
     }
 
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     toast.success("Your password has been updated. You can now sign in.");
     navigate({ to: "/auth", replace: true });
   };
