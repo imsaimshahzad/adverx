@@ -82,7 +82,7 @@ function ResetPasswordPage() {
       return;
     }
 
-    await supabase.auth.signOut({ scope: "local" });
+    await supabase.auth.signOut();
     toast.success("Your password has been updated. You can now sign in.");
     navigate({ to: "/auth", replace: true });
   };
