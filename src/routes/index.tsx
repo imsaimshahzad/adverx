@@ -116,7 +116,7 @@ function PublicHeader() {
   return (
     <header className="mx-auto flex min-h-[4rem] w-full max-w-7xl items-center justify-between gap-4 px-5 py-2 lg:px-8">
       <Link to="/" aria-label="AdverX home" className="shrink-0 rounded-md py-1 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        <BrandLogo compact className="h-12 w-auto max-w-[10.5rem] object-contain sm:h-14 sm:max-w-[12rem]" />
+        <BrandLogo className="h-12 w-auto max-w-[13rem] object-contain sm:h-14 sm:max-w-[14rem]" />
       </Link>
       <nav className="hidden flex-1 items-center justify-center gap-5 text-sm font-medium text-muted-foreground md:flex">
         <a href="#workspace" className="transition-colors hover:text-foreground">Workspace</a>
