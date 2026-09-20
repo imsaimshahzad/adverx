@@ -65,7 +65,7 @@ function PublicHome() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <PublicHeader />
       <section className="relative border-b border-border/70 bg-gradient-to-br from-primary/[0.07] via-background to-violet-500/[0.06]">
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 pb-14 pt-10 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 pb-10 pt-7 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-14 lg:pt-10">
           <div>
             <p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-primary">
               <span className="size-2 rounded-full bg-primary" /> ADVERX
@@ -114,11 +114,11 @@ function PublicHome() {
 
 function PublicHeader() {
   return (
-    <header className="mx-auto flex min-h-[5rem] w-full max-w-7xl items-center justify-between gap-5 px-5 py-4 lg:px-8">
+    <header className="mx-auto flex min-h-[4rem] w-full max-w-7xl items-center justify-between gap-4 px-5 py-2 lg:px-8">
       <Link to="/" aria-label="AdverX home" className="shrink-0 rounded-md py-1 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        <BrandLogo compact className="max-h-14 max-w-[10.5rem] sm:max-h-16 sm:max-w-[13rem]" />
+        <BrandLogo compact className="max-h-11 max-w-[9.5rem] sm:max-h-12 sm:max-w-[11rem]" />
       </Link>
-      <nav className="hidden flex-1 items-center justify-center gap-7 text-sm font-medium text-muted-foreground md:flex">
+      <nav className="hidden flex-1 items-center justify-center gap-5 text-sm font-medium text-muted-foreground md:flex">
         <a href="#workspace" className="transition-colors hover:text-foreground">Workspace</a>
         <a href="#how-it-works" className="transition-colors hover:text-foreground">How it works</a>
         <a href="#plans" className="transition-colors hover:text-foreground">Plans</a>
