@@ -281,6 +281,7 @@ export type AdminProfitSummary = AdminRow & {
   total_profit?: number;
   platform_profit?: number;
   today_profit?: number;
+  today_admin_earnings?: number;
   month_profit?: number;
   unassigned_referral?: number;
   total_unassigned_referral?: number;
