@@ -1,6 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
-
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 import { ADMIN_ROLES, requireAdminUser, requireAuthenticatedUser } from "@/lib/auth.server";
