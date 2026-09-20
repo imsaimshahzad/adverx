@@ -6,6 +6,7 @@ import {
   Users,
   Wallet,
   LifeBuoy,
+  History,
   Menu,
   BadgeCheck,
   ShieldCheck,
@@ -37,7 +38,7 @@ const NAV_GROUPS = [
   },
   {
     label: "Finance",
-    items: [{ to: "/withdraw", label: "Withdrawals", icon: Wallet }],
+    items: [{ to: "/withdraw", label: "Withdrawals", icon: Wallet }, { to: "/transactions", label: "Transaction History", icon: History }],
   },
   {
     label: "Support",
