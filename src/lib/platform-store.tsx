@@ -722,7 +722,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       console.error("[v0] Public catalog load failed", error);
       if (mounted) setCatalogError(error instanceof Error ? error.message : "Unable to load public catalog.");
     });
-  const sessionRequest = supabase.auth.getSession().then(async ({ data }) => {
+  const sessionRequest = ensureSupabaseSessionReady().then(async ({ data }) => {
     if (mounted) await refresh(data.session?.user ?? null);
   });
   await Promise.all([catalogRequest, sessionRequest]);
