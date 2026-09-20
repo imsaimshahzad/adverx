@@ -166,6 +166,9 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/support': typeof AuthenticatedSupportRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/api/upload-hero': typeof ApiUploadHeroRoute
+  '/api/impersonation/consume': typeof ApiImpersonationConsumeRoute
   '/deposit/$planId': typeof AuthenticatedDepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
   '/users/detail/$publicUid': typeof AuthenticatedUsersDetailPublicUidRoute
@@ -472,13 +475,9 @@ declare module '@tanstack/react-start' {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  SupportRoute: typeof AuthenticatedSupportRoute
-  WithdrawRoute: typeof AuthenticatedWithdrawRoute
   ApiUploadHeroRoute: typeof ApiUploadHeroRoute
   ApiImpersonationConsumeRoute: typeof ApiImpersonationConsumeRoute
-  DepositPlanIdRoute: typeof AuthenticatedDepositPlanIdRoute
   JoinReferralCodeRoute: typeof JoinReferralCodeRoute
-  UsersDetailPublicUidRoute: typeof AuthenticatedUsersDetailPublicUidRoute
 }
 
 declare module '@tanstack/react-router' {
