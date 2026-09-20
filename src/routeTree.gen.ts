@@ -227,6 +227,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/admin/login'
     | '/api/upload-hero'
+    | '/api/impersonation/consume'
     | '/deposit/$planId'
     | '/join/$referralCode'
     | '/users/detail/$publicUid'
@@ -247,6 +248,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/admin/login'
     | '/api/upload-hero'
+    | '/api/impersonation/consume'
     | '/deposit/$planId'
     | '/join/$referralCode'
   fileRoutesById: FileRoutesById
