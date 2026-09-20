@@ -409,8 +409,12 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
 }
 
 export async function getUserDetails(identifier: string) {
-  const { data: profile, error: profileError } = await db.from("profiles").select("*").or(`id.eq.${identifier},public_uid.eq.${identifier}`).maybeSingle();
-  if (profileError || !profile) throw new Error("User not found.");
+  let profileResult = await db.from("profiles").select("*").eq("public_uid", identifier).maybeSingle();
+  if (!profileResult.data && !profileResult.error) {
+    profileResult = await db.from("profiles").select("*").eq("id", identifier).maybeSingle();
+  }
+  if (profileResult.error || !profileResult.data) throw new Error("User not found.");
+  const profile = profileResult.data as AdminRow;
   const userId = String(profile.id);
   const [{ data: userPlans, error: plansError }, { data: userPlans, error: plansError }, { data: planRows, error: planRowsError }, { data: deposits, error: depositsError }, { data: withdrawals, error: withdrawalsError }, { data: commissions, error: commissionsError }, { data: ledger, error: ledgerError }] = await Promise.all([
     db.from("user_plans").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
@@ -452,8 +456,6 @@ export async function getUserDetails(identifier: string) {
       referral_commission: completedCommissions.reduce((sum: number, row: AdminRow) => sum + Number(row.amount ?? 0), 0),
     },
   } as AdminRow;
-}
-
 export async function getUsersPage(search = "", status = "", page = 1, pageSize = 25) {
   const [{ data: profiles, error: profilesError }, { data: activePlans, error: plansError }, { data: plans, error: planNamesError }] = await Promise.all([
     db.from("profiles").select("*").order("created_at", { ascending: false }),
