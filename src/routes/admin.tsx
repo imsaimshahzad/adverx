@@ -1744,60 +1744,86 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
   const deposits = (data.deposits ?? []) as AdminRow[];
   const withdrawals = (data.withdrawals ?? []) as AdminRow[];
   const commissions = (data.commissions ?? []) as AdminRow[];
-  const ledger = (data.ledger ?? []) as AdminRow[];
   const displayName = String(profile.full_name ?? profile.username ?? "User");
-
   const money = (value: unknown) => `PKR ${Number(value ?? 0).toLocaleString()}`;
-  const info = [
-    ["Full name", profile.full_name],
-    ["Username", profile.username],
-    ["Public UID", profile.public_uid],
-    ["Referral code", profile.referral_code],
-    ["Referred by", profile.referred_by],
-    ["Status", profile.status],
-    ["Role", profile.role],
-    ["Verified", profile.verified],
-    ["Plan activated", profile.plan_activated_at],
-    ["Created at", profile.created_at],
-    ["Recovery reserve", profile.recovery_reserve_pkr],
-  ].filter(([, value]) => value !== null && value !== undefined && value !== "");
+  const date = (value: unknown) => value ? new Date(String(value)).toLocaleDateString() : "—";
+  const status = (value: unknown) => String(value ?? "—").replaceAll("_", " ");
+
+  const activity = [
+    ...deposits.map((row) => ({ date: row.created_at, text: `Deposit ${money(row.amount)} · ${status(row.status)}` })),
+    ...withdrawals.map((row) => ({ date: row.created_at, text: `Withdrawal ${money(row.amount)} · ${status(row.status)}` })),
+    ...commissions.map((row) => ({ date: row.created_at, text: `Commission +${money(row.amount)} · ${status(row.status)}${row.level ? ` · ${status(row.level)}` : ""}` })),
+    ...plans.map((row) => ({ date: row.purchased_at ?? row.created_at, text: `Plan ${String(row.plan_display_name ?? "Plan")} · ${money(row.purchase_price_pkr)} · ${status(row.status)}` })),
+  ].sort((a, b) => new Date(String(b.date ?? 0)).getTime() - new Date(String(a.date ?? 0)).getTime()).slice(0, 20);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 size-4" />Back to users</Button>
-        <Badge variant="outline">{String(profile.status ?? "unknown")}</Badge>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={onBack}><ArrowLeft className="mr-1.5 size-4" />Back</Button>
+          <div>
+            <h2 className="text-xl font-semibold leading-tight">{displayName}</h2>
+            <p className="text-xs text-muted-foreground">UID {String(profile.public_uid ?? "—")} · @{String(profile.username ?? "—")}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">{status(profile.status)}</Badge>
+          {onLoginAsUser ? <Button size="sm" onClick={() => onLoginAsUser(String(profile.id))}>Login as User</Button> : null}
+        </div>
       </div>
-      <div>
-        <h2 className="text-2xl font-semibold">{displayName}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">AdverX user profile and account activity.</p>
-      </div>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {[
           ["Balance", money(summary.balance)],
+          ["Invested", money(summary.total_invest)],
           ["Deposits", money(summary.deposits)],
           ["Withdrawals", money(summary.withdrawals)],
-          ["Transactions", Number(summary.transactions ?? 0).toLocaleString()],
-          ["Total Invest", money(summary.total_invest)],
-        ].map(([label, value]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-xl font-semibold tabular-nums">{value}</p></CardContent></Card>)}
+          ["Commission", `+${money(summary.referral_commission)}`],
+        ].map(([label, value]) => (
+          <Card key={label}><CardContent className="p-3.5">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
+          </CardContent></Card>
+        ))}
       </section>
-      <section className="grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>Referral commission</CardTitle></CardHeader><CardContent><p className="text-2xl font-semibold tabular-nums">{money(summary.referral_commission)}</p><p className="mt-1 text-xs text-muted-foreground">Completed referral commissions credited to this user.</p></CardContent></Card>
-        <Card><CardHeader><CardTitle>Profile information</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2">{info.map(([label, value]) => <div key={label}><p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-sm font-medium">{formatValue(value)}</p></div>)}</CardContent></Card>
+
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-2 p-3.5 text-sm">
+          <span><b>Referral:</b> {String(profile.referral_code ?? "—")}</span>
+          <span><b>Referred by:</b> {String(profile.referred_by ?? "—")}</span>
+          <span><b>Role:</b> {status(profile.role)}</span>
+          <span><b>Verified:</b> {profile.verified ? "Yes" : "No"}</span>
+          {profile.plan_activated_at ? <span><b>Plan active:</b> {date(profile.plan_activated_at)}</span> : null}
+        </CardContent>
+      </Card>
+
+      <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+        <Card>
+          <CardHeader className="px-4 py-3"><CardTitle className="text-sm">Plans</CardTitle></CardHeader>
+          <CardContent className="px-4 pb-3 pt-0">
+            {plans.length ? <div className="divide-y text-sm">{plans.map((row) => (
+              <div key={String(row.id)} className="flex items-center justify-between gap-3 py-2.5">
+                <div><p className="font-medium">{String(row.plan_display_name ?? "Plan")}</p><p className="text-xs text-muted-foreground">{date(row.purchased_at ?? row.created_at)}</p></div>
+                <div className="text-right"><p className="font-medium tabular-nums">{money(row.purchase_price_pkr)}</p><p className="text-xs capitalize text-muted-foreground">{status(row.status)}</p></div>
+              </div>
+            ))}</div> : <p className="py-3 text-sm text-muted-foreground">No plans.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="px-4 py-3"><CardTitle className="text-sm">Recent Activity</CardTitle></CardHeader>
+          <CardContent className="px-4 pb-3 pt-0">
+            {activity.length ? <div className="divide-y text-sm">{activity.map((item, index) => (
+              <div key={`${item.date}-${index}`} className="flex items-center justify-between gap-3 py-2.5">
+                <span>{item.text}</span><span className="shrink-0 text-xs text-muted-foreground">{date(item.date)}</span>
+              </div>
+            ))}</div> : <p className="py-3 text-sm text-muted-foreground">No activity.</p>}
+          </CardContent>
+        </Card>
       </section>
-      <Card><CardHeader><CardTitle>Plans</CardTitle></CardHeader><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-3">Plan</th><th className="p-3 text-right">Purchase</th><th className="p-3 text-right">Reward reserve</th><th className="p-3">Status</th><th className="p-3">Purchased</th></tr></thead><tbody>{plans.length ? plans.map((row) => <tr key={String(row.id)} className="border-b last:border-0"><td className="p-3 font-medium">{formatValue(row.plan_display_name)}</td><td className="p-3 text-right tabular-nums">{money(row.purchase_price_pkr)}</td><td className="p-3 text-right tabular-nums">{money(row.reward_budget_pkr)}</td><td className="p-3">{formatValue(row.status)}</td><td className="p-3">{formatValue(row.purchased_at ?? row.created_at)}</td></tr>) : <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No plan records.</td></tr>}</tbody></table></CardContent></Card>
-      <section className="grid gap-5 xl:grid-cols-3">
-        {[
-          ["Deposits", deposits, ["amount", "status", "method", "transaction_id", "created_at"]],
-          ["Withdrawals", withdrawals, ["amount", "status", "method", "fee", "created_at"]],
-          ["Referral commissions", commissions, ["amount", "level", "percentage", "source", "status", "created_at"]],
-        ].map(([title, items, fields]) => <Card key={String(title)}><CardHeader><CardTitle>{String(title)}</CardTitle></CardHeader><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[520px] text-xs"><thead><tr className="border-b text-left uppercase tracking-wide text-muted-foreground">{(fields as string[]).map((field) => <th key={field} className="p-3 whitespace-nowrap">{field.replaceAll("_", " ")}</th>)}</tr></thead><tbody>{(items as AdminRow[]).slice(0, 10).map((row) => <tr key={String(row.id)} className="border-b last:border-0"><td className="p-3">{formatValue(row[(fields as string[])[0]])}</td>{(fields as string[]).slice(1).map((field) => <td key={field} className="p-3">{formatValue(row[field])}</td>)}</tr>)}{!(items as AdminRow[]).length ? <tr><td colSpan={(fields as string[]).length} className="p-8 text-center text-muted-foreground">No records.</td></tr> : null}</tbody></table></CardContent></Card>)}
-      </section>
-      <Card><CardHeader><CardTitle>Wallet ledger</CardTitle><p className="text-sm text-muted-foreground">The same ledger entries used for this user's balance.</p></CardHeader><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground"><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3 text-right">Amount</th><th className="p-3">Note</th></tr></thead><tbody>{ledger.slice(0, 25).map((row) => <tr key={String(row.id)} className="border-b last:border-0"><td className="p-3 whitespace-nowrap">{formatValue(row.created_at)}</td><td className="p-3">{formatValue(row.entry_type)}</td><td className="p-3 text-right tabular-nums">{money(row.amount)}</td><td className="p-3">{formatValue(row.note)}</td></tr>)}{!ledger.length ? <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No ledger entries.</td></tr> : null}</tbody></table></CardContent></Card>
     </div>
   );
 }
-
 function shortId(value: unknown) {
   const text = String(value ?? "");
   return text.length > 14 ? `${text.slice(0, 8)}…${text.slice(-4)}` : text || "—";
