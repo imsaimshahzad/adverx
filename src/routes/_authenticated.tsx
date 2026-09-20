@@ -10,6 +10,7 @@ function requiresAdmin(pathname: string) {
 }
 
 export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
   pendingMs: 0,
   pendingMinMs: 250,
   pendingComponent: () => <LoadingScreen label="Loading your workspace" />,
