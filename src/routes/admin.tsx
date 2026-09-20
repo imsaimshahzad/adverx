@@ -1099,7 +1099,7 @@ function RevenueDashboard({
     value === undefined || value === null ? "—" : Number(value).toLocaleString();
   const cards: Array<[string, unknown]> = [
     ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit],
-    ["Today", summary.today_profit],
+    ["Today", summary.today_admin_earnings ?? summary.today_profit],
     ["This month", summary.month_profit],
     ["Available Withdrawable Balance", summary.available_balance],
     ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral],
