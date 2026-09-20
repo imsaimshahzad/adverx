@@ -1870,11 +1870,11 @@ function ModuleTable({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] table-auto text-sm">
+            <table className="w-full min-w-[680px] table-auto text-xs">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr className="border-b border-slate-200/80 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   {columns.map((column) => (
-                    <th className="whitespace-nowrap px-2 py-2" key={column}>
+                    <th className="whitespace-nowrap px-2 py-1.5 text-[11px]" key={column}>
                       {active === "plans" && column === "ads_per_day"
                         ? "Daily Ads Limit"
                         : column.replaceAll("_", " ")}
@@ -1895,7 +1895,7 @@ function ModuleTable({
                   >
                     {columns.map((column) => (
                       <td
-                        className="max-w-[220px] truncate px-2 py-2 align-middle"
+                        className="max-w-[180px] truncate px-2 py-1.5 align-middle text-xs"
                         key={column}
                       >
                         {active === "audit-logs" && column === "metadata" ? (
@@ -1910,7 +1910,7 @@ function ModuleTable({
                       </td>
                     ))}
                     {active === "deposits" ? (
-                      <td className="whitespace-nowrap px-2 py-2 align-middle">
+                      <td className="whitespace-nowrap px-2 py-1.5 align-middle">
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <Button
                             variant="outline"
