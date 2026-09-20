@@ -83,7 +83,10 @@ function PublicHome() {
               <Button asChild variant="outline" size="lg"><Link to="/auth">Sign In</Link></Button>
             </div>
           </div>
-          <div className="relative lg:translate-y-1">\n            <div className="pointer-events-none absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-primary/20 via-violet-500/10 to-cyan-400/10 blur-3xl" />\n            <DashboardPreview compact />\n          </div>
+          <div className="relative lg:translate-y-1">
+            <div className="pointer-events-none absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-primary/20 via-violet-500/10 to-cyan-400/10 blur-3xl" />
+            <DashboardPreview compact />
+          </div>
         </div>
       </section>
       <HeroTrustStrip />
@@ -98,8 +101,8 @@ function PublicHome() {
       <PlansPreview plans={plans} />
       <WhyAdNet />
       <Faq />
-      <section className="mx-auto max-w-7xl px-5 pb-20 lg:px-8 lg:pb-28">
-        <div className="rounded-3xl bg-primary px-6 py-12 text-primary-foreground sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14">
+      <section className="mx-auto max-w-7xl px-5 pb-16 lg:px-8 lg:pb-20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-violet-600 to-primary px-6 py-10 text-primary-foreground shadow-[0_24px_70px_-30px_hsl(var(--primary)/0.65)] sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14 lg:py-11">
           <div><p className="text-3xl font-semibold tracking-tight sm:text-4xl">Ready to get started?</p><p className="mt-3 max-w-xl text-primary-foreground/75">Create your AdverX account and explore your available tasks.</p></div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0"><Button asChild variant="secondary" size="lg"><Link to="/auth">Create Account</Link></Button><Button asChild variant="outline" size="lg" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/auth">Sign In</Link></Button></div>
         </div>
