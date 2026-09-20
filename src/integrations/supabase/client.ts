@@ -50,6 +50,7 @@ function createSupabaseClient() {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
     },
     auth: {
+      storageKey: impersonationMode ? "adverx-impersonation-auth" : undefined,
       storage: brokeredPreviewStorage(),
       persistSession: true,
       autoRefreshToken: true,
