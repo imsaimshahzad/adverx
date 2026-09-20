@@ -347,6 +347,18 @@ export async function getRecoveryFundActivity() {
   return chronological.reverse() as AdminRow[];
 }
 
+export async function getReferrerRecoveryReserve() {
+  const { data, error } = await db
+    .from("profiles")
+    .select("recovery_reserve_pkr")
+    .gt("recovery_reserve_pkr", 0);
+  if (error) throw new Error(`Unable to load referrer recovery reserve: ${error.message}`);
+  return (data ?? []).reduce(
+    (total: number, row: AdminRow) => total + Number(row.recovery_reserve_pkr ?? 0),
+    0,
+  );
+}
+
 export async function getRevenuePlans() {
   const { data, error } = await db
     .from("plans")

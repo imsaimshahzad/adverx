@@ -61,6 +61,7 @@ import {
   getOperationsOverview,
   getAdminProfitLedger,
   getAdminProfitSummary,
+  getReferrerRecoveryReserve,
   getRecoveryFundActivity,
   getRevenuePlans,
   useRecoveryFund,
@@ -248,6 +249,7 @@ function AdminRoute() {
   const [overview, setOverview] = useState<Record<string, number>>({});
   const [profitSummary, setProfitSummary] = useState<AdminRow>({});
   const [profitLedger, setProfitLedger] = useState<AdminRow[]>([]);
+  const [referrerRecoveryReserve, setReferrerRecoveryReserve] = useState(0);
   const [revenuePlans, setRevenuePlans] = useState<AdminRow[]>([]);
   const loadVersion = useRef(0);
   const adminIdentity = useRef<{ id: string; name: string } | null>(null);
@@ -329,26 +331,43 @@ function AdminRoute() {
         setOverview({});
       }
   if (active === "revenue") {
-  try {
-  const [summary, ledger, plans] = await Promise.all([getAdminProfitSummary(), getAdminProfitLedger(), getRevenuePlans()]);
-  const userIds = [...new Set(ledger.map((row) => String(row.user_id ?? "")).filter(Boolean))];
-  const { data: profiles } = userIds.length
-    ? await (supabase as any).from("profiles").select("id, public_uid, full_name, username").in("id", userIds)
-    : { data: [] };
-  const profileMap = new Map((profiles ?? []).map((profile: any) => [String(profile.id), profile]));
-  const displayLedger = ledger.map((row) => {
-    const profile: any = profileMap.get(String(row.user_id ?? ""));
-    return { ...row, user_display: profile ? `${profile.full_name || profile.username || "User"} · ${profile.public_uid}` : "User" };
-  });
-  setProfitSummary(summary);
-  setProfitLedger(displayLedger);
-  setRevenuePlans(plans);
+  const revenueLoad = async () => {
+    try {
+      const summary = await getAdminProfitSummary();
+      setProfitSummary(summary);
+    } catch (error) {
+      console.error("[admin] revenue summary load failed", error);
+    }
 
-        } catch {
-          setProfitSummary({});
-          setProfitLedger([]);
-        }
-      }
+    try {
+      const ledger = await getAdminProfitLedger();
+      const userIds = [...new Set(ledger.map((row) => String(row.user_id ?? "")).filter(Boolean))];
+      const { data: profiles } = userIds.length
+        ? await (supabase as any).from("profiles").select("id, public_uid, full_name, username").in("id", userIds)
+        : { data: [] };
+      const profileMap = new Map((profiles ?? []).map((profile: any) => [String(profile.id), profile]));
+      setProfitLedger(ledger.map((row) => {
+        const profile: any = profileMap.get(String(row.user_id ?? ""));
+        return { ...row, user_display: profile ? `${profile.full_name || profile.username || "User"} · ${profile.public_uid}` : "User" };
+      }));
+    } catch (error) {
+      console.error("[admin] revenue ledger load failed", error);
+    }
+
+    try {
+      setRevenuePlans(await getRevenuePlans());
+    } catch (error) {
+      console.error("[admin] revenue plans load failed", error);
+    }
+
+    try {
+      setReferrerRecoveryReserve(await getReferrerRecoveryReserve());
+    } catch (error) {
+      console.error("[admin] referrer reserve load failed", error);
+    }
+  };
+  await revenueLoad();
+}
       if (active === "users") {
         try {
 const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
@@ -828,7 +847,7 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
           ) : active === "support" ? (
             <SupportTicketPanel admin />
           ) : active === "revenue" ? (
-            <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} plans={revenuePlans} onRefresh={load} />
+            <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} plans={revenuePlans} referrerRecoveryReserve={referrerRecoveryReserve} onRefresh={load} />
           ) : (
             <ModuleTable
               active={active}
@@ -1066,12 +1085,14 @@ function RevenueDashboard({
   overview,
   ledger,
   plans,
+  referrerRecoveryReserve,
   onRefresh,
 }: {
   summary: AdminRow;
   overview: Record<string, number>;
   ledger: AdminRow[];
   plans: AdminRow[];
+  referrerRecoveryReserve: number;
   onRefresh: () => Promise<void>;
 }) {
   const metric = (value: unknown) =>
@@ -1084,7 +1105,7 @@ function RevenueDashboard({
     ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral],
     ["Unallocated Recovery", summary.unallocated_recovery],
     ["Retained Reward Budget", summary.retained_reward_budget],
-    ["Referrer Recovery Reserve", overview.remaining_recovery_fund],
+    ["Referrer Recovery Reserve", referrerRecoveryReserve],
     ["Admin Own Balance", summary.admin_own_balance],
   ];
   const cardDescription = (label: string) => {
