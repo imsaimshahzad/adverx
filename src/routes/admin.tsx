@@ -4,6 +4,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
+  redirect,
 } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -54,7 +55,6 @@ import "@/admin-design.css";
 import "@/morphic-system.css";
 import { supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
 import { checkRouteAccess } from "@/lib/auth-guard.functions";
-import { redirect } from "@tanstack/react-router";
 import {
   AdminModule,
   type AdminRow,
