@@ -1870,18 +1870,18 @@ function ModuleTable({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className={`w-full ${active === "tasks" ? "min-w-[980px]" : "min-w-[720px]"} table-auto text-sm`}>
+            <table className="w-full min-w-[720px] table-auto text-sm">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr className="border-b border-slate-200/80 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   {columns.map((column) => (
-                    <th className="whitespace-nowrap px-3 py-3" key={column}>
+                    <th className="whitespace-nowrap px-2 py-2" key={column}>
                       {active === "plans" && column === "ads_per_day"
                         ? "Daily Ads Limit"
                         : column.replaceAll("_", " ")}
                     </th>
                   ))}
   {actions.length || managementTable || active === "support" ? (
-  <th className="whitespace-nowrap px-3 py-3">Actions</th>
+  <th className="whitespace-nowrap px-2 py-2">Actions</th>
 
                   ) : null}
                 </tr>
@@ -1895,7 +1895,7 @@ function ModuleTable({
                   >
                     {columns.map((column) => (
                       <td
-                        className="max-w-[220px] truncate px-3 py-3 align-middle"
+                        className="max-w-[220px] truncate px-2 py-2 align-middle"
                         key={column}
                       >
                         {active === "audit-logs" && column === "metadata" ? (
@@ -1910,7 +1910,7 @@ function ModuleTable({
                       </td>
                     ))}
                     {active === "deposits" ? (
-                      <td className="whitespace-nowrap px-3 py-3 align-middle">
+                      <td className="whitespace-nowrap px-2 py-2 align-middle">
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <Button
                             variant="outline"
@@ -1927,6 +1927,7 @@ function ModuleTable({
                             <>
                               <Button
                                 size="sm"
+                                className="bg-emerald-600 text-white hover:bg-emerald-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   onStatus(row, "approved");
@@ -1937,6 +1938,7 @@ function ModuleTable({
                               <Button
                                 variant="destructive"
                                 size="sm"
+                                className="bg-rose-600 text-white hover:bg-rose-700"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   onStatus(row, "rejected");
@@ -1968,9 +1970,9 @@ function ModuleTable({
                         </div>
                       </td>
   ) : actions.length || managementTable || active === "support" ? (
-                        <td className="whitespace-nowrap px-3 py-3 align-middle">
+                        <td className="whitespace-nowrap px-2 py-2 align-middle">
                         {active === "users" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button> : null}
-                        {managementTable ? <div className="flex items-center gap-1.5 whitespace-nowrap"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-600" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" className="bg-rose-600 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</div> : null}
+                        {managementTable ? <div className="flex items-center gap-1.5 whitespace-nowrap"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" className="bg-rose-600 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" className="bg-rose-600 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</div> : null}
                         {active === "support" ? <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
                         {actions.length ? <select
                           aria-label={`Change status for ${String(row.full_name ?? row.id ?? "record")}`}
