@@ -268,7 +268,7 @@ function AdminRoute() {
       toast.error("Unable to identify this user.");
       return;
     }
-    navigate({ to: "/users/detail/$publicUid", params: { publicUid } });
+    window.location.assign(`/users/detail/${encodeURIComponent(publicUid)}`);
   }, [navigate, userPageRows]);
   const closeUserDetails = useCallback(() => {
     window.history.pushState({}, "", "/admin");
