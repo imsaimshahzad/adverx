@@ -408,9 +408,11 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   return data as AdminRow;
 }
 
-export async function getUserDetails(userId: string) {
-  const [{ data: profile, error: profileError }, { data: userPlans, error: plansError }, { data: planRows, error: planRowsError }, { data: deposits, error: depositsError }, { data: withdrawals, error: withdrawalsError }, { data: commissions, error: commissionsError }, { data: ledger, error: ledgerError }] = await Promise.all([
-    db.from("profiles").select("*").eq("id", userId).maybeSingle(),
+export async function getUserDetails(identifier: string) {
+  const { data: profile, error: profileError } = await db.from("profiles").select("*").or(`id.eq.${identifier},public_uid.eq.${identifier}`).maybeSingle();
+  if (profileError || !profile) throw new Error("User not found.");
+  const userId = String(profile.id);
+  const [{ data: userPlans, error: plansError }, { data: userPlans, error: plansError }, { data: planRows, error: planRowsError }, { data: deposits, error: depositsError }, { data: withdrawals, error: withdrawalsError }, { data: commissions, error: commissionsError }, { data: ledger, error: ledgerError }] = await Promise.all([
     db.from("user_plans").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
     db.from("plans").select("id, name"),
     db.from("deposits").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
@@ -419,10 +421,9 @@ export async function getUserDetails(userId: string) {
     db.from("ledger_entries").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
   ]);
 
-  if (profileError || plansError || planRowsError || depositsError || withdrawalsError || commissionsError || ledgerError) {
+  if (plansError || planRowsError || depositsError || withdrawalsError || commissionsError || ledgerError) {
     throw new Error("Unable to load user details.");
   }
-  if (!profile) throw new Error("User not found.");
 
   const planById = new Map((planRows ?? []).map((row: AdminRow) => [String(row.id), row]));
   const mappedPlans = (userPlans ?? []).map((row: AdminRow) => ({
