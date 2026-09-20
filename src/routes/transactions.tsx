@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ReceiptText, X, Copy, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
@@ -53,6 +53,8 @@ function TransactionsPage() {
   const [items, setItems] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Tx | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -219,7 +221,7 @@ function TransactionsPage() {
           </div>
           <div className="divide-y divide-border/60">
             {items.map((item) => (
-              <div key={item.id} className="grid gap-3 px-4 py-4 md:grid-cols-[1.1fr_1.2fr_1.5fr_.9fr_.8fr] md:items-center md:gap-4">
+              <button key={item.id} type="button" onClick={() => { setSelected(item); setCopied(false); }} className="grid w-full gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/30 md:grid-cols-[1.1fr_1.2fr_1.5fr_.9fr_.8fr] md:items-center md:gap-4">
                 <div>
                   <p className="text-sm font-medium">{new Date(item.createdAt).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
                   <p className="text-[11px] text-muted-foreground">{new Date(item.createdAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" })}</p>
@@ -228,13 +230,24 @@ function TransactionsPage() {
                   {item.direction === "credit" ? <ArrowDownLeft className="size-4 text-success" /> : <ArrowUpRight className="size-4 text-destructive" />}
                   <div><p className="text-sm font-medium">{item.title}</p><p className="text-[11px] text-muted-foreground">{item.category}</p></div>
                 </div>
-                <p className="text-xs text-muted-foreground md:truncate">{item.detail}</p>
+                <div className="min-w-0"><p className="text-sm font-medium truncate">{item.detail.split(" — ")[1] ?? item.detail}</p><p className="text-[11px] text-muted-foreground">Click to view full details</p></div>
                 <div><Badge variant="secondary">{item.status}</Badge></div>
                 <p className={`num text-sm font-semibold md:text-right ${item.direction === "credit" ? "text-success" : "text-destructive"}`}>
                   {item.direction === "credit" ? "+" : "-"}{money(item.amount)}
                 </p>
-              </div>
+              </button>
             ))}
+          </div>
+        </div>
+      )}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
+          <div role="dialog" aria-modal="true" className="w-full max-w-lg rounded-2xl border border-border/60 bg-background p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4"><div><p className="text-lg font-semibold">{selected.title}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(selected.createdAt).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })} · {new Date(selected.createdAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" })}</p></div><button type="button" onClick={() => setSelected(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Close"><X className="size-4" /></button></div>
+            <div className="mt-5 rounded-xl border border-border/60 bg-muted/20 p-4"><p className="text-xs text-muted-foreground">Amount</p><p className={`mt-1 text-2xl font-bold ${selected.direction === "credit" ? "text-success" : "text-destructive"}`}>{selected.direction === "credit" ? "+" : "-"}{money(selected.amount)}</p></div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Category</p><p className="mt-1 text-sm font-medium">{selected.category}</p></div><div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Status</p><p className="mt-1"><Badge variant="secondary">{selected.status}</Badge></p></div></div>
+            <div className="mt-3 rounded-xl border border-border/50 p-4"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Full Details</p><p className="mt-2 text-sm leading-6">{selected.detail}</p></div>
+            <div className="mt-4 flex justify-end"><button type="button" onClick={() => { navigator.clipboard?.writeText(selected.detail); setCopied(true); }} className="inline-flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-xs font-medium hover:bg-muted">{copied ? <Check className="size-4" /> : <Copy className="size-4" />} {copied ? "Copied" : "Copy details"}</button></div>
           </div>
         </div>
       )}
