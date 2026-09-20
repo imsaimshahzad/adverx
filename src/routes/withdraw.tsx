@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { money, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
+import { isImpersonating } from "@/integrations/supabase/client";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/withdraw")({
