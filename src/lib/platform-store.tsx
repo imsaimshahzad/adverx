@@ -596,8 +596,8 @@ async function loadState(user: {
       createdAt: new Date(w.created_at).getTime(),
     })),
     adViews: ((completions ?? []) as any[]).map((c) => ({
-      adId: c.task_id,
-      completedAt: new Date(c.created_at).getTime(),
+      adId: c.ad_id,
+      completedAt: new Date(c.completed_at).getTime(),
       reward: num(c.reward),
     })),
     network: referralRows.map((r) => {
@@ -764,7 +764,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       "ledger_entries",
       "wallet_transactions",
       "withdrawals",
-      "task_completions",
+      "ad_completions",
       "notifications",
       "referrals",
       "plans",
