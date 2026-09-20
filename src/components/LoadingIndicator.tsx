@@ -8,18 +8,20 @@ type LoadingIndicatorProps = {
 };
 
 const sizes = {
-  sm: "newtons-cradle--sm",
-  md: "newtons-cradle--md",
-  lg: "newtons-cradle--lg",
+  sm: "bounce-loader--sm",
+  md: "bounce-loader--md",
+  lg: "bounce-loader--lg",
 } as const;
 
 export function LoadingIndicator({ size = "md", label, className }: LoadingIndicatorProps) {
   return (
     <span className={cn("newtons-cradle", sizes[size], className)} role="status" aria-label={label ?? "Loading"}>
-      <span className="newtons-cradle__dot" />
-      <span className="newtons-cradle__dot" />
-      <span className="newtons-cradle__dot" />
-      <span className="newtons-cradle__dot" />
+      <span className="bounce-loader__circle" />
+      <span className="bounce-loader__circle" />
+      <span className="bounce-loader__circle" />
+      <span className="bounce-loader__shadow" />
+      <span className="bounce-loader__shadow" />
+      <span className="bounce-loader__shadow" />
       <span className="sr-only">{label ?? "Loading"}</span>
     </span>
   );

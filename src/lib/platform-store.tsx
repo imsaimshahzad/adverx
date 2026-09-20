@@ -716,18 +716,17 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const boot = async () => {
   setCatalogReady(false);
   setCatalogError(null);
-  try {
-  await loadCatalog();
-  if (mounted) setCatalogReady(true);
-  } catch (error) {
-  console.error("[v0] Public catalog load failed", error);
-  if (mounted) setCatalogError(error instanceof Error ? error.message : "Unable to load public catalog.");
-  }
-      const { data } = await supabase.auth.getSession();
-      if (mounted) {
-        await refresh(data.session?.user ?? null);
-      }
-    };
+  const catalogRequest = loadCatalog()
+    .then(() => { if (mounted) setCatalogReady(true); })
+    .catch((error) => {
+      console.error("[v0] Public catalog load failed", error);
+      if (mounted) setCatalogError(error instanceof Error ? error.message : "Unable to load public catalog.");
+    });
+  const sessionRequest = supabase.auth.getSession().then(async ({ data }) => {
+    if (mounted) await refresh(data.session?.user ?? null);
+  });
+  await Promise.all([catalogRequest, sessionRequest]);
+};
     void boot();
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) void refresh(session?.user ?? null);
