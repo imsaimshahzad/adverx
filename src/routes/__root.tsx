@@ -6,15 +6,12 @@ import {
   useRouter,
   HeadContent,
   Scripts,
-  redirect,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlatformProvider } from "@/lib/platform-store";
-import { ensureSupabaseSessionReady } from "@/integrations/supabase/client";
-import { checkRouteAccess } from "@/lib/auth-guard.functions";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { Toaster } from "@/components/ui/sonner";
 import { LoadingScreen } from "@/components/LoadingIndicator";
@@ -80,37 +77,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-const AUTHENTICATED_PATHS = [
-  "/ads",
-  "/history",
-  "/network",
-  "/notifications",
-  "/plans",
-  "/profile",
-  "/support",
-  "/withdraw",
-  "/transactions",
-  "/deposit/",
-  "/users/detail/",
-];
-
-function requiresAuthentication(pathname: string) {
-  return (
-    AUTHENTICATED_PATHS.some((path) => pathname === path || pathname.startsWith(path)) ||
-    (pathname.startsWith("/admin") && pathname !== "/admin/login")
-  );
-}
-
-function requiresAdmin(pathname: string) {
-  return (
-    (pathname.startsWith("/admin") && pathname !== "/admin/login") ||
-    pathname.startsWith("/users/detail/")
-  );
-}
-
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  pendingMs: 0,
-  pendingMinMs: 250,
   beforeLoad: async ({ location }) => {
     // Supabase's normal browser session is restored from client storage, so
     // there is no trustworthy server-side session to inspect during SSR.
