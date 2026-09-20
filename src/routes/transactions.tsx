@@ -87,6 +87,12 @@ function TransactionsPage() {
 
         const depositRows = (deposits ?? []) as any[];
         const depositById = new Map(depositRows.map((d) => [String(d.id), d]));
+        const buyerIds = [...new Set(depositRows.map((d) => String(d.user_id ?? "")).filter(Boolean))];
+        const { data: buyerRows, error: buyerError } = buyerIds.length
+          ? await db.from("profiles").select("id, username, full_name").in("id", buyerIds)
+          : { data: [], error: null };
+        if (buyerError) throw new Error(buyerError.message);
+        const buyerById = new Map((buyerRows ?? []).map((p: any) => [String(p.id), p]));
         const planIds = [...new Set(depositRows.map((d) => String(d.plan_id ?? "")).filter(Boolean))];
         const { data: planRows, error: planError } = planIds.length
           ? await db.from("plans").select("id, name").in("id", planIds)
@@ -120,6 +126,11 @@ function TransactionsPage() {
           const reference = String(row.reference_id ?? "");
           const deposit = depositById.get(reference);
           const planName = deposit ? planById.get(String(deposit.plan_id ?? "")) ?? "" : "";
+          const buyer = deposit ? buyerById.get(String(deposit.user_id ?? "")) : null;
+          const buyerName = buyer?.full_name || buyer?.username || "Member";
+          const sourceDetail = deposit
+            ? buyerName + " · " + (planName || "Plan") + " plan purchase · " + (deposit.method ?? "Payment") + " · " + (deposit.status ?? "recorded") + (deposit.transaction_id ? " · " + deposit.transaction_id : "")
+            : null;
           let direction: "credit" | "debit" = credit > 0 && debit === 0 ? "credit" : "debit";
           let amount = credit > 0 ? credit : debit;
           if (type === "PLAN_PURCHASE" && rawAmount < 0) { direction = "debit"; amount = Math.abs(rawAmount); }
@@ -130,8 +141,12 @@ function TransactionsPage() {
             createdAt: new Date(row.created_at).getTime(),
             category: labelMap[type] ?? (type.replaceAll("_", " ").replace(/\b\w/g, (m: string) => m.toUpperCase()) || "Transaction"),
             title: type === "PLAN_PURCHASE" ? (planName ? `${planName} Plan Purchase` : "Plan Purchase") : (labelMap[type] ?? "Account Transaction"),
-            detail: deposit
-              ? `${deposit.method ?? "Payment"} · ${deposit.status ?? "recorded"}${deposit.transaction_id ? ` · ${deposit.transaction_id}` : ""}`
+            detail: sourceDetail
+              ? (type === "UNASSIGNED_REFERRAL"
+                ? "Referral commission retained by platform — " + sourceDetail
+                : type === "PLATFORM_ADMIN_PROFIT"
+                  ? "Platform profit from " + sourceDetail
+                  : sourceDetail)
               : note || (type === "UNASSIGNED_REFERRAL" ? "Referral allocation received by platform" : type === "PLATFORM_ADMIN_PROFIT" ? "Platform profit from approved plan purchase" : "Account transaction"),
             amount, direction, status: String(row.status ?? "recorded"),
           });
