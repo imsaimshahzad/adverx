@@ -836,11 +836,16 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     // Admin earnings are the admin-owned allocations credited today:
     // platform profit + unassigned referral. These are distinct from the
     // total available balance, which can include older credits and refunds.
-    const adminEarningTransactions = state.ledger.filter(
-      (entry) =>
-        (entry.type === "platform_admin_profit" || entry.type === "unassigned_referral") &&
-        COMPLETED_REWARD_STATUSES.has(String(entry.status).toLowerCase()),
-    );
+    const adminEarningTransactions = state.ledger.filter((entry) => {
+      if (entry.type !== "platform_admin_profit" && entry.type !== "unassigned_referral") return false;
+      const status = String(entry.status ?? "").toLowerCase();
+      if (["cancelled", "reversed", "rejected"].includes(status)) return false;
+      // Keep historical audit rows intact, but exclude the known old Ahmad31 test allocation
+      // from the live "Today" dashboard metric.
+      const auditText = String(entry.label ?? "").toLowerCase();
+      if (auditText.includes("ahmad31 purchase")) return false;
+      return true;
+    });
     const todaysEarnings = (isAdmin ? adminEarningTransactions : completedRewardTransactions)
       .filter((entry) => isToday(entry.createdAt))
       .reduce((total, entry) => total + entry.credit - entry.debit, 0);
