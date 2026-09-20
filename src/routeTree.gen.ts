@@ -10,24 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AdsRouteImport } from './routes/ads'
+import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated.ads'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as NetworkRouteImport } from './routes/network'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as PlansRouteImport } from './routes/plans'
-import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated.history'
+import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticated.network'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated.notifications'
+import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated.plans'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as WithdrawRouteImport } from './routes/withdraw'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated.support'
+import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated.withdraw'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiUploadHeroRouteImport } from './routes/api.upload-hero'
 import { Route as ApiImpersonationConsumeRouteImport } from './routes/api.impersonation.consume'
-import { Route as DepositPlanIdRouteImport } from './routes/deposit.$planId'
+import { Route as AuthenticatedDepositPlanIdRouteImport } from './routes/_authenticated.deposit.$planId'
 import { Route as JoinReferralCodeRouteImport } from './routes/join.$referralCode'
-import { Route as UsersDetailPublicUidRouteImport } from './routes/users.detail.$publicUid'
+import { Route as AuthenticatedUsersDetailPublicUidRouteImport } from './routes/_authenticated.users.detail.$publicUid'
+
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,40 +45,40 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdsRoute = AdsRouteImport.update({
-  id: '/ads',
+const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
+  id: '/_authenticated/ads',
   path: '/ads',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
+const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
+  id: '/_authenticated/history',
   path: '/history',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const NetworkRoute = NetworkRouteImport.update({
-  id: '/network',
+const AuthenticatedNetworkRoute = AuthenticatedNetworkRouteImport.update({
+  id: '/_authenticated/network',
   path: '/network',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
+const AuthenticatedNotificationsRoute = AuthenticatedNotificationsRouteImport.update({
+  id: '/_authenticated/notifications',
   path: '/notifications',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const PlansRoute = PlansRouteImport.update({
-  id: '/plans',
+const AuthenticatedPlansRoute = AuthenticatedPlansRouteImport.update({
+  id: '/_authenticated/plans',
   path: '/plans',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/_authenticated/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -84,15 +90,15 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/_authenticated/support',
   path: '/support',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const WithdrawRoute = WithdrawRouteImport.update({
-  id: '/withdraw',
+const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
+  id: '/_authenticated/withdraw',
   path: '/withdraw',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
@@ -109,15 +115,15 @@ const ApiImpersonationConsumeRoute = ApiImpersonationConsumeRouteImport.update({
   path: '/api/impersonation/consume',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DepositPlanIdRoute = DepositPlanIdRouteImport.update({
-  id: '/deposit/$planId',
+const AuthenticatedDepositPlanIdRoute = AuthenticatedDepositPlanIdRouteImport.update({
+  id: '/_authenticated/deposit/$planId',
   path: '/deposit/$planId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const UsersDetailPublicUidRoute = UsersDetailPublicUidRouteImport.update({
-  id: '/users/detail/$publicUid',
+const AuthenticatedUsersDetailPublicUidRoute = AuthenticatedUsersDetailPublicUidRouteImport.update({
+  id: '/_authenticated/users/detail/$publicUid',
   path: '/users/detail/$publicUid',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const JoinReferralCodeRoute = JoinReferralCodeRouteImport.update({
   id: '/join/$referralCode',
@@ -171,6 +177,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/ads': typeof AdsRoute
   '/auth': typeof AuthRoute
   '/history': typeof HistoryRoute
@@ -193,23 +200,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/ads'
+    | '/_authenticated/ads'
     | '/auth'
-    | '/history'
-    | '/network'
-    | '/notifications'
-    | '/plans'
-    | '/profile'
+    | '/_authenticated/history'
+    | '/_authenticated/network'
+    | '/_authenticated/notifications'
+    | '/_authenticated/plans'
+    | '/_authenticated/profile'
     | '/reset-password'
     | '/signup'
-    | '/support'
-    | '/withdraw'
+    | '/_authenticated/support'
+    | '/_authenticated/withdraw'
     | '/admin/login'
     | '/api/upload-hero'
     | '/api/impersonation/consume'
-    | '/deposit/$planId'
+    | '/_authenticated/deposit/$planId'
     | '/join/$referralCode'
-    | '/users/detail/$publicUid'
+    | '/_authenticated/users/detail/$publicUid'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,6 +239,7 @@ export interface FileRouteTypes {
     | '/join/$referralCode'
     | '/users/detail/$publicUid'
   id:
+    | '/_authenticated'
     | '__root__'
     | '/'
     | '/admin'
@@ -254,28 +262,26 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AdsRoute: typeof AdsRoute
   AuthRoute: typeof AuthRoute
-  HistoryRoute: typeof HistoryRoute
-  NetworkRoute: typeof NetworkRoute
-  NotificationsRoute: typeof NotificationsRoute
-  PlansRoute: typeof PlansRoute
-  ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  SupportRoute: typeof SupportRoute
-  WithdrawRoute: typeof WithdrawRoute
   ApiUploadHeroRoute: typeof ApiUploadHeroRoute
   ApiImpersonationConsumeRoute: typeof ApiImpersonationConsumeRoute
-  DepositPlanIdRoute: typeof DepositPlanIdRoute
   JoinReferralCodeRoute: typeof JoinReferralCodeRoute
-  UsersDetailPublicUidRoute: typeof UsersDetailPublicUidRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -291,11 +297,11 @@ declare module '@tanstack/react-router' {
       parentRoute: typeof rootRouteImport
     }
     '/ads': {
-      id: '/ads'
+      id: '/_authenticated/ads'
       path: '/ads'
       fullPath: '/ads'
       preLoaderRoute: typeof AdsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/auth': {
       id: '/auth'
@@ -305,39 +311,39 @@ declare module '@tanstack/react-router' {
       parentRoute: typeof rootRouteImport
     }
     '/history': {
-      id: '/history'
+      id: '/_authenticated/history'
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/network': {
-      id: '/network'
+      id: '/_authenticated/network'
       path: '/network'
       fullPath: '/network'
       preLoaderRoute: typeof NetworkRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/notifications': {
-      id: '/notifications'
+      id: '/_authenticated/notifications'
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/plans': {
-      id: '/plans'
+      id: '/_authenticated/plans'
       path: '/plans'
       fullPath: '/plans'
       preLoaderRoute: typeof PlansRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/profile': {
-      id: '/profile'
+      id: '/_authenticated/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/reset-password': {
       id: '/reset-password'
@@ -354,18 +360,18 @@ declare module '@tanstack/react-router' {
       parentRoute: typeof rootRouteImport
     }
     '/support': {
-      id: '/support'
+      id: '/_authenticated/support'
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/withdraw': {
-      id: '/withdraw'
+      id: '/_authenticated/withdraw'
       path: '/withdraw'
       fullPath: '/withdraw'
       preLoaderRoute: typeof WithdrawRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/admin/login': {
       id: '/admin/login'
@@ -389,18 +395,18 @@ declare module '@tanstack/react-router' {
       parentRoute: typeof rootRouteImport
     }
     '/deposit/$planId': {
-      id: '/deposit/$planId'
+      id: '/_authenticated/deposit/$planId'
       path: '/deposit/$planId'
       fullPath: '/deposit/$planId'
       preLoaderRoute: typeof DepositPlanIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/users/detail/$publicUid': {
-      id: '/users/detail/$publicUid'
+      id: '/_authenticated/users/detail/$publicUid'
       path: '/users/detail/$publicUid'
       fullPath: '/users/detail/$publicUid'
       preLoaderRoute: typeof UsersDetailPublicUidRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/join/$referralCode': {
       id: '/join/$referralCode'
@@ -421,6 +427,34 @@ const AdminRouteChildren: AdminRouteChildren = {
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
+  AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedNetworkRoute: typeof AuthenticatedNetworkRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
+  AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
+  AuthenticatedDepositPlanIdRoute: typeof AuthenticatedDepositPlanIdRoute
+  AuthenticatedUsersDetailPublicUidRoute: typeof AuthenticatedUsersDetailPublicUidRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdsRoute: AuthenticatedAdsRoute
+  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute
+  AuthenticatedNetworkRoute: AuthenticatedNetworkRoute
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute
+  AuthenticatedPlansRoute: AuthenticatedPlansRoute
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute
+  AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute
+  AuthenticatedDepositPlanIdRoute: AuthenticatedDepositPlanIdRoute
+  AuthenticatedUsersDetailPublicUidRoute: AuthenticatedUsersDetailPublicUidRoute
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(AuthenticatedRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
