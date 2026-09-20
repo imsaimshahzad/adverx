@@ -833,9 +833,17 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         (entry.type === "ad_reward" || entry.type === "referral_reward") &&
         COMPLETED_REWARD_STATUSES.has(String(entry.status).toLowerCase()),
     );
-    const todaysEarnings = completedRewardTransactions
+    // Admin earnings are the admin-owned allocations credited today:
+    // platform profit + unassigned referral. These are distinct from the
+    // total available balance, which can include older credits and refunds.
+    const adminEarningTransactions = state.ledger.filter(
+      (entry) =>
+        (entry.type === "platform_admin_profit" || entry.type === "unassigned_referral") &&
+        COMPLETED_REWARD_STATUSES.has(String(entry.status).toLowerCase()),
+    );
+    const todaysEarnings = (isAdmin ? adminEarningTransactions : completedRewardTransactions)
       .filter((entry) => isToday(entry.createdAt))
-      .reduce((total, entry) => total + entry.credit, 0);
+      .reduce((total, entry) => total + entry.credit - entry.debit, 0);
     // Count the same completed ad rewards used by Today earnings, using the
     // Asia/Karachi calendar day rather than the browser's UTC date.
     // Completion records are the source of truth for the daily ad counter.

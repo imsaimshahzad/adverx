@@ -61,24 +61,48 @@ function TransactionsPage() {
       setError(null);
       try {
         const db = supabase as any;
-        const [{ data: wallet, error: walletError }, { data: ledger, error: ledgerError }, { data: deposits }, { data: withdrawals }] =
-          await Promise.all([
-            db.from("wallet_transactions").select("*").order("created_at", { ascending: false }),
-            db.from("ledger_entries").select("*").order("created_at", { ascending: false }),
-            db.from("deposits").select("id, plan_id, amount, status, method, transaction_id, created_at, plan:plans(name)").order("created_at", { ascending: false }),
-            db.from("withdrawals").select("id, amount, fee, method, status, created_at").order("created_at", { ascending: false }),
-          ]);
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) throw new Error("Please sign in again.");
 
-        if (walletError && ledgerError) {
-          throw new Error(walletError.message || ledgerError.message);
-        }
+        const uid = authData.user.id;
+        const { data: profile, error: profileError } = await db.from("profiles").select("role").eq("id", uid).maybeSingle();
+        if (profileError) throw new Error(profileError.message);
+
+        const isAdmin = ["admin", "super_admin", "moderator"].includes(String(profile?.role ?? ""));
+        const [
+          { data: wallet, error: walletError },
+          { data: ledger, error: ledgerError },
+          { data: deposits, error: depositsError },
+          { data: withdrawals, error: withdrawalsError },
+        ] = await Promise.all([
+          db.from("wallet_transactions").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+          db.from("ledger_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+          db.from("deposits").select("id, plan_id, amount, status, method, transaction_id, created_at, plan:plans(name)").eq("user_id", uid).order("created_at", { ascending: false }),
+          db.from("withdrawals").select("id, amount, fee, method, status, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
+        ]);
+
+        if (walletError && ledgerError) throw new Error(walletError.message || ledgerError.message);
+        if (depositsError) throw new Error(depositsError.message);
+        if (withdrawalsError) throw new Error(withdrawalsError.message);
 
         const depositRows = (deposits ?? []) as any[];
         const depositById = new Map(depositRows.map((d) => [String(d.id), d]));
-        const rows: Tx[] = [];
+        const allowedTypes = new Set(
+          isAdmin
+            ? ["PLAN_PURCHASE", "AD_REWARD", "TASK_REWARD", "REWARD", "REFERRAL_REWARD", "REFERRAL_COMMISSION", "PLATFORM_ADMIN_PROFIT", "UNASSIGNED_REFERRAL", "WITHDRAWAL", "WITHDRAWAL_FEE", "REFUND", "ADMIN_ADJUSTMENT", "WITHDRAWAL_REFUND"]
+            : ["PLAN_PURCHASE", "AD_REWARD", "TASK_REWARD", "REWARD", "REFERRAL_REWARD", "REFERRAL_COMMISSION", "WITHDRAWAL", "WITHDRAWAL_FEE", "REFUND", "ADMIN_ADJUSTMENT", "WITHDRAWAL_REFUND"],
+        );
 
+        const rows: Tx[] = [];
         for (const row of [...((wallet ?? []) as any[]), ...((ledger ?? []) as any[])]) {
           const type = String(row.type ?? row.entry_type ?? "").toUpperCase();
+          if (!allowedTypes.has(type)) continue;
+
+          const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
+          const note = String(row.note ?? row.description ?? row.reason ?? "");
+          const auditText = `${String(metadata.reason ?? "")} ${note}`.toLowerCase();
+          if (auditText.includes("old admin test") || auditText.includes("test cleanup") || auditText.includes("test reversal")) continue;
+
           const rawAmount = Number(row.amount ?? 0);
           const credit = row.credit != null ? Number(row.credit) : rawAmount > 0 ? rawAmount : 0;
           const debit = row.debit != null ? Number(row.debit) : rawAmount < 0 ? Math.abs(rawAmount) : 0;
@@ -87,10 +111,7 @@ function TransactionsPage() {
           const planName = deposit?.plan?.name ?? "";
           let direction: "credit" | "debit" = credit > 0 && debit === 0 ? "credit" : "debit";
           let amount = credit > 0 ? credit : debit;
-          if (type === "PLAN_PURCHASE" && rawAmount < 0) {
-            direction = "debit";
-            amount = Math.abs(rawAmount);
-          }
+          if (type === "PLAN_PURCHASE" && rawAmount < 0) { direction = "debit"; amount = Math.abs(rawAmount); }
           if (!amount) continue;
 
           rows.push({
@@ -100,36 +121,31 @@ function TransactionsPage() {
             title: type === "PLAN_PURCHASE" ? (planName ? `${planName} Plan Purchase` : "Plan Purchase") : (labelMap[type] ?? "Account Transaction"),
             detail: deposit
               ? `${deposit.method ?? "Payment"} · ${deposit.status ?? "recorded"}${deposit.transaction_id ? ` · ${deposit.transaction_id}` : ""}`
-              : String(row.note ?? row.description ?? row.reason ?? "Account transaction"),
-            amount,
-            direction,
-            status: String(row.status ?? "recorded"),
+              : note || (type === "UNASSIGNED_REFERRAL" ? "Referral allocation received by platform" : type === "PLATFORM_ADMIN_PROFIT" ? "Platform profit from approved plan purchase" : "Account transaction"),
+            amount, direction, status: String(row.status ?? "recorded"),
           });
         }
 
-        for (const row of (withdrawals ?? []) as any[]) {
-          rows.push({
-            id: `withdrawal-${row.id}`,
-            createdAt: new Date(row.created_at).getTime(),
-            category: "Withdrawal",
-            title: "Withdrawal Request",
-            detail: `${row.method ?? "Payout"} · ${row.status ?? "pending"}`,
-            amount: Number(row.amount ?? 0),
-            direction: "debit",
-            status: String(row.status ?? "pending"),
-          });
+        if (!isAdmin) {
+          for (const row of (withdrawals ?? []) as any[]) {
+            rows.push({
+              id: `withdrawal-${row.id}`,
+              createdAt: new Date(row.created_at).getTime(),
+              category: "Withdrawal",
+              title: "Withdrawal Request",
+              detail: `${row.method ?? "Payout"} · ${row.status ?? "pending"}`,
+              amount: Number(row.amount ?? 0), direction: "debit", status: String(row.status ?? "pending"),
+            });
+          }
         }
 
         const seen = new Set<string>();
-        const unique = rows
-          .filter((row) => row.amount > 0)
-          .sort((a, b) => b.createdAt - a.createdAt)
-          .filter((row) => {
-            const key = `${row.category}|${row.amount}|${row.createdAt}|${row.title}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
+        const unique = rows.filter((row) => row.amount > 0).sort((a, b) => b.createdAt - a.createdAt).filter((row) => {
+          const key = `${row.category}|${row.amount}|${row.createdAt}|${row.title}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
 
         if (mounted) setItems(unique);
       } catch (e) {
@@ -139,9 +155,7 @@ function TransactionsPage() {
       }
     };
     void load();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   return (
