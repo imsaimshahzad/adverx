@@ -103,6 +103,11 @@ const ApiUploadHeroRoute = ApiUploadHeroRouteImport.update({
   path: '/api/upload-hero',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiImpersonationConsumeRoute = ApiImpersonationConsumeRouteImport.update({
+  id: '/api/impersonation/consume',
+  path: '/api/impersonation/consume',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DepositPlanIdRoute = DepositPlanIdRouteImport.update({
   id: '/deposit/$planId',
   path: '/deposit/$planId',
@@ -135,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/withdraw': typeof WithdrawRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/upload-hero': typeof ApiUploadHeroRoute
+  '/api/impersonation/consume': typeof ApiImpersonationConsumeRoute
   '/deposit/$planId': typeof DepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
   '/users/detail/$publicUid': typeof UsersDetailPublicUidRoute
@@ -197,6 +203,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/admin/login'
     | '/api/upload-hero'
+    | '/api/impersonation/consume'
     | '/deposit/$planId'
     | '/join/$referralCode'
     | '/users/detail/$publicUid'
@@ -256,6 +263,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   WithdrawRoute: typeof WithdrawRoute
   ApiUploadHeroRoute: typeof ApiUploadHeroRoute
+  ApiImpersonationConsumeRoute: typeof ApiImpersonationConsumeRoute
   DepositPlanIdRoute: typeof DepositPlanIdRoute
   JoinReferralCodeRoute: typeof JoinReferralCodeRoute
   UsersDetailPublicUidRoute: typeof UsersDetailPublicUidRoute
@@ -368,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUploadHeroRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/impersonation/consume': {
+      id: '/api/impersonation/consume'
+      path: '/api/impersonation/consume'
+      fullPath: '/api/impersonation/consume'
+      preLoaderRoute: typeof ApiImpersonationConsumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/deposit/$planId': {
       id: '/deposit/$planId'
       path: '/deposit/$planId'
@@ -417,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   WithdrawRoute: WithdrawRoute,
   ApiUploadHeroRoute: ApiUploadHeroRoute,
+  ApiImpersonationConsumeRoute: ApiImpersonationConsumeRoute,
   DepositPlanIdRoute: DepositPlanIdRoute,
   JoinReferralCodeRoute: JoinReferralCodeRoute,
   UsersDetailPublicUidRoute: UsersDetailPublicUidRoute,
