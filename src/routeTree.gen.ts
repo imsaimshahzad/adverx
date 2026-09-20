@@ -26,6 +26,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiUploadHeroRouteImport } from './routes/api.upload-hero'
 import { Route as DepositPlanIdRouteImport } from './routes/deposit.$planId'
 import { Route as JoinReferralCodeRouteImport } from './routes/join.$referralCode'
+import { Route as UsersDetailPublicUidRouteImport } from './routes/users.detail.$publicUid'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -107,6 +108,11 @@ const DepositPlanIdRoute = DepositPlanIdRouteImport.update({
   path: '/deposit/$planId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsersDetailPublicUidRoute = UsersDetailPublicUidRouteImport.update({
+  id: '/users/detail/$publicUid',
+  path: '/users/detail/$publicUid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinReferralCodeRoute = JoinReferralCodeRouteImport.update({
   id: '/join/$referralCode',
   path: '/join/$referralCode',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/api/upload-hero': typeof ApiUploadHeroRoute
   '/deposit/$planId': typeof DepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
+  '/users/detail/$publicUid': typeof UsersDetailPublicUidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/api/upload-hero': typeof ApiUploadHeroRoute
   '/deposit/$planId': typeof DepositPlanIdRoute
   '/join/$referralCode': typeof JoinReferralCodeRoute
+  '/users/detail/$publicUid': typeof UsersDetailPublicUidRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -191,6 +199,7 @@ export interface FileRouteTypes {
     | '/api/upload-hero'
     | '/deposit/$planId'
     | '/join/$referralCode'
+    | '/users/detail/$publicUid'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/api/upload-hero'
     | '/deposit/$planId'
     | '/join/$referralCode'
+    | '/users/detail/$publicUid'
   id:
     | '__root__'
     | '/'
@@ -248,6 +258,7 @@ export interface RootRouteChildren {
   ApiUploadHeroRoute: typeof ApiUploadHeroRoute
   DepositPlanIdRoute: typeof DepositPlanIdRoute
   JoinReferralCodeRoute: typeof JoinReferralCodeRoute
+  UsersDetailPublicUidRoute: typeof UsersDetailPublicUidRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -364,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DepositPlanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/users/detail/$publicUid': {
+      id: '/users/detail/$publicUid'
+      path: '/users/detail/$publicUid'
+      fullPath: '/users/detail/$publicUid'
+      preLoaderRoute: typeof UsersDetailPublicUidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$referralCode': {
       id: '/join/$referralCode'
       path: '/join/$referralCode'
@@ -401,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUploadHeroRoute: ApiUploadHeroRoute,
   DepositPlanIdRoute: DepositPlanIdRoute,
   JoinReferralCodeRoute: JoinReferralCodeRoute,
+  UsersDetailPublicUidRoute: UsersDetailPublicUidRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
