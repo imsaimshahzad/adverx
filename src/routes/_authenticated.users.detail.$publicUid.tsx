@@ -8,12 +8,12 @@ import { getUserDetails } from "@/lib/admin-service";
 import { startImpersonation } from "@/lib/auth-guard.functions";
 import type { AdminRow } from "@/lib/admin-service";
 
-export const Route = createFileRoute("/users/detail/$publicUid")({
+export const Route = createFileRoute("/_authenticated/users/detail/$publicUid")({
   component: UserDetailRoute,
 });
 
 function UserDetailRoute() {
-  const { publicUid } = useParams({ from: "/users/detail/$publicUid" });
+  const { publicUid } = useParams({ from: "/_authenticated/users/detail/$publicUid" });
   const navigate = useNavigate();
   const [data, setData] = useState<AdminRow | null>(null);
   const [loading, setLoading] = useState(true);
