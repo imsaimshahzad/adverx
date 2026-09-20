@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { money, PLANS, usePlatform } from "@/lib/platform-store";
 
-export const Route = createFileRoute("/plans")({
+export const Route = createFileRoute("/_authenticated/plans")({
   head: () => ({
     meta: [
       { title: "Plans — AdverX" },
