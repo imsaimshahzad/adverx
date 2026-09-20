@@ -746,7 +746,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
       inactivityTimer.current = setTimeout(() => {
         toast.error("Your session expired due to inactivity.");
-        void supabase.auth.signOut();
+        void supabase.auth.signOut({ scope: isImpersonating() ? "local" : "global" });
       }, 15 * 60 * 1000);
     };
     activityEvents.forEach((event) => window.addEventListener(event, resetInactivityTimer, { passive: true }));
