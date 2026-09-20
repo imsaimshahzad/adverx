@@ -6,12 +6,16 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  redirect,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlatformProvider } from "@/lib/platform-store";
+import { ensureSupabaseSessionReady } from "@/integrations/supabase/client";
+import { checkRouteAccess } from "@/lib/auth-guard.functions";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { Toaster } from "@/components/ui/sonner";
 import { LoadingScreen } from "@/components/LoadingIndicator";
 
@@ -76,7 +80,65 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+const AUTHENTICATED_PATHS = [
+  "/ads",
+  "/history",
+  "/network",
+  "/notifications",
+  "/plans",
+  "/profile",
+  "/support",
+  "/withdraw",
+  "/transactions",
+  "/deposit/",
+  "/users/detail/",
+];
+
+function requiresAuthentication(pathname: string) {
+  return (
+    AUTHENTICATED_PATHS.some((path) => pathname === path || pathname.startsWith(path)) ||
+    (pathname.startsWith("/admin") && pathname !== "/admin/login")
+  );
+}
+
+function requiresAdmin(pathname: string) {
+  return (
+    (pathname.startsWith("/admin") && pathname !== "/admin/login") ||
+    pathname.startsWith("/users/detail/")
+  );
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: async ({ location }) => {
+    // Supabase's normal browser session is restored from client storage, so
+    // there is no trustworthy server-side session to inspect during SSR.
+    // The authoritative guard therefore waits for browser restoration before
+    // deciding whether to redirect.
+    if (typeof window === "undefined" || !requiresAuthentication(location.pathname)) {
+      return;
+    }
+
+    await ensureSupabaseSessionReady();
+
+    const adminRequired = requiresAdmin(location.pathname);
+    const access = await checkRouteAccess({ data: { admin: adminRequired } });
+
+    if (!access.authenticated) {
+      throw redirect({
+        to: adminRequired ? "/admin/login" : "/auth",
+        search: { redirect: location.href },
+      });
+    }
+
+    if (adminRequired && !access.admin) {
+      throw redirect({
+        to: "/auth",
+        search: { redirect: location.href },
+      });
+    }
+
+    return { auth: access };
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -140,6 +202,7 @@ function RootComponent() {
       <PlatformProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <ImpersonationBanner />
         <Toaster position="top-center" richColors duration={4000} closeButton toastOptions={{ className: "top-notification glass-panel" }} />
       </PlatformProvider>
     </QueryClientProvider>
