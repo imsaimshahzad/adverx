@@ -52,7 +52,9 @@ import { HomepageHeroSettings } from "@/components/HomepageHeroSettings";
 import { SupportTicketPanel } from "@/components/SupportTicketPanel";
 import "@/admin-design.css";
 import "@/morphic-system.css";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
+import { checkRouteAccess } from "@/lib/auth-guard.functions";
+import { redirect } from "@tanstack/react-router";
 import {
   AdminModule,
   type AdminRow,
@@ -85,6 +87,20 @@ import {
 const db = supabase as any;
 
 export const Route = createFileRoute("/admin")({
+  pendingMs: 0,
+  pendingMinMs: 250,
+  beforeLoad: async ({ location }) => {
+    if (location.pathname === "/admin/login") return;
+    await ensureSupabaseSessionReady();
+    const access = await checkRouteAccess({ data: { admin: true } });
+    if (!access.authenticated || !access.admin) {
+      throw redirect({
+        to: "/admin/login",
+        search: { redirect: location.href },
+        replace: true,
+      });
+    }
+  },
   head: () => ({ meta: [{ title: "Admin operations — AdverX" }] }),
   component: AdminRoute,
 });
