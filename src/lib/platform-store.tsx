@@ -846,9 +846,11 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (auditText.includes("ahmad31 purchase")) return false;
       return true;
     });
-    const todaysEarnings = (isAdmin ? adminEarningTransactions : completedRewardTransactions)
-      .filter((entry) => isToday(entry.createdAt))
-      .reduce((total, entry) => total + entry.credit - entry.debit, 0);
+    const todaysEarnings = isAdmin && state.adminProfitSummary
+      ? num(state.adminProfitSummary.today_admin_earnings)
+      : completedRewardTransactions
+          .filter((entry) => isToday(entry.createdAt))
+          .reduce((total, entry) => total + entry.credit - entry.debit, 0);
     // Count the same completed ad rewards used by Today earnings, using the
     // Asia/Karachi calendar day rather than the browser's UTC date.
     // Completion records are the source of truth for the daily ad counter.
