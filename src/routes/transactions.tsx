@@ -77,7 +77,7 @@ function TransactionsPage() {
         ] = await Promise.all([
           db.from("wallet_transactions").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
           db.from("ledger_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
-          db.from("deposits").select("id, plan_id, amount, status, method, transaction_id, created_at, plan:plans(name)").eq("user_id", uid).order("created_at", { ascending: false }),
+          db.from("deposits").select("id, plan_id, amount, status, method, transaction_id, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
           db.from("withdrawals").select("id, amount, fee, method, status, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
         ]);
 
@@ -87,6 +87,12 @@ function TransactionsPage() {
 
         const depositRows = (deposits ?? []) as any[];
         const depositById = new Map(depositRows.map((d) => [String(d.id), d]));
+        const planIds = [...new Set(depositRows.map((d) => String(d.plan_id ?? "")).filter(Boolean))];
+        const { data: planRows, error: planError } = planIds.length
+          ? await db.from("plans").select("id, name").in("id", planIds)
+          : { data: [], error: null };
+        if (planError) throw new Error(planError.message);
+        const planById = new Map((planRows ?? []).map((p: any) => [String(p.id), String(p.name ?? "")]));
         const allowedTypes = new Set(
           isAdmin
             ? ["PLAN_PURCHASE", "AD_REWARD", "TASK_REWARD", "REWARD", "REFERRAL_REWARD", "REFERRAL_COMMISSION", "PLATFORM_ADMIN_PROFIT", "UNASSIGNED_REFERRAL", "WITHDRAWAL", "WITHDRAWAL_FEE", "REFUND", "ADMIN_ADJUSTMENT", "WITHDRAWAL_REFUND"]
@@ -108,7 +114,7 @@ function TransactionsPage() {
           const debit = row.debit != null ? Number(row.debit) : rawAmount < 0 ? Math.abs(rawAmount) : 0;
           const reference = String(row.reference_id ?? "");
           const deposit = depositById.get(reference);
-          const planName = deposit?.plan?.name ?? "";
+          const planName = deposit ? planById.get(String(deposit.plan_id ?? "")) ?? "" : "";
           let direction: "credit" | "debit" = credit > 0 && debit === 0 ? "credit" : "debit";
           let amount = credit > 0 ? credit : debit;
           if (type === "PLAN_PURCHASE" && rawAmount < 0) { direction = "debit"; amount = Math.abs(rawAmount); }
