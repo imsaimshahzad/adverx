@@ -926,7 +926,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     if (data.user) await refresh(data.user);
   }, [refresh, state.user]);
   const logout = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: isImpersonating() ? "local" : "global" });
     if (error) throw new Error(`Sign out failed: ${error.message}`);
     setState(EMPTY as unknown as State);
     setDataError(null);
