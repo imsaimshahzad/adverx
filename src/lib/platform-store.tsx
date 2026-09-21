@@ -953,11 +953,12 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       p_plan_id: input.planId,
     });
     if (error) throw new Error(`Deposit creation failed: ${error.message}`);
+    await refresh(auth.user);
   if (input.imageHash) {
     const { error: hashError } = await db.from("deposits").update({ image_hash: input.imageHash }).eq("user_id", auth.user.id).eq("transaction_id", input.transactionId).is("image_hash", null);
     if (hashError) throw new Error(`Receipt hash could not be saved: ${hashError.message}`);
   }
-  }, []);
+  }, [refresh]);
   const startAd = useCallback(async (adId: string) => {
     const { data, error } = await db.rpc("start_ad_view", { p_ad_id: adId });
     if (error) throw new Error(error.message);
