@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { UserDetailPage } from "@/routes/admin";
 import { getUserDetails } from "@/lib/admin-service";
