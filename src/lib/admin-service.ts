@@ -438,7 +438,33 @@ export async function getUserDetails(identifier: string) {
   const approvedDeposits = (deposits ?? []).filter((row: AdminRow) => row.status === "approved");
   const paidWithdrawals = (withdrawals ?? []).filter((row: AdminRow) => row.status === "paid");
   const completedCommissions = (commissions ?? []).filter((row: AdminRow) => row.status === "completed");
-  const balance = (ledger ?? []).reduce((sum: number, row: AdminRow) => sum + Number(row.amount ?? 0), 0);
+
+  // Wallet balance must use the same user-owned ledger entries as the member
+  // dashboard. Plan purchases, ad-budget reserves, platform profit, deposits
+  // and other internal allocation rows are NOT spendable wallet balance.
+  // Keep this calculation server-data-backed and deterministic so admin/user
+  // screens cannot disagree about a member's available balance.
+  const balanceEntryTypes = new Set([
+    "ad_reward",
+    "referral_reward",
+    "referral_commission",
+    "refund",
+    "admin_adjustment",
+    "withdrawal",
+    "withdrawal_refund",
+  ]);
+  const completedStatuses = new Set(["completed", "credited", "paid", "approved"]);
+  const balance = (ledger ?? [])
+    .filter((row: AdminRow) => balanceEntryTypes.has(String(row.entry_type ?? "").toLowerCase()))
+    .filter((row: AdminRow) => !["cancelled", "reversed", "rejected"].includes(String(row.status ?? "").toLowerCase()))
+    .filter((row: AdminRow) => {
+      const type = String(row.entry_type ?? "").toLowerCase();
+      return type === "withdrawal" || completedStatuses.has(String(row.status ?? "").toLowerCase()) || row.status == null;
+    })
+    .reduce((sum: number, row: AdminRow) => {
+      const amount = Number(row.amount ?? 0);
+      return sum + (String(row.entry_type ?? "").toLowerCase() === "withdrawal" ? -Math.abs(amount) : amount);
+    }, 0);
 
   return {
     profile,
