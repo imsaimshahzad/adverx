@@ -7,6 +7,8 @@ import { brokeredPreviewStorage } from "./previewAuthStorage";
 const IMPERSONATION_FLAG = "adverx-impersonating";
 const IMPERSONATION_TOKEN_PARAM = "impersonation_token";
 const IMPERSONATION_VERIFIED = "adverx-impersonation-verified";
+const NORMAL_STORAGE_KEY = "adverx-admin-auth";
+const IMPERSONATION_STORAGE_KEY = "adverx-impersonation-auth";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -67,17 +69,19 @@ function createBrowserClient(impersonating: boolean) {
     auth: impersonating
       ? {
           storage: typeof window !== "undefined" ? window.sessionStorage : undefined,
-          storageKey: "adverx-impersonation-auth",
+          storageKey: IMPERSONATION_STORAGE_KEY,
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: false,
+          lock: async (_name, _acquireTimeout, fn) => fn(),
         }
       : {
           storage: brokeredPreviewStorage(),
-          storageKey: "adverx-admin-auth",
+          storageKey: NORMAL_STORAGE_KEY,
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
+          lock: async (_name, _acquireTimeout, fn) => fn(),
         },
   });
 }
