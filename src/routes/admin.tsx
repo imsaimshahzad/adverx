@@ -91,13 +91,22 @@ export const Route = createFileRoute("/admin")({
   pendingMs: 0,
   pendingMinMs: 250,
   beforeLoad: async ({ location }) => {
+    if (location.pathname === "/admin/login") return;
     if (isImpersonating()) {
       throw redirect({ to: "/auth", search: { redirect: location.href }, replace: true });
     }
-    if (location.pathname === "/admin/login") return;
-    await ensureSupabaseSessionReady();
-    const access = await checkRouteAccess({ data: { admin: true } });
-    if (!access.authenticated || !access.admin) {
+    try {
+      await ensureSupabaseSessionReady();
+      const access = await checkRouteAccess({ data: { admin: true } });
+      if (!access.authenticated || !access.admin) {
+        throw redirect({
+          to: "/admin/login",
+          search: { redirect: location.href },
+          replace: true,
+        });
+      }
+    } catch (cause) {
+      if (cause && typeof cause === "object" && "isRedirect" in cause) throw cause;
       throw redirect({
         to: "/admin/login",
         search: { redirect: location.href },
@@ -278,7 +287,7 @@ function AdminRoute() {
   const [userPageRows, setUserPageRows] = useState<AdminRow[]>([]);
   const [userTotal, setUserTotal] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [detailUserId, setDetailUserId] = useState<string | null>(() => new URLSearchParams(window.location.search).get("user"));
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [detailData, setDetailData] = useState<AdminRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const openUserDetails = useCallback((userId: string) => {
@@ -300,12 +309,15 @@ function AdminRoute() {
     setDetailData(null);
   }, []);
   useEffect(() => {
-    const onPopState = () => {
-      setDetailUserId(new URLSearchParams(window.location.search).get("user"));
+    const syncAdminUrlState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setDetailUserId(params.get("user"));
+      if (params.get("section") === "users") setActive("users");
       setDetailData(null);
     };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+    syncAdminUrlState();
+    window.addEventListener("popstate", syncAdminUrlState);
+    return () => window.removeEventListener("popstate", syncAdminUrlState);
   }, []);
   useEffect(() => {
     if (!detailUserId) return;
