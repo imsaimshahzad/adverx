@@ -73,6 +73,7 @@ import {
   approveDeposit,
   deleteOrArchive,
   dispatchNotification,
+  broadcastNotification,
   formatValue,
   insertRow,
   saveManagementRow,
