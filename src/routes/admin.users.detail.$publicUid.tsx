@@ -47,12 +47,12 @@ function UserDetailRoute() {
   }, [publicUid]);
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
+    const returnPath = sessionStorage.getItem("adverx-admin-detail-return");
+    sessionStorage.removeItem("adverx-admin-detail-return");
+    if (returnPath && returnPath.startsWith("/admin")) {
+      void navigate({ to: returnPath, replace: true });
       return;
     }
-
-    // Directly opened detail pages have no in-app history to return to.
     void navigate({ to: "/admin/users", replace: true });
   };
 
