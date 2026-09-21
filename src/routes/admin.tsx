@@ -2050,13 +2050,36 @@ function ModuleTable({
   onUserDetails: (userId: string) => void;
 }) {
   const pageSize = 20;
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
-  const visibleRows = rows.slice((page - 1) * pageSize, page * pageSize);
+  const pageCount = Math.max(1, Math.ceil(displayRows.length / pageSize));
+  const visibleRows = displayRows.slice((page - 1) * pageSize, page * pageSize);
   const [metadataRow, setMetadataRow] = useState<AdminRow | null>(null);
-  const rawColumns = [...new Set(rows.flatMap((row) => Object.keys(row)))].filter(
+  const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
+  const notificationGroups = active === "notifications"
+    ? Array.from(
+        rows.reduce((map, row) => {
+          const key = [
+            String(row.title ?? ""),
+            String(row.body ?? ""),
+            String(row.created_at ?? "").slice(0, 19),
+          ].join("|");
+          const group = map.get(key) ?? [];
+          group.push(row);
+          map.set(key, group);
+          return map;
+        }, new Map<string, AdminRow[]>()).values(),
+      ).map((group) => ({
+        ...group[0],
+        recipient_count: group.length,
+        _recipients: group,
+      }))
+    : [];
+  const displayRows = active === "notifications" ? notificationGroups : rows;
+  const rawColumns = [...new Set(displayRows.flatMap((row) => Object.keys(row)))].filter(
     (column) => !["id", "user_id", "profile_id", "created_by", "replied_by", "public_uid"].includes(column),
   );
-  const columns = active === "plans"
+  const columns = active === "notifications"
+  ? ["title", "body", "recipient_count", "created_at"]
+  : active === "plans"
   ? [
   ...[
   "name",
@@ -2186,7 +2209,13 @@ function ModuleTable({
                         className="max-w-[180px] truncate px-2 py-1.5 align-middle text-xs"
                         key={column}
                       >
-                        {active === "users" ? (
+                        {active === "notifications" && column === "recipient_count" ? (
+                          <span>{String(row.recipient_count ?? 0)} recipient{Number(row.recipient_count ?? 0) === 1 ? "" : "s"}</span>
+                        ) : active === "notifications" && column === "body" ? (
+                          <span title={String(row.body ?? "")}>{String(row.body ?? "—")}</span>
+                        ) : active === "notifications" && column === "created_at" ? (
+                          <span>{formatValue(row.created_at)}</span>
+                        ) : active === "users" ? (
                           column === "user" ? (
                             <div className="min-w-0">
                               <div className="truncate font-medium text-slate-900">{String(row.full_name ?? row.username ?? "Unknown user")}</div>
@@ -2214,7 +2243,20 @@ function ModuleTable({
                         ) : <span title={String(row[column] ?? "")}>{active === "tasks" && column !== "created_at" ? String(row[column] ?? "—") : formatValue(row[column])}</span>}
                       </td>
                     ))}
-                    {active === "deposits" ? (
+                    {active === "notifications" ? (
+                      <td className="whitespace-nowrap px-2 py-1.5 align-middle">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setNotificationDetail((row as AdminRow & { _recipients?: AdminRow[] })._recipients ?? []);
+                          }}
+                        >
+                          View recipients
+                        </Button>
+                      </td>
+                    ) : active === "deposits" ? (
                       <td className="whitespace-nowrap px-2 py-1.5 align-middle">
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <Button
@@ -2356,6 +2398,23 @@ function ModuleTable({
             </CardContent>
           </Card>
         ) : null}
+        <Dialog open={Boolean(notificationDetail)} onOpenChange={(open) => !open && setNotificationDetail(null)}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Notification recipients</DialogTitle>
+              <DialogDescription>This notification was sent as one campaign. The recipients below are the individual users who received it.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[55vh] space-y-2 overflow-y-auto rounded-xl border p-3">
+              {(notificationDetail ?? []).map((recipient, index) => (
+                <div key={String(recipient.id ?? index)} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+                  <span className="font-mono text-xs text-slate-700">{String(recipient.public_uid ?? recipient.user_id ?? "Unknown user")}</span>
+                  <span className="text-xs text-slate-500">{String(recipient.user_id ?? "")}</span>
+                </div>
+              ))}
+            </div>
+            <DialogFooter><Button variant="outline" onClick={() => setNotificationDetail(null)}>Close</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog open={Boolean(metadataRow)} onOpenChange={(open) => !open && setMetadataRow(null)}>
           <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
