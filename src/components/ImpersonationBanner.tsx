@@ -16,6 +16,7 @@ export function ImpersonationBanner() {
   const exit = async () => {
     try {
       await getSupabase().auth.signOut({ scope: "local" });
+      getSupabase().auth.stopAutoRefresh();
     } finally {
       sessionStorage.removeItem("adverx-impersonating");
       sessionStorage.removeItem("adverx-impersonation-verified");
