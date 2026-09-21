@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/deposit/$planId")({
 function DepositPage() {
   const { planId } = useParams({ from: "/_authenticated/deposit/$planId" });
   const navigate = useNavigate();
-  const { submitDeposit } = usePlatform();
+  const { submitDeposit, state } = usePlatform();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loadingPlan, setLoadingPlan] = useState(true);
   const [planError, setPlanError] = useState<string | null>(null);
@@ -60,6 +60,9 @@ function DepositPage() {
 
   if (loadingPlan) return <AppShell title="Submit deposit" subtitle="Preparing your deposit"><div className="surface flex flex-col gap-2 p-6 text-sm text-muted-foreground"><span className="text-base font-medium text-foreground">Preparing your deposit</span><span>We&apos;re loading the selected plan and payment details.</span></div></AppShell>;
   if (planError || !plan) return <AppShell title="Submit deposit" subtitle="Unable to continue"><div className="surface space-y-4 p-6"><p className="text-sm text-destructive">{planError ?? "Unable to load this plan."}</p><div className="flex gap-2"><Button asChild><Link to="/plans"><ArrowLeft className="mr-2 size-4" />Back to Plans</Link></Button><Button variant="outline" onClick={() => window.location.reload()}>Retry</Button></div></div></AppShell>;
+
+  const pendingDeposit = state.deposits.find((deposit) => deposit.status === "pending");
+  if (pendingDeposit) return <AppShell title="Deposit Pending" subtitle="Awaiting admin approval"><div className="surface space-y-3 p-6"><p className="text-base font-semibold">You already have a pending deposit.</p><p className="text-sm text-muted-foreground">Your PKR {pendingDeposit.amount.toLocaleString("en-PK")} deposit is currently under review. You cannot submit another deposit until this request is approved or rejected.</p><Button className="w-full" onClick={() => void navigate({ to: "/" })}>Back to Dashboard</Button></div></AppShell>;
 
   const method = PAYMENT_METHODS.find((m) => m.id === methodId) ?? PAYMENT_METHODS[0];
   return <AppShell title="Submit deposit" subtitle={`${plan.name} · ${money(plan.price)}`}>
