@@ -1668,22 +1668,21 @@ function CreateRecordButton({
                       Turn this off to target one or multiple specific UIDs.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={form.targetUserId.trim() === "__ALL__"}
-                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-0 p-0 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${form.targetUserId.trim() === "__ALL__" ? "bg-primary" : "bg-muted-foreground/40"}`}
-                    onClick={() =>
-                      setForm({
-                        ...form,
-                        targetUserId: form.targetUserId.trim() === "__ALL__" ? "" : "__ALL__",
-                      })
-                    }
-                  >
-                    <span
-                      className={`pointer-events-none block size-4 rounded-full bg-white shadow-sm transition-transform ${form.targetUserId.trim() === "__ALL__" ? "translate-x-4" : "translate-x-0.5"}`}
+                  <label className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={form.targetUserId.trim() === "__ALL__"}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          targetUserId: e.target.checked ? "__ALL__" : "",
+                        })
+                      }
                     />
-                  </button>
+                    <span className="absolute inset-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/30" />
+                    <span className="pointer-events-none absolute left-1 top-1 size-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
+                  </label>
                 </div>
                 {form.targetUserId.trim() !== "__ALL__" && (
                   <label className="grid gap-2">
