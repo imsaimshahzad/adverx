@@ -34,8 +34,49 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set("apikey", supabaseKey);
+
+    // Some privacy-focused browsers/extensions can leave a blocked Supabase
+    // request pending indefinitely. Never let auth/database boot hang forever.
+    if (!init?.signal && typeof AbortController !== "undefined") {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 15000);
+      return fetch(input, { ...init, headers, signal: controller.signal }).finally(() => {
+        window.clearTimeout(timer);
+      });
+    }
+
     return fetch(input, { ...init, headers });
   };
+}
+
+function resilientStorage(primary: Storage | undefined): Storage {
+  const memory = new Map<string, string>();
+  const fallback =
+    typeof window !== "undefined"
+      ? (() => {
+          try { return window.sessionStorage; } catch { return undefined; }
+        })()
+      : undefined;
+
+  const read = (key: string) => {
+    try {
+      return primary?.getItem(key) ?? null;
+    } catch {
+      try { return fallback?.getItem(key) ?? memory.get(key) ?? null; } catch { return memory.get(key) ?? null; }
+    }
+  };
+  const write = (key: string, value: string) => {
+    memory.set(key, value);
+    try { primary?.setItem(key, value); return; } catch {}
+    try { fallback?.setItem(key, value); } catch {}
+  };
+  const remove = (key: string) => {
+    memory.delete(key);
+    try { primary?.removeItem(key); } catch {}
+    try { fallback?.removeItem(key); } catch {}
+  };
+
+  return { getItem: read, setItem: write, removeItem: remove, clear: () => {}, key: () => null, length: 0 } as Storage;
 }
 
 function env(name: string) {
@@ -68,7 +109,7 @@ function createBrowserClient(impersonating: boolean) {
     },
     auth: impersonating
       ? {
-          storage: typeof window !== "undefined" ? window.sessionStorage : undefined,
+          storage: resilientStorage(typeof window !== "undefined" ? (() => { try { return window.sessionStorage; } catch { return undefined; } })() : undefined),
           storageKey: IMPERSONATION_STORAGE_KEY,
           persistSession: true,
           autoRefreshToken: true,
@@ -76,7 +117,7 @@ function createBrowserClient(impersonating: boolean) {
           lock: async (_name, _acquireTimeout, fn) => fn(),
         }
       : {
-          storage: brokeredPreviewStorage(),
+          storage: resilientStorage(brokeredPreviewStorage()),
           storageKey: NORMAL_STORAGE_KEY,
           persistSession: true,
           autoRefreshToken: true,
