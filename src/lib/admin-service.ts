@@ -72,6 +72,15 @@ export async function dispatchNotification(
   return data as AdminRow;
 }
 
+export async function broadcastNotification(title: string, body: string) {
+  const { data, error } = await db.rpc("admin_broadcast_notification", {
+    p_title: title,
+    p_body: body,
+  });
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
 export async function reviewWithdrawal(
   id: string,
   nextStatus: "approved" | "processing" | "paid" | "rejected",
