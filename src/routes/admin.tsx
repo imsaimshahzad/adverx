@@ -91,22 +91,13 @@ export const Route = createFileRoute("/admin")({
   pendingMs: 0,
   pendingMinMs: 250,
   beforeLoad: async ({ location }) => {
-    if (location.pathname === "/admin/login") return;
     if (isImpersonating()) {
       throw redirect({ to: "/auth", search: { redirect: location.href }, replace: true });
     }
-    try {
-      await ensureSupabaseSessionReady();
-      const access = await checkRouteAccess({ data: { admin: true } });
-      if (!access.authenticated || !access.admin) {
-        throw redirect({
-          to: "/admin/login",
-          search: { redirect: location.href },
-          replace: true,
-        });
-      }
-    } catch (cause) {
-      if (cause && typeof cause === "object" && "isRedirect" in cause) throw cause;
+    if (location.pathname === "/admin/login") return;
+    await ensureSupabaseSessionReady();
+    const access = await checkRouteAccess({ data: { admin: true } });
+    if (!access.authenticated || !access.admin) {
       throw redirect({
         to: "/admin/login",
         search: { redirect: location.href },
@@ -240,14 +231,19 @@ const statusActions: Partial<Record<AdminModule, string[]>> = {
   support: ["open", "in_progress", "resolved", "closed"],
 };
 
-function AdminRoute() {
+export function AdminRoute() {
   const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [authorization, setAuthorization] = useState<"checking" | "authorized" | "unauthorized">("checking");
   const [error, setError] = useState<string | null>(null);
   const [adminName, setAdminName] = useState("Admin");
-  const [active, setActive] = useState<AdminModule>("overview");
+  const [active, setActive] = useState<AdminModule>(() => {
+    const section = window.location.pathname.startsWith("/admin/")
+      ? window.location.pathname.split("/")[2]
+      : "overview";
+    return menu.some(([key]) => key === section) ? section as AdminModule : "overview";
+  });
   const [rows, setRows] = useState<Record<string, AdminRow[]>>({});
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
@@ -287,7 +283,7 @@ function AdminRoute() {
   const [userPageRows, setUserPageRows] = useState<AdminRow[]>([]);
   const [userTotal, setUserTotal] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [detailUserId, setDetailUserId] = useState<string | null>(null);
+  const [detailUserId, setDetailUserId] = useState<string | null>(() => new URLSearchParams(window.location.search).get("user"));
   const [detailData, setDetailData] = useState<AdminRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const openUserDetails = useCallback((userId: string) => {
@@ -297,27 +293,20 @@ function AdminRoute() {
       toast.error("Unable to identify this user.");
       return;
     }
-    window.history.pushState({}, "", `/admin?user=${encodeURIComponent(publicUid)}&section=users`);
-    setDetailUserId(publicUid);
-    setDetailData(null);
-    setActive("users");
-  }, [userPageRows]);
+    void navigate({ to: "/admin/users/detail/$publicUid", params: { publicUid } });
+  }, [navigate, userPageRows]);
   const closeUserDetails = useCallback(() => {
-    window.history.pushState({}, "", "/admin?section=users");
-    setActive("users");
+    window.history.pushState({}, "", "/admin");
     setDetailUserId(null);
     setDetailData(null);
   }, []);
   useEffect(() => {
-    const syncAdminUrlState = () => {
-      const params = new URLSearchParams(window.location.search);
-      setDetailUserId(params.get("user"));
-      if (params.get("section") === "users") setActive("users");
+    const onPopState = () => {
+      setDetailUserId(new URLSearchParams(window.location.search).get("user"));
       setDetailData(null);
     };
-    syncAdminUrlState();
-    window.addEventListener("popstate", syncAdminUrlState);
-    return () => window.removeEventListener("popstate", syncAdminUrlState);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
   useEffect(() => {
     if (!detailUserId) return;
@@ -493,6 +482,17 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
       setRefreshing(false);
     }
   }, [active, navigate, page, query]);
+  useEffect(() => {
+    const section = location.pathname.startsWith("/admin/")
+      ? location.pathname.split("/")[2]
+      : "overview";
+    if (menu.some(([key]) => key === section)) {
+      setActive(section as AdminModule);
+    } else if (location.pathname === "/admin") {
+      setActive("overview");
+    }
+  }, [location.pathname]);
+
   useEffect(() => {
     if (location.pathname === "/admin/login") return;
     void load();
@@ -838,6 +838,8 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
                 setQuery("");
                 setPage(1);
                 setSelectedUser(null);
+                if (key === "overview") void navigate({ to: "/admin" });
+                else void navigate({ to: "/admin/$section", params: { section: key } });
               }}
             >
               <Icon className="size-4" />
@@ -2189,7 +2191,7 @@ function ModuleTable({
   ) : actions.length || managementTable || active === "support" ? (
                         <td className="whitespace-nowrap px-2 py-2 align-middle">
                         <div className="flex items-center gap-2 whitespace-nowrap">
-                          {active === "users" ? <><a href={`/admin?user=${encodeURIComponent(String(row.public_uid ?? row.id))}&section=users`} onClick={(event) => event.stopPropagation()} className="inline-flex h-9 items-center justify-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50">Details</a><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button></> : null}
+                          {active === "users" ? <><a href={`/users/detail/${encodeURIComponent(String(row.public_uid ?? row.id))}`} onClick={(event) => event.stopPropagation()} className="inline-flex h-9 items-center justify-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50">Details</a><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button></> : null}
                           {managementTable ? <><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" className="h-9 rounded-full bg-emerald-600 px-4 text-white hover:bg-emerald-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" className="h-9 rounded-full bg-rose-600 px-4 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" className="h-9 rounded-full bg-rose-600 px-4 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</> : null}
                           {active === "support" ? <Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
                           {actions.length ? <select
