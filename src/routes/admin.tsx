@@ -2017,3 +2017,314 @@ function ModuleTable({
   const columns = active === "plans"
   ? [
   ...[
+  "name",
+  "price_pkr",
+  "admin_profit_pct",
+  "referrer_commission_pct",
+  "recovery_fund_pct",
+  "ad_budget_pct",
+  "reward_budget_pkr",
+  "ads_per_day",
+  "status",
+  "created_at",
+  "description",
+  ].filter((column) => rawColumns.includes(column)),
+  ...rawColumns.filter(
+  (column) =>
+  ![
+  "name",
+  "price_pkr",
+  "ads_per_day",
+  "status",
+  "created_at",
+  "description",
+  "min_deposit_pkr",
+  "daily_ads",
+  "ads_per_day",
+  "id",
+  ].includes(column),
+  ),
+  ].slice(0, 6)
+  : active === "users"
+  ? ["user", "plan", "payment", "status", "role"]
+  : rawColumns.slice(0, 6);
+  return (
+    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+      <CardHeader className="gap-4 border-b border-slate-200/80 bg-slate-50 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="h-1 w-10 rounded-full bg-[#6366f1]" />
+        <div>
+          <CardTitle>{active.replaceAll("-", " ")}</CardTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {totalRecords ?? rows.length} live records from Supabase.
+          </p>
+        </div>
+        {active === "users" && userCounts && onUserPartition ? (
+          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="User filters">
+            {(["all", "paid", "unpaid", "starter", "growth", "pro"] as const).map((filter) => (
+              <Button key={filter} type="button" size="sm" variant={userPartition === filter ? "default" : "outline"} role="tab" aria-selected={userPartition === filter} onClick={() => onUserPartition(filter)} className="shrink-0 capitalize">
+                {filter === "all" ? "All" : `${filter.slice(0, 1).toUpperCase()}${filter.slice(1)}`} ({userCounts[filter]})
+              </Button>
+            ))}
+          </div>
+        ) : adsCounts && onAdsFilter ? (
+          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Ads status">
+            {(["active", "archived", "all"] as const).map((status) => (
+              <Button key={status} type="button" size="sm" variant={adsFilter === status ? "default" : "outline"} role="tab" aria-selected={adsFilter === status} onClick={() => onAdsFilter(status)} className="shrink-0 capitalize">
+                {status} ({adsCounts[status]})
+              </Button>
+            ))}
+          </div>
+        ) : statusCounts && onStatusPartition ? (
+          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${active} status`}>
+            {(["pending", "approved", "rejected"] as const).map((status) => (
+              <Button
+                key={status}
+                type="button"
+                size="sm"
+                variant={statusPartition === status ? "default" : "outline"}
+                role="tab"
+                aria-selected={statusPartition === status}
+                onClick={() => onStatusPartition(status)}
+                className="shrink-0 capitalize"
+              >
+                {status} ({statusCounts[status]})
+              </Button>
+            ))}
+          </div>
+        ) : null}
+        <div className="flex items-center gap-2">
+          <Input
+            className="sm:max-w-xs"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search records"
+          />
+          <CreateRecordButton
+            active={active}
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            onCreated={onCreated}
+          />
+        </div>
+      </CardHeader>
+      <CardContent className="px-0 pb-0">
+        {!rows.length ? (
+          <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+            <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-indigo-50 text-indigo-700"><Inbox className="size-5" /></div>
+            <p className="font-medium text-slate-800">Nothing to review yet</p>
+            <p className="mt-1 max-w-xs text-sm text-muted-foreground">Records will appear here as activity is created.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] table-auto text-xs">
+              <thead className="sticky top-0 z-10 bg-slate-50">
+                <tr className="border-b border-slate-200/80 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  {columns.map((column) => (
+                    <th className="whitespace-nowrap px-2 py-1.5 text-[11px]" key={column}>
+                      {active === "plans" && column === "ads_per_day"
+                        ? "Daily Ads Limit"
+                        : column.replaceAll("_", " ")}
+                    </th>
+                  ))}
+  {actions.length || managementTable || active === "support" ? (
+  <th className="whitespace-nowrap px-2 py-2">Actions</th>
+
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRows.map((row, index) => (
+                  <tr
+                    className={`border-b border-slate-100 transition-colors hover:bg-[#fff8f2] ${index % 2 ? "bg-slate-50/35" : "bg-white/30"}`}
+                    key={String(row.id ?? index)}
+                    onClick={() => active === "users" && setSelectedUser(row)}
+                  >
+                    {columns.map((column) => (
+                      <td
+                        className="max-w-[180px] truncate px-2 py-1.5 align-middle text-xs"
+                        key={column}
+                      >
+                        {active === "users" ? (
+                          column === "user" ? (
+                            <div className="min-w-0">
+                              <div className="truncate font-medium text-slate-900">{String(row.full_name ?? row.username ?? "Unknown user")}</div>
+                              <div className="truncate text-[11px] text-slate-500">UID {String(row.public_uid ?? "—")} · @{String(row.username ?? "—")}</div>
+                            </div>
+                          ) : column === "plan" ? (
+                            <span>{String(row.active_plan_name ?? "No Plan") || "No Plan"}</span>
+                          ) : column === "payment" ? (
+                            <span>{String(row.payment ?? "Unpaid")}</span>
+                          ) : column === "status" ? (
+                            <span>{String(row.status ?? "—")}</span>
+                          ) : column === "role" ? (
+                            <span>{String(row.role ?? "member")}</span>
+                          ) : (
+                            <span>{String(row[column] ?? "—")}</span>
+                          )
+                        ) : active === "audit-logs" && column === "metadata" ? (
+                          <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-indigo-700 hover:bg-indigo-50" onClick={(event) => { event.stopPropagation(); setMetadataRow(row); }}>
+                            <Eye className="size-3.5" /> View details
+                          </Button>
+                        ) : active === "audit-logs" && ["actor_id", "admin_id", "user_id", "target_id"].includes(column) ? (
+                          <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-600" title={String(row[column] ?? "")}>{shortId(row[column])}<button type="button" className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-indigo-700" aria-label="Copy ID" onClick={(event) => { event.stopPropagation(); void navigator.clipboard?.writeText(String(row[column] ?? "")); }}><Copy className="size-3" /></button></span>
+                        ) : active === "audit-logs" && ["action", "event_type"].includes(column) ? (
+                          <Badge variant="outline" className={`border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${actionBadgeClass(String(row[column] ?? ""))}`}>{String(row[column] ?? "—").replaceAll("_", " ")}</Badge>
+                        ) : <span title={String(row[column] ?? "")}>{active === "tasks" && column !== "created_at" ? String(row[column] ?? "—") : formatValue(row[column])}</span>}
+                      </td>
+                    ))}
+                    {active === "deposits" ? (
+                      <td className="whitespace-nowrap px-2 py-1.5 align-middle">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onReceipt(row);
+                            }}
+                            disabled={!row.proof_url}
+                          >
+                            View Receipt
+                          </Button>
+                          {row.status === "pending" ? (
+                            <>
+                              <Button
+                                size="sm"
+                                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onStatus(row, "approved");
+                                }}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="bg-rose-600 text-white hover:bg-rose-700"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onStatus(row, "rejected");
+                                }}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          ) : null}
+                          {actions.length ? (
+                            <select
+                              aria-label={`Change status for ${String(row.full_name ?? row.id ?? "deposit")}`}
+                              className="h-9 rounded-md border bg-background px-2 text-sm"
+                              value=""
+                              onClick={(event) => event.stopPropagation()}
+                              onChange={(event) =>
+                                event.target.value &&
+                                onStatus(row, event.target.value)
+                              }
+                            >
+                              <option value="">Change status</option>
+                              {actions.map((action) => (
+                                <option key={action} value={action}>
+                                  {action}
+                                </option>
+                              ))}
+                            </select>
+                          ) : null}
+                        </div>
+                      </td>
+  ) : actions.length || managementTable || active === "support" ? (
+                        <td className="whitespace-nowrap px-2 py-2 align-middle">
+                        <div className="flex items-center gap-2 whitespace-nowrap">
+                          {active === "users" ? <><a href={`/users/detail/${encodeURIComponent(String(row.public_uid ?? row.id))}`} onClick={(event) => event.stopPropagation()} className="inline-flex h-9 items-center justify-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50">Details</a><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onAdjustBalance(row); }}>Adjust balance</Button></> : null}
+                          {managementTable ? <><Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>Edit</Button>{active === "tasks" ? row.status === "archived" ? <Button size="sm" className="h-9 rounded-full bg-emerald-600 px-4 text-white hover:bg-emerald-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "active"); }}>Restore</Button> : <Button size="sm" className="h-9 rounded-full bg-rose-600 px-4 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onStatus(row, "archived"); }}>Archive</Button> : <Button size="sm" variant="destructive" className="h-9 rounded-full bg-rose-600 px-4 text-white hover:bg-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(row); }}>Delete</Button>}</> : null}
+                          {active === "support" ? <Button size="sm" variant="outline" className="h-9 rounded-full px-4" onClick={(event) => { event.stopPropagation(); onReply(row); }}>Reply / Manage</Button> : null}
+                          {actions.length ? <select
+                            aria-label={`Change status for ${String(row.full_name ?? row.id ?? "record")}`}
+                            className="h-9 shrink-0 appearance-none rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-slate-200"
+                            value=""
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={(event) =>
+                              event.target.value &&
+                              onStatus(row, event.target.value)
+                            }
+                          >
+                            <option value="">Change status</option>
+                            {actions.map((action) => (
+                              <option key={action} value={action}>
+                                {action}
+                              </option>
+                            ))}
+                          </select> : null}
+                        </div>
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex items-center justify-between border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {visibleRows.length} of {rows.length}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 1}
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="px-2 py-2 text-sm text-muted-foreground">
+                  Page {page} of {pageCount}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= pageCount}
+                  onClick={() => setPage(Math.min(pageCount, page + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {selectedUser ? (
+          <Card className="mt-4">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle>User details</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedUser(null)}
+              >
+                Close
+              </Button>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              {Object.entries(selectedUser).map(([key, value]) => (
+                <div key={key}>
+                  <p className="text-xs uppercase text-muted-foreground">
+                    {key.replaceAll("_", " ")}
+                  </p>
+                  <p className="text-sm">{formatValue(value)}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
+        <Dialog open={Boolean(metadataRow)} onOpenChange={(open) => !open && setMetadataRow(null)}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Sparkles className="size-4 text-indigo-700" /> Audit metadata</DialogTitle>
+              <DialogDescription>Structured details captured with this audit event.</DialogDescription>
+            </DialogHeader>
+            <pre className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-6 text-slate-700">{prettyJson(metadataRow?.metadata)}</pre>
+            <DialogFooter><Button variant="outline" onClick={() => setMetadataRow(null)}>Close</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
+  );
+}
