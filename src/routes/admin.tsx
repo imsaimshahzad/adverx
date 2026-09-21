@@ -231,14 +231,19 @@ const statusActions: Partial<Record<AdminModule, string[]>> = {
   support: ["open", "in_progress", "resolved", "closed"],
 };
 
-function AdminRoute() {
+export function AdminRoute() {
   const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [authorization, setAuthorization] = useState<"checking" | "authorized" | "unauthorized">("checking");
   const [error, setError] = useState<string | null>(null);
   const [adminName, setAdminName] = useState("Admin");
-  const [active, setActive] = useState<AdminModule>("overview");
+  const [active, setActive] = useState<AdminModule>(() => {
+    const section = window.location.pathname.startsWith("/admin/")
+      ? window.location.pathname.split("/")[2]
+      : "overview";
+    return menu.some(([key]) => key === section) ? section as AdminModule : "overview";
+  });
   const [rows, setRows] = useState<Record<string, AdminRow[]>>({});
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
@@ -288,7 +293,7 @@ function AdminRoute() {
       toast.error("Unable to identify this user.");
       return;
     }
-    window.location.assign(`/users/detail/${encodeURIComponent(publicUid)}`);
+    void navigate({ to: "/admin/users/detail/$publicUid", params: { publicUid: encodeURIComponent(publicUid) } });
   }, [navigate, userPageRows]);
   const closeUserDetails = useCallback(() => {
     window.history.pushState({}, "", "/admin");
@@ -477,6 +482,17 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
       setRefreshing(false);
     }
   }, [active, navigate, page, query]);
+  useEffect(() => {
+    const section = location.pathname.startsWith("/admin/")
+      ? location.pathname.split("/")[2]
+      : "overview";
+    if (menu.some(([key]) => key === section)) {
+      setActive(section as AdminModule);
+    } else if (location.pathname === "/admin") {
+      setActive("overview");
+    }
+  }, [location.pathname]);
+
   useEffect(() => {
     if (location.pathname === "/admin/login") return;
     void load();
@@ -822,6 +838,7 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
                 setQuery("");
                 setPage(1);
                 setSelectedUser(null);
+                void navigate({ to: "/admin/$section", params: { section: key } });
               }}
             >
               <Icon className="size-4" />
