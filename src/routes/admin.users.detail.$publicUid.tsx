@@ -57,7 +57,7 @@ function UserDetailRoute() {
   };
 
   const loginAsUser = async (userId: string) => {
-    const tab = window.open("about:blank", "_blank");
+    const tab = window.open("about:blank", "_blank", "noopener,noreferrer");
     try {
       if (!tab) throw new Error("Please allow pop-ups for AdverX.");
       const result = await startImpersonation({ data: { userId } });
