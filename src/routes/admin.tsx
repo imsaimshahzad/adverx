@@ -1672,7 +1672,7 @@ function CreateRecordButton({
                     type="button"
                     role="switch"
                     aria-checked={form.targetUserId.trim() === "__ALL__"}
-                    className={`relative h-6 w-11 rounded-full transition ${form.targetUserId.trim() === "__ALL__" ? "bg-primary" : "bg-muted"}`}
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-0 p-0 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${form.targetUserId.trim() === "__ALL__" ? "bg-primary" : "bg-muted-foreground/40"}`}
                     onClick={() =>
                       setForm({
                         ...form,
@@ -1681,7 +1681,7 @@ function CreateRecordButton({
                     }
                   >
                     <span
-                      className={`absolute top-1 size-4 rounded-full bg-white shadow transition ${form.targetUserId.trim() === "__ALL__" ? "left-6" : "left-1"}`}
+                      className={`pointer-events-none block size-4 rounded-full bg-white shadow-sm transition-transform ${form.targetUserId.trim() === "__ALL__" ? "translate-x-4" : "translate-x-0.5"}`}
                     />
                   </button>
                 </div>
