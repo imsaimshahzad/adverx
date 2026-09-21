@@ -46,6 +46,16 @@ function UserDetailRoute() {
     return () => { cancelled = true; };
   }, [publicUid]);
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    // Directly opened detail pages have no in-app history to return to.
+    void navigate({ to: "/admin/users", replace: true });
+  };
+
   const loginAsUser = async (userId: string) => {
     const tab = window.open("about:blank", "_blank");
     try {
@@ -65,9 +75,9 @@ function UserDetailRoute() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
           <button
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
-            onClick={() => navigate({ to: "/admin/users" })}
+            onClick={handleBack}
           >
-            <ArrowLeft className="size-4" /> Back to Users
+            <ArrowLeft className="size-4" /> Back
           </button>
           <span className="text-sm font-semibold tracking-wide text-slate-700">AdverX Admin</span>
         </div>
@@ -76,7 +86,7 @@ function UserDetailRoute() {
         <UserDetailPage
           data={data}
           loading={loading}
-          onBack={() => navigate({ to: "/admin/users" })}
+          onBack={handleBack}
           onLoginAsUser={loginAsUser}
         />
       </main>
