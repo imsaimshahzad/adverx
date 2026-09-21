@@ -254,9 +254,9 @@ function Dashboard() {
             <div className="flex items-start gap-3">
               <Clock className="mt-0.5 size-5 text-warning" />
               <div>
-                <p className="text-sm font-medium">Deposit under review</p>
+                <p className="text-sm font-medium">Deposit Pending</p>
                 <p className="text-xs text-muted-foreground">
-                  Transaction {pendingDeposit.transactionId} is being verified.
+                  PKR {money(pendingDeposit.amount)} deposit is being verified.
                   Your plan activates right after approval.
                 </p>
               </div>
