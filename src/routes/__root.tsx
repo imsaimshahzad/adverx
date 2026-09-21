@@ -78,36 +78,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: async ({ location }) => {
-    // Supabase's normal browser session is restored from client storage, so
-    // there is no trustworthy server-side session to inspect during SSR.
-    // The authoritative guard therefore waits for browser restoration before
-    // deciding whether to redirect.
-    if (typeof window === "undefined" || !requiresAuthentication(location.pathname)) {
-      return;
-    }
-
-    await ensureSupabaseSessionReady();
-
-    const adminRequired = requiresAdmin(location.pathname);
-    const access = await checkRouteAccess({ data: { admin: adminRequired } });
-
-    if (!access.authenticated) {
-      throw redirect({
-        to: adminRequired ? "/admin/login" : "/auth",
-        search: { redirect: location.href },
-      });
-    }
-
-    if (adminRequired && !access.admin) {
-      throw redirect({
-        to: "/auth",
-        search: { redirect: location.href },
-      });
-    }
-
-    return;
-  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
