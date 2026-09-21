@@ -90,19 +90,12 @@ export const Route = createFileRoute("/admin")({
   ssr: false,
   pendingMs: 0,
   pendingMinMs: 250,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: ({ location }) => {
+    // Keep route entry synchronous. Admin authentication is handled inside
+    // AdminRoute so a failed session/server check can never blank the route.
+    if (location.pathname === "/admin/login") return;
     if (isImpersonating()) {
       throw redirect({ to: "/auth", search: { redirect: location.href }, replace: true });
-    }
-    if (location.pathname === "/admin/login") return;
-    await ensureSupabaseSessionReady();
-    const access = await checkRouteAccess({ data: { admin: true } });
-    if (!access.authenticated || !access.admin) {
-      throw redirect({
-        to: "/admin/login",
-        search: { redirect: location.href },
-        replace: true,
-      });
     }
   },
   head: () => ({ meta: [{ title: "Admin operations — AdverX" }] }),
