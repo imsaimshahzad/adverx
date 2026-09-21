@@ -1847,6 +1847,37 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
         </CardContent>
       </Card>
 
+      {(() => {
+        const activePlan = plans.find((row) => String(row.status ?? "").toLowerCase() === "active");
+        if (!activePlan) return null;
+        const allocated = Number(activePlan.reward_budget_pkr ?? activePlan.original_reward_reserve_pkr ?? 0);
+        const remaining = Number(activePlan.remaining_reward_budget_pkr ?? 0);
+        const used = Math.max(0, allocated - remaining);
+        const dailyUsed = Number(activePlan.daily_reward_used_pkr ?? 0);
+        const dailyLimit = Number(activePlan.daily_reward_limit_pkr ?? 0);
+        return (
+          <Card>
+            <CardHeader className="px-4 py-3">
+              <CardTitle className="text-sm">Reward Budget</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3 px-4 pb-4 pt-0 sm:grid-cols-3 lg:grid-cols-5">
+              {[
+                ["Allocated", money(allocated)],
+                ["Used", money(used)],
+                ["Remaining", money(remaining)],
+                ["Daily Used", money(dailyUsed)],
+                ["Daily Limit", dailyLimit > 0 ? money(dailyLimit) : "—"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg border bg-muted/30 p-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="mt-1 text-base font-semibold tabular-nums">{value}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
         <Card>
           <CardHeader className="px-4 py-3"><CardTitle className="text-sm">Plans</CardTitle></CardHeader>
