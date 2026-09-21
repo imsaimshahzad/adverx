@@ -2049,9 +2049,6 @@ function ModuleTable({
   onDelete: (row: AdminRow) => void;
   onUserDetails: (userId: string) => void;
 }) {
-  const pageSize = 20;
-  const pageCount = Math.max(1, Math.ceil(displayRows.length / pageSize));
-  const visibleRows = displayRows.slice((page - 1) * pageSize, page * pageSize);
   const [metadataRow, setMetadataRow] = useState<AdminRow | null>(null);
   const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
@@ -2072,6 +2069,7 @@ function ModuleTable({
       setNotificationRecipientMap(map);
     })();
   }, [active, rows]);
+
   const notificationGroups = active === "notifications"
     ? Array.from(
         rows.reduce((map, row) => {
@@ -2092,9 +2090,9 @@ function ModuleTable({
       }))
     : [];
   const displayRows = active === "notifications" ? notificationGroups : rows;
-  const rawColumns = [...new Set(displayRows.flatMap((row) => Object.keys(row)))].filter(
-    (column) => !["id", "user_id", "profile_id", "created_by", "replied_by", "public_uid"].includes(column),
-  );
+  const pageSize = 20;
+  const pageCount = Math.max(1, Math.ceil(displayRows.length / pageSize));
+  const visibleRows = displayRows.slice((page - 1) * pageSize, page * pageSize);
   const columns = active === "notifications"
   ? ["title", "body", "recipient_count", "created_at"]
   : active === "plans"
