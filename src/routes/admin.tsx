@@ -1476,12 +1476,15 @@ function CreateRecordButton({
           const count = await broadcastNotification(name, form.body.trim());
           toast.success(`Notification sent to ${count} users.`);
         } else {
-          await dispatchNotification(
-            form.targetUserId.trim(),
-            name,
-            form.body.trim(),
-          );
-          toast.success("Notification sent successfully.");
+          const targetIds = form.targetUserId
+            .split(/[,\\n]+/)
+            .map((id) => id.trim())
+            .filter(Boolean);
+          if (!targetIds.length) throw new Error("Enter at least one user UID.");
+          for (const targetId of targetIds) {
+            await dispatchNotification(targetId, name, form.body.trim());
+          }
+          toast.success(`Notification sent to ${targetIds.length} user${targetIds.length === 1 ? "" : "s"}.`);
         }
       } else if (active === "tasks") {
         const reward = Number(form.reward);
@@ -1657,17 +1660,57 @@ function CreateRecordButton({
               </label>
             )}
             {active === "notifications" && (
-              <label className="grid gap-2 text-sm font-medium">
-                Recipient
-                <select
-                  className="h-10 rounded-md border bg-background px-3 text-sm"
-                  value={form.targetUserId}
-                  onChange={(e) => setForm({ ...form, targetUserId: e.target.value })}
-                >
-                  <option value="">Choose recipient</option>
-                  <option value="__ALL__">All Users</option>
-                </select>
-              </label>
+              <div className="grid gap-3 text-sm font-medium">
+                <div className="flex items-center justify-between rounded-lg border bg-muted/20 p-3">
+                  <div>
+                    <div>Send to all users</div>
+                    <p className="text-xs font-normal text-muted-foreground">
+                      Turn this off to target one or multiple specific UIDs.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={form.targetUserId.trim() === "__ALL__"}
+                    className={`relative h-6 w-11 rounded-full transition ${form.targetUserId.trim() === "__ALL__" ? "bg-primary" : "bg-muted"}`}
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        targetUserId: form.targetUserId.trim() === "__ALL__" ? "" : "__ALL__",
+                      })
+                    }
+                  >
+                    <span
+                      className={`absolute top-1 size-4 rounded-full bg-white shadow transition ${form.targetUserId.trim() === "__ALL__" ? "left-6" : "left-1"}`}
+                    />
+                  </button>
+                </div>
+                {form.targetUserId.trim() !== "__ALL__" && (
+                  <label className="grid gap-2">
+                    Specific user UID(s)
+                    <textarea
+                      className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm font-normal"
+                      value={form.targetUserId}
+                      placeholder="Enter UID, press Enter for the next UID, or separate with commas"
+                      onChange={(e) => setForm({ ...form, targetUserId: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          const value = e.currentTarget.value.trim();
+                          if (!value) return;
+                          setForm({
+                            ...form,
+                            targetUserId: value.endsWith(",") ? value + " " : value + ", ",
+                          });
+                        }
+                      }}
+                    />
+                    <span className="text-xs font-normal text-muted-foreground">
+                      Press Enter after each UID to lock it into the list. You can also paste comma-separated UIDs.
+                    </span>
+                  </label>
+                )}
+              </div>
             )}
             {active === "ledger" && (
               <label className="grid gap-2 text-sm font-medium">
