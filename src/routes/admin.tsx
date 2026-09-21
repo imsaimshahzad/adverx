@@ -2052,6 +2052,7 @@ function ModuleTable({
   const [metadataRow, setMetadataRow] = useState<AdminRow | null>(null);
   const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
+  const [notificationProfileCount, setNotificationProfileCount] = useState(0);
   useEffect(() => {
     if (active !== "notifications") return;
     const ids = [...new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean))];
@@ -2060,10 +2061,14 @@ function ModuleTable({
       return;
     }
     void (async () => {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("id, public_uid, full_name, username")
-        .in("id", ids);
+      const [{ data }, { count }] = await Promise.all([
+        (supabase as any)
+          .from("profiles")
+          .select("id, public_uid, full_name, username")
+          .in("id", ids),
+        (supabase as any).from("profiles").select("id", { count: "exact", head: true }),
+      ]);
+      setNotificationProfileCount(Number(count ?? 0));
       const map: Record<string, AdminRow> = {};
       for (const profile of data ?? []) map[String(profile.id)] = profile;
       setNotificationRecipientMap(map);
@@ -2136,7 +2141,9 @@ function ModuleTable({
         <div>
           <CardTitle>{active.replaceAll("-", " ")}</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            {totalRecords ?? rows.length} live records from Supabase.
+            {active === "notifications"
+              ? `${displayRows.length} notification${displayRows.length === 1 ? "" : "s"}`
+              : `${totalRecords ?? rows.length} live records from Supabase.`}
           </p>
         </div>
         {active === "users" && userCounts && onUserPartition ? (
@@ -2226,7 +2233,11 @@ function ModuleTable({
                         key={column}
                       >
                         {active === "notifications" && column === "recipient_count" ? (
-                          <span>{String(row.recipient_count ?? 0)} recipient{Number(row.recipient_count ?? 0) === 1 ? "" : "s"}</span>
+                          <span className="font-medium">
+                            {Number(row.recipient_count ?? 0) === notificationProfileCount && notificationProfileCount > 0
+                              ? "Sent to all users"
+                              : `Sent to ${row.recipient_count ?? 0} user${Number(row.recipient_count ?? 0) === 1 ? "" : "s"}`}
+                          </span>
                         ) : active === "notifications" && column === "body" ? (
                           <span title={String(row.body ?? "")}>{String(row.body ?? "—")}</span>
                         ) : active === "notifications" && column === "created_at" ? (
