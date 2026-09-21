@@ -74,8 +74,10 @@ function createBrowserClient(impersonating: boolean) {
         }
       : {
           storage: brokeredPreviewStorage(),
+          storageKey: "adverx-admin-auth",
           persistSession: true,
           autoRefreshToken: true,
+          detectSessionInUrl: true,
         },
   });
 }
