@@ -2054,6 +2054,24 @@ function ModuleTable({
   const visibleRows = displayRows.slice((page - 1) * pageSize, page * pageSize);
   const [metadataRow, setMetadataRow] = useState<AdminRow | null>(null);
   const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
+  const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
+  useEffect(() => {
+    if (active !== "notifications") return;
+    const ids = [...new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean))];
+    if (!ids.length) {
+      setNotificationRecipientMap({});
+      return;
+    }
+    void (async () => {
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("id, public_uid, full_name, username")
+        .in("id", ids);
+      const map: Record<string, AdminRow> = {};
+      for (const profile of data ?? []) map[String(profile.id)] = profile;
+      setNotificationRecipientMap(map);
+    })();
+  }, [active, rows]);
   const notificationGroups = active === "notifications"
     ? Array.from(
         rows.reduce((map, row) => {
@@ -2250,7 +2268,14 @@ function ModuleTable({
                           size="sm"
                           onClick={(event) => {
                             event.stopPropagation();
-                            setNotificationDetail((row as AdminRow & { _recipients?: AdminRow[] })._recipients ?? []);
+                            setNotificationDetail(
+                              ((row as AdminRow & { _recipients?: AdminRow[] })._recipients ?? []).map((recipient) => ({
+                                ...recipient,
+                                public_uid: notificationRecipientMap[String(recipient.user_id ?? "")]?.public_uid,
+                                full_name: notificationRecipientMap[String(recipient.user_id ?? "")]?.full_name,
+                                username: notificationRecipientMap[String(recipient.user_id ?? "")]?.username,
+                              })),
+                            );
                           }}
                         >
                           View recipients
