@@ -293,7 +293,7 @@ export function AdminRoute() {
       toast.error("Unable to identify this user.");
       return;
     }
-    void navigate({ to: "/admin/users/detail/$publicUid", params: { publicUid: encodeURIComponent(publicUid) } });
+    void navigate({ to: "/admin/users/detail/$publicUid", params: { publicUid } });
   }, [navigate, userPageRows]);
   const closeUserDetails = useCallback(() => {
     window.history.pushState({}, "", "/admin");
