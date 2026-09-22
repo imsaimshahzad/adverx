@@ -102,7 +102,7 @@ export function AuthPage() {
       </div>
 
       <Tabs defaultValue={pathMode} className="glass-panel min-w-0 p-4 sm:p-6">
-        <TabsList className="grid h-11 w-full min-w-0 grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1">
+        <TabsList className="grid h-10 w-full min-w-0 grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1">
           <TabsTrigger value="register" className="min-w-0 truncate px-2 text-xs sm:text-sm">Create account</TabsTrigger>
           <TabsTrigger value="login" className="min-w-0 truncate px-2 text-xs sm:text-sm">Sign in</TabsTrigger>
         </TabsList>
@@ -145,7 +145,7 @@ export function AuthPage() {
           </Field>
           <label className="flex w-full min-w-0 items-start gap-2 rounded-lg py-1 text-xs leading-5 text-muted-foreground">
             <Checkbox
-              className="mt-0.5 size-4 shrink-0"
+              className="mt-1 size-4 shrink-0"
               checked={form.terms}
               onCheckedChange={(v) => setForm({ ...form, terms: v === true })}
             />
