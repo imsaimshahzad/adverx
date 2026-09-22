@@ -80,7 +80,7 @@ function PublicHome() {
               <Button asChild size="lg" className="shadow-sm transition-transform hover:-translate-y-0.5">
                 <Link to={hero.ctaLink}>{hero.ctaText} <ArrowRight className="size-4" /></Link>
               </Button>
-              <Button asChild variant="outline" size="lg"><Link to="/auth">Sign In</Link></Button>
+              <Button asChild variant="outline" size="lg"><Link to="/login">Sign In</Link></Button>
             </div>
           </div>
           <div className="relative lg:translate-y-1">
@@ -104,7 +104,7 @@ function PublicHome() {
       <section className="mx-auto max-w-7xl px-5 pb-16 lg:px-8 lg:pb-20">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-violet-600 to-primary px-6 py-10 text-primary-foreground shadow-[0_24px_70px_-30px_hsl(var(--primary)/0.65)] sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14 lg:py-11">
           <div><p className="text-3xl font-semibold tracking-tight sm:text-4xl">Ready to get started?</p><p className="mt-3 max-w-xl text-primary-foreground/75">Create your AdverX account and explore your available tasks.</p></div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0"><Button asChild variant="secondary" size="lg"><Link to="/auth">Create Account</Link></Button><Button asChild variant="outline" size="lg" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/auth">Sign In</Link></Button></div>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0"><Button asChild variant="secondary" size="lg"><Link to="/login">Create Account</Link></Button><Button asChild variant="outline" size="lg" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/login">Sign In</Link></Button></div>
         </div>
       </section>
       <PublicFooter />
@@ -125,8 +125,8 @@ function PublicHeader() {
         <a href="#faq" className="transition-colors hover:text-foreground">FAQ</a>
       </nav>
       <div className="flex shrink-0 items-center gap-2">
-        <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/auth">Sign In</Link></Button>
-        <Button asChild size="sm"><Link to="/auth">Get Started</Link></Button>
+        <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/login">Sign In</Link></Button>
+        <Button asChild size="sm"><Link to="/signup">Get Started</Link></Button>
       </div>
     </header>
   );
@@ -177,7 +177,7 @@ function PublicFooter() {
         </div>
         <div className="flex flex-col gap-5 sm:items-end">
           <nav className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground" aria-label="Footer navigation">
-            <Link to="/" className="hover:text-foreground">Home</Link><Link to="/plans" className="hover:text-foreground">Plans</Link><a href="#privacy" className="hover:text-foreground">Privacy Policy</a><a href="#terms" className="hover:text-foreground">Terms</a><a href="mailto:support@adverx.online" className="hover:text-foreground">Contact</a><Link to="/auth" className="hover:text-foreground">Sign In</Link>
+            <Link to="/" className="hover:text-foreground">Home</Link><Link to="/plans" className="hover:text-foreground">Plans</Link><a href="#privacy" className="hover:text-foreground">Privacy Policy</a><a href="#terms" className="hover:text-foreground">Terms</a><a href="mailto:support@adverx.online" className="hover:text-foreground">Contact</a><Link to="/login" className="hover:text-foreground">Sign In</Link>
           </nav>
           <div className="flex items-center gap-3" aria-label="Social links">
             <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Linkedin className="size-4" /></a>
