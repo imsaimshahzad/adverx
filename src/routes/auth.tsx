@@ -145,7 +145,7 @@ export function AuthPage() {
           </Field>
           <label className="flex w-full min-w-0 items-start gap-2 rounded-lg py-1 text-xs leading-5 text-muted-foreground">
             <Checkbox
-              className="mt-1 size-4 shrink-0"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded-full"
               checked={form.terms}
               onCheckedChange={(v) => setForm({ ...form, terms: v === true })}
             />
