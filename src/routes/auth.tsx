@@ -45,8 +45,8 @@ export const Route = createFileRoute("/auth")({
 export function AuthPage() {
   const { state, ready, dataError, logout } = usePlatform();
   const navigate = useNavigate();
-  const { redirect } = Route.useSearch();
   const location = useLocation();
+  const redirect = typeof location.search?.redirect === "string" ? location.search.redirect : "/";
   const pathMode = location.pathname === "/login" ? "login" : location.pathname === "/signup" ? "register" : "register";
   const [form, setForm] = useState({
     fullName: "",
