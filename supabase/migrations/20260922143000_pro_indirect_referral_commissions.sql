@@ -27,4 +27,4 @@ WHERE lower(name) = 'pro' AND price_pkr = 900;
 
 ALTER FUNCTION public.admin_approve_deposit(uuid,text,text) SET search_path = public, pg_catalog;
 ALTER FUNCTION public.sync_approved_plan_snapshot() SET search_path = public, pg_catalog;
-REVOKE EXECUTE ON FUNCTION public.process_referral_commissions() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.process_referral_commissions() FROM PUBLIC, anon, authenticated;
