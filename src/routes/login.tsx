@@ -3,8 +3,7 @@ import { AuthPage } from "@/routes/auth";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search) => ({
-    redirect: typeof search.redirect === "string" ? search.redirect : "/",
-    mode: "login" as const,
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
   }),
   head: () => ({
     links: [{ rel: "canonical", href: "https://adverx.online/login" }],
