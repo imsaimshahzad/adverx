@@ -7,6 +7,11 @@
   "background_color": "#ffffff",
   "theme_color": "#173f68",
   "icons": [
-    { "src": "/adverx-logo.png", "sizes": "1408x768", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }
