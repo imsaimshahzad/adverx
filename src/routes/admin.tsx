@@ -1762,8 +1762,8 @@ function CreateRecordButton({
                   Price PKR
                   <Input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
                 </label>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {([["adminProfit", "Admin Profit %"], ["referralCommission", "Referral Commission %"], ["recoveryFund", "Recovery Fund %"]] as const).map(([field, label]) => <label key={field} className="grid gap-2 text-sm font-medium">{label}<Input type="number" min="0" max="100" step="0.01" value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })} /></label>)}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {([["adminProfit", "Admin Profit %"], ["referralCommission", "Direct Referral %"], ["indirectReferral", "Indirect Referral %"], ["recoveryFund", "Recovery Fund %"]] as const).map(([field, label]) => <label key={field} className="grid gap-2 text-sm font-medium">{label}<Input type="number" min="0" max="100" step="0.01" value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })} /></label>)}
                 </div>
                 <label className="grid gap-2 text-sm font-medium">
                   Daily Ads Limit
