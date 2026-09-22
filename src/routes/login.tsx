@@ -7,6 +7,7 @@ export const Route = createFileRoute("/login")({
     mode: "login" as const,
   }),
   head: () => ({
+    links: [{ rel: "canonical", href: "https://adverx.online/login" }],
     meta: [
       { title: "Login to AdverX" },
       {
