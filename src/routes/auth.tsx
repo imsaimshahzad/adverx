@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export const Route = createFileRoute("/auth")({
   validateSearch: (search) => ({
     redirect: typeof search.redirect === "string" ? search.redirect : "/",
-    mode: search.mode === "login" ? "login" : "register",
   }),
   head: () => ({
     meta: [
@@ -46,7 +45,9 @@ export const Route = createFileRoute("/auth")({
 export function AuthPage() {
   const { state, ready, dataError, logout } = usePlatform();
   const navigate = useNavigate();
-  const { redirect, mode } = Route.useSearch();
+  const { redirect } = Route.useSearch();
+  const location = useLocation();
+  const pathMode = location.pathname === "/login" ? "login" : location.pathname === "/signup" ? "register" : "register";
   const [form, setForm] = useState({
     fullName: "",
     username: "",
@@ -100,11 +101,16 @@ export function AuthPage() {
         </p>
       </div>
 
-      <Tabs defaultValue={mode} className="glass-panel p-5 sm:p-6">
+      <Tabs defaultValue={pathMode} className="glass-panel p-5 sm:p-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="register">Create account</TabsTrigger>
           <TabsTrigger value="login">Sign in</TabsTrigger>
         </TabsList>
+        <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+          <Link to="/signup" className="underline underline-offset-4 hover:text-foreground">Register</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/login" className="underline underline-offset-4 hover:text-foreground">Login</Link>
+        </div>
 
         <TabsContent value="register" className="mt-5 space-y-3">
           <Field label="Full name">
