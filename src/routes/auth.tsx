@@ -143,13 +143,25 @@ export function AuthPage() {
               placeholder="Enter referral code (optional)"
             />
           </Field>
-          <label className="flex w-full min-w-0 items-start gap-2 rounded-lg py-1 text-xs leading-5 text-muted-foreground">
-            <Checkbox
-              className="mt-0.5 h-5 w-5 shrink-0 rounded-full"
+          <label className="gl-checkbox">
+            <input
+              className="gl-checkbox__input"
+              type="checkbox"
               checked={form.terms}
-              onCheckedChange={(v) => setForm({ ...form, terms: v === true })}
+              onChange={(e) => setForm({ ...form, terms: e.target.checked })}
             />
-            <span>
+            <span className="gl-checkbox__box" aria-hidden="true">
+              <svg
+                className="gl-checkbox__check"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <span className="gl-checkbox__label">
               I accept the terms of service. Rewards depend on available tasks
               and platform capacity and are not a guaranteed return.
             </span>
