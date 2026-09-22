@@ -833,7 +833,6 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
                 setPage(1);
                 setSelectedUser(null);
                 if (key === "overview") void navigate({ to: "/admin" });
-                else void navigate({ to: "/admin/$section", params: { section: key } });
               }}
             >
               <Icon className="size-4" />
