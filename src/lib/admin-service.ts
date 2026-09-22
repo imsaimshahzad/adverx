@@ -374,7 +374,7 @@ export async function getReferrerRecoveryReserve() {
 export async function getRevenuePlans() {
   const { data, error } = await db
     .from("plans")
-    .select("id, name, price_pkr, admin_profit_pct, direct_referral_pct, recovery_fund_pct, ad_budget_pct")
+    .select("id, name, price_pkr, admin_profit_pct, direct_referral_pct, referrer_commission_pct, indirect_referral_pct, recovery_fund_pct, ad_budget_pct, activity_rules")
     .order("price_pkr", { ascending: true });
   if (error) throw new Error(`Unable to load plan allocation details: ${error.message}`);
   return (data ?? []) as AdminRow[];
