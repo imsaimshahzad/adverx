@@ -212,7 +212,7 @@ const tableFor: Partial<Record<AdminModule, string>> = {
   fraud: "fraud_flags",
   notifications: "notifications",
   support: "support_tickets",
-  "audit-logs": "audit_log",
+  "audit-logs": "audit_logs",
 };
 const statusActions: Partial<Record<AdminModule, string[]>> = {
   users: ["active", "restricted", "suspended"],
