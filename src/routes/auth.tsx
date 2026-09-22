@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
@@ -143,27 +142,16 @@ export function AuthPage() {
               placeholder="Enter referral code (optional)"
             />
           </Field>
-          <label className="gl-checkbox">
+          <label className="flex w-full min-w-0 items-start gap-2 rounded-lg py-1 text-xs leading-5 text-muted-foreground">
             <input
-              className="gl-checkbox__input"
               type="checkbox"
               checked={form.terms}
               onChange={(e) => setForm({ ...form, terms: e.target.checked })}
+              className="mt-1 size-4 shrink-0 accent-primary"
             />
-            <span className="gl-checkbox__box" aria-hidden="true">
-              <svg
-                className="gl-checkbox__check"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </span>
-            <span className="gl-checkbox__label">
-              I accept the terms of service. Rewards depend on available tasks
-              and platform capacity and are not a guaranteed return.
+            <span className="min-w-0">
+              I accept the terms of service. Rewards depend on available tasks and
+              platform capacity and are not a guaranteed return.
             </span>
           </label>
           <Button
