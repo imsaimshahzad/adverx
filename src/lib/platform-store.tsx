@@ -28,6 +28,7 @@ export type Plan = {
   remainingRewardBudget: number;
   adminProfitPct: number;
   referrerCommissionPct: number;
+  indirectReferralPct: number;
   recoveryFundPct: number;
   adBudgetPct: number;
   recoveryPerReferral: number;
@@ -159,6 +160,7 @@ const EMPTY = {
   withdrawals: [],
   adViews: [],
   network: [],
+  totalReferralCommission: 0,
   notifications: [],
   recoveries: [],
   adminProfitSummary: null,
@@ -171,6 +173,7 @@ type State = {
   withdrawals: Withdrawal[];
   adViews: AdView[];
   network: NetworkMember[];
+  totalReferralCommission: number;
   notifications: Notification[];
   recoveries: Array<{ id: string; amount: number; status: string; createdAt: number; referredId: string }>;
   adminProfitSummary: AdminProfitSummary | null;
@@ -257,6 +260,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     remainingRewardBudget: 0,
     adminProfitPct: num(p.admin_profit_pct),
     referrerCommissionPct: num(p.referrer_commission_pct),
+    indirectReferralPct: num(p.indirect_referral_pct),
     recoveryFundPct: num(p.recovery_fund_pct),
     adBudgetPct: num(p.ad_budget_pct),
     recoveryPerReferral: num(p.recovery_per_referral_pkr),
@@ -440,6 +444,7 @@ async function loadState(user: {
         remainingRewardBudget: num(snapshotRow?.remaining_reward_budget_pkr),
         adminProfitPct: num(activePlanConfig?.admin_profit_pct),
         referrerCommissionPct: num(activePlanConfig?.referrer_commission_pct),
+        indirectReferralPct: num(activePlanConfig?.indirect_referral_pct),
         recoveryFundPct: num(activePlanConfig?.recovery_fund_pct),
         adBudgetPct: num(activePlanConfig?.ad_budget_pct),
         recoveryPerReferral: num(activePlanConfig?.recovery_per_referral_pkr),
@@ -469,16 +474,21 @@ async function loadState(user: {
   }
   const referralRows = referredProfiles;
   const referredIds = referralRows.map((row) => row.id).filter(Boolean);
-  const [{ data: referredPlans }, { data: commissions }] = referredIds.length
-    ? await Promise.all([
-        db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active"),
-        db.from("referral_commissions").select("source_user_id, amount").eq("user_id", uid),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const [{ data: referredPlans }, { data: commissions }] = await Promise.all([
+    referredIds.length
+      ? db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active")
+      : Promise.resolve({ data: [] }),
+    db.from("referral_commissions").select("source_user_id, amount").eq("user_id", uid).eq("status", "completed"),
+  ]);
   const profileById = new Map<string, any>((referredProfiles ?? []).map((row: any) => [row.id, row]));
   const planById = new Map<string, any>((referredPlans ?? []).map((row: any) => [row.user_id, PLANS.find((plan) => plan.id === row.plan_id)]));
   const commissionByUser = new Map<string, number>();
-  for (const row of commissions ?? []) commissionByUser.set(row.source_user_id, (commissionByUser.get(row.source_user_id) ?? 0) + num(row.amount));
+  let totalReferralCommission = 0;
+  for (const row of commissions ?? []) {
+    const amount = num(row.amount);
+    totalReferralCommission += amount;
+    if (row.source_user_id) commissionByUser.set(row.source_user_id, (commissionByUser.get(row.source_user_id) ?? 0) + amount);
+  }
   let adminProfitSummary: AdminProfitSummary | null = null;
   if (["admin", "super_admin", "moderator"].includes(role)) {
     try {
@@ -613,6 +623,7 @@ async function loadState(user: {
         status: plan ? "Active" : "Registered",
       };
     }),
+    totalReferralCommission,
     notifications: ((notifications ?? []) as any[]).map((n) => ({
       id: n.id,
       title: n.title,
