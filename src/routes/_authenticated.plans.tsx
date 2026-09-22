@@ -13,16 +13,16 @@ import { money, PLANS, usePlatform } from "@/lib/platform-store";
 export const Route = createFileRoute("/_authenticated/plans")({
   head: () => ({
     meta: [
-      { title: "Plans — AdverX" },
+      { title: "AdverX Plans — Choose Your Reward Plan" },
       {
         name: "description",
         content:
-          "Compare AdverX plans: daily ad limits, network eligibility and minimum withdrawal thresholds.",
+          "Explore AdverX plans, daily ad task limits, referral rewards and withdrawal eligibility."
       },
-      { property: "og:title", content: "Plans — AdverX" },
+      { property: "og:title", content: "AdverX Plans — Choose Your Reward Plan" },
       {
         property: "og:description",
-        content: "Daily ad limits, network eligibility and withdrawal thresholds compared.",
+        content: "Explore AdverX plans, daily ad task limits, referral rewards and withdrawal eligibility.",
       },
     ],
   }),
@@ -45,6 +45,19 @@ function PlansPage() {
       ) : PLANS.length === 0 ? (
         <div className="surface p-6 text-sm text-muted-foreground">No active plans are currently available.</div>
       ) : (
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://adverx.online/" },
+              { "@type": "ListItem", position: 2, name: "Plans", item: "https://adverx.online/plans" },
+            ],
+          }),
+        }}
+      />
       <div className="space-y-3">
         {PLANS.map((p) => {
           const isActive = activePlan?.id === p.id;
