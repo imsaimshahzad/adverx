@@ -727,16 +727,22 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const boot = async () => {
   setCatalogReady(false);
   setCatalogError(null);
-  const catalogRequest = loadCatalog()
-    .then(() => { if (mounted) setCatalogReady(true); })
-    .catch((error) => {
-      console.error("[v0] Public catalog load failed", error);
-      if (mounted) setCatalogError(error instanceof Error ? error.message : "Unable to load public catalog.");
-    });
-  const sessionRequest = ensureSupabaseSessionReady().then(async ({ data }) => {
+  try {
+    // Resolve the auth session first so the catalog query runs with the same
+    // authenticated context as the account state. Running both requests in
+    // parallel could mark the catalog ready while PLANS was still empty,
+    // briefly (and sometimes persistently) showing "No plans".
+    const { data } = await ensureSupabaseSessionReady();
     if (mounted) await refresh(data.session?.user ?? null);
-  });
-  await Promise.all([catalogRequest, sessionRequest]);
+
+    await loadCatalog();
+    if (mounted) setCatalogReady(true);
+  } catch (error) {
+    console.error("[v0] Public catalog/account bootstrap failed", error);
+    if (mounted) {
+      setCatalogError(error instanceof Error ? error.message : "Unable to load available plans.");
+    }
+  }
 };
     void boot();
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
