@@ -233,9 +233,8 @@ export function AdminRoute() {
   const [error, setError] = useState<string | null>(null);
   const [adminName, setAdminName] = useState("Admin");
   const [active, setActive] = useState<AdminModule>(() => {
-    const section = window.location.pathname.startsWith("/admin/")
-      ? window.location.pathname.split("/")[2]
-      : "overview";
+    const section = new URLSearchParams(window.location.search).get("section") ||
+      (window.location.pathname.startsWith("/admin/") ? window.location.pathname.split("/")[2] : "overview");
     return menu.some(([key]) => key === section) ? section as AdminModule : "overview";
   });
   const [rows, setRows] = useState<Record<string, AdminRow[]>>({});
@@ -477,15 +476,11 @@ const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
     }
   }, [active, navigate, page, query]);
   useEffect(() => {
-    const section = location.pathname.startsWith("/admin/")
-      ? location.pathname.split("/")[2]
-      : "overview";
-    if (menu.some(([key]) => key === section)) {
-      setActive(section as AdminModule);
-    } else if (location.pathname === "/admin") {
-      setActive("overview");
-    }
-  }, [location.pathname]);
+    const searchSection = new URLSearchParams(window.location.search).get("section");
+    const section = searchSection || (location.pathname.startsWith("/admin/") ? location.pathname.split("/")[2] : "overview");
+    if (menu.some(([key]) => key === section)) setActive(section as AdminModule);
+    else if (location.pathname === "/admin" && !searchSection) setActive("overview");
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     if (location.pathname === "/admin/login") return;
