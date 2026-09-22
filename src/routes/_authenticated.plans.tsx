@@ -65,6 +65,12 @@ function PlansPage() {
               <ul className="mt-4 space-y-1.5 text-sm">
                 <Line>{p.dailyAdLimit} ad tasks per day</Line>
                 <Line>{p.durationDays ? `${p.durationDays} days validity` : "Lifetime access"}</Line>
+                <Line>Direct referral: {p.referrerCommissionPct}%</Line>
+                <Line>
+                  {p.indirectReferralPct > 0
+                    ? `Indirect referral: ${p.indirectReferralPct}% · Up to Level 6 earnings`
+                    : "Indirect referral: Not included"}
+                </Line>
                 <Line>Minimum withdrawal {money(p.minWithdrawal)}</Line>
                 <Line>{p.networkEligible ? "Network rewards enabled" : "No network rewards"}</Line>
               </ul>
