@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export const Route = createFileRoute("/auth")({
   validateSearch: (search) => ({
     redirect: typeof search.redirect === "string" ? search.redirect : "/",
+    mode: search.mode === "login" ? "login" : "register",
   }),
   head: () => ({
     meta: [
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/auth")({
 export function AuthPage() {
   const { state, ready, dataError, logout } = usePlatform();
   const navigate = useNavigate();
-  const { redirect } = Route.useSearch();
+  const { redirect, mode } = Route.useSearch();
   const [form, setForm] = useState({
     fullName: "",
     username: "",
@@ -99,7 +100,7 @@ export function AuthPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="register" className="glass-panel p-5 sm:p-6">
+      <Tabs defaultValue={mode} className="glass-panel p-5 sm:p-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="register">Create account</TabsTrigger>
           <TabsTrigger value="login">Sign in</TabsTrigger>
