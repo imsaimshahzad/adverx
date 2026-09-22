@@ -50,7 +50,7 @@ function PlansPage() {
 
   return (
     <AppShell title="Plans" subtitle="Choose the plan that fits your activity">
-      <>
+      <div className="space-y-4">
       {!catalogReady ? (
         <div className="surface p-6 text-sm text-muted-foreground" role="status">
           {catalogError ? `Unable to load plans. ${catalogError}` : <span className="flex flex-col items-center gap-2"><LoadingIndicator size="md" label="Loading available plans" /><span>Loading available plans</span></span>}
@@ -122,7 +122,7 @@ function PlansPage() {
         Earnings depend on available tasks, verified activity and platform capacity. Plan
         payments are not an investment and do not carry a guaranteed return.
       </p>
-      </>
+      </div>
     </AppShell>
   );
 }
