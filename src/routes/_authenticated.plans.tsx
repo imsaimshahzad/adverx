@@ -12,6 +12,7 @@ import { money, PLANS, usePlatform } from "@/lib/platform-store";
 
 export const Route = createFileRoute("/_authenticated/plans")({
   head: () => ({
+    links: [{ rel: "canonical", href: "https://adverx.online/plans" }],
     meta: [
       { title: "AdverX Plans — Choose Your Reward Plan" },
       {
@@ -23,6 +24,19 @@ export const Route = createFileRoute("/_authenticated/plans")({
       {
         property: "og:description",
         content: "Explore AdverX plans, daily ad task limits, referral rewards and withdrawal eligibility.",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: "https://adverx.online/" },
+            { "@type": "ListItem", position: 2, name: "Plans", item: "https://adverx.online/plans" },
+          ],
+        }),
       },
     ],
   }),
@@ -45,19 +59,6 @@ function PlansPage() {
       ) : PLANS.length === 0 ? (
         <div className="surface p-6 text-sm text-muted-foreground">No active plans are currently available.</div>
       ) : (
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: "https://adverx.online/" },
-              { "@type": "ListItem", position: 2, name: "Plans", item: "https://adverx.online/plans" },
-            ],
-          }),
-        }}
-      />
       <div className="space-y-3">
         {PLANS.map((p) => {
           const isActive = activePlan?.id === p.id;
