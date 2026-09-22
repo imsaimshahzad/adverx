@@ -106,12 +106,6 @@ export function AuthPage() {
           <TabsTrigger value="register">Create account</TabsTrigger>
           <TabsTrigger value="login">Sign in</TabsTrigger>
         </TabsList>
-        <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground">
-          <Link to="/signup" className="underline underline-offset-4 hover:text-foreground">Register</Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/login" className="underline underline-offset-4 hover:text-foreground">Login</Link>
-        </div>
-
         <TabsContent value="register" className="mt-5 space-y-3">
           <Field label="Full name">
             <Input
