@@ -313,17 +313,23 @@ export function AdminRoute() {
   }, [detailUserId]);
   const load = useCallback(async () => {
     if (location.pathname === "/admin/login") return;
+
     const requestVersion = ++loadVersion.current;
     const isInitialAuthorization = !adminIdentity.current;
     setRefreshing(true);
+
     if (isInitialAuthorization) {
       setLoading(true);
       setAuthorization("checking");
       setRows({});
       setCounts({});
     }
+
     setError(null);
+
     try {
+      // Authenticate once. Navigation between Admin modules must never repeat
+      // the auth/profile round-trip or reload every Admin table.
       if (isInitialAuthorization) {
         const { data: auth, error: authError } = await supabase.auth.getUser();
         if (authError || !auth.user) {
@@ -331,150 +337,163 @@ export function AdminRoute() {
           navigate({ to: "/admin/login", replace: true });
           return;
         }
+
         const { data: profile, error: profileError } = await db
           .from("profiles")
           .select("id, role, full_name")
           .eq("id", auth.user.id)
           .maybeSingle();
-        const allowed = !profileError && ["admin", "super_admin", "moderator"].includes(profile?.role);
+
+        const allowed =
+          !profileError &&
+          ["admin", "super_admin", "moderator"].includes(profile?.role);
+
         if (!allowed) {
           setAuthorization("unauthorized");
           return;
         }
-        const name = profile?.full_name || auth.user.email?.split("@")[0] || "Admin";
+
+        const name =
+          profile?.full_name || auth.user.email?.split("@")[0] || "Admin";
         adminIdentity.current = { id: auth.user.id, name };
         setAuthorization("authorized");
         setAdminName(name);
       }
-      const tables = [
-        ...new Set(
-          Object.values(tableFor).concat([
-            "profiles",
-            "deposits",
-            "withdrawals",
-            "advertiser_revenue",
-            "ledger_entries",
-            "referrals",
-            "referral_commissions",
-            "fraud_flags",
-            "support_tickets",
-            "notifications",
-            "deposit_methods",
-          ]),
-        ),
-      ];
-      const results = await Promise.allSettled(
-        tables.map(async (table) => [table, await queryRows(table)] as const),
-      );
-      const next: Record<string, AdminRow[]> = {};
-      const failures: string[] = [];
-      for (const result of results) {
-        if (result.status === "fulfilled") {
-          next[result.value[0]] = result.value[1];
-        } else {
-          failures.push(result.reason?.message || "query failed");
-        }
-      }
+
       if (requestVersion !== loadVersion.current) return;
-      setRows(next);
-      try {
-        const [summary, operational] = await Promise.all([getReserveSummary(), getOperationsOverview()]);
-        setReserveSummary(summary);
-        setOverview(operational as Record<string, number>);
-      } catch {
-        setReserveSummary([]);
-        setOverview({});
-      }
-  if (active === "revenue") {
-  const revenueLoad = async () => {
-    try {
-      const summary = await getAdminProfitSummary();
-      setProfitSummary(summary);
-    } catch (error) {
-      console.error("[admin] revenue summary load failed", error);
-    }
 
-    try {
-      const ledger = await getAdminProfitLedger();
-      const userIds = [...new Set(ledger.map((row) => String(row.user_id ?? "")).filter(Boolean))];
-      const { data: profiles } = userIds.length
-        ? await (supabase as any).from("profiles").select("id, public_uid, full_name, username").in("id", userIds)
-        : { data: [] };
-      const profileMap = new Map((profiles ?? []).map((profile: any) => [String(profile.id), profile]));
-      setProfitLedger(ledger.map((row) => {
-        const profile: any = profileMap.get(String(row.user_id ?? ""));
-        return { ...row, user_display: profile ? `${profile.full_name || profile.username || "User"} · ${profile.public_uid}` : "User" };
-      }));
-    } catch (error) {
-      console.error("[admin] revenue ledger load failed", error);
-    }
-
-    try {
-      setRevenuePlans(await getRevenuePlans());
-    } catch (error) {
-      console.error("[admin] revenue plans load failed", error);
-    }
-
-    try {
-      setReferrerRecoveryReserve(await getReferrerRecoveryReserve());
-    } catch (error) {
-      console.error("[admin] referrer reserve load failed", error);
-    }
-  };
-  await revenueLoad();
-}
-      if (active === "users") {
-        try {
-const userRows = (await getUsersPage("", "", 1, 1000)).map(mapUserForDisplay);
-  setUserPageRows(userRows);
-  setUserTotal(userRows.length);
-        } catch {
-          setUserPageRows([]);
-          setUserTotal(0);
+      // Only fetch the data required by the currently visible module.
+      // The old implementation fetched ~20 tables on every module change,
+      // making one slow table block the whole Admin screen.
+      const loadModuleData = async () => {
+        if (active === "overview") {
+          const [summary, operational] = await Promise.all([
+            getReserveSummary(),
+            getOperationsOverview(),
+          ]);
+          if (requestVersion !== loadVersion.current) return;
+          setReserveSummary(summary);
+          setOverview(operational as Record<string, number>);
+          return;
         }
-      }
-      if (failures.length)
-        setError(
-          `${failures.length} data source${failures.length > 1 ? "s" : ""} could not be loaded. Other modules remain available.`,
-        );
-      const badgeTables = [
-        "deposits",
-        "withdrawals",
-        "fraud_flags",
-        "support_tickets",
-      ];
-      const badgeResults = await Promise.allSettled(
-        badgeTables.map(
-          async (table) =>
-            [
-              table,
-              await queryCount(table, {
-                status:
-                  table === "fraud_flags"
-                    ? "open"
-                    : table === "support_tickets"
-                      ? "open"
-                      : "pending",
-              }),
-            ] as const,
-        ),
-      );
-      const nextCounts: Record<string, number> = {};
-      for (const result of badgeResults)
-        if (result.status === "fulfilled")
-          nextCounts[result.value[0]] = result.value[1];
-      setCounts(nextCounts);
+
+        if (active === "revenue") {
+          const [summary, ledger, plans, recoveryReserve] = await Promise.all([
+            getAdminProfitSummary(),
+            getAdminProfitLedger(),
+            getRevenuePlans(),
+            getReferrerRecoveryReserve(),
+          ]);
+
+          if (requestVersion !== loadVersion.current) return;
+
+          setProfitSummary(summary);
+
+          const userIds = [
+            ...new Set(
+              ledger
+                .map((row) => String(row.user_id ?? ""))
+                .filter(Boolean),
+            ),
+          ];
+
+          if (userIds.length) {
+            const { data: profiles, error: profilesError } = await db
+              .from("profiles")
+              .select("id, public_uid, full_name, username")
+              .in("id", userIds);
+
+            if (!profilesError) {
+              const profileMap = new Map(
+                (profiles ?? []).map((profile: any) => [
+                  String(profile.id),
+                  profile,
+                ]),
+              );
+              setProfitLedger(
+                ledger.map((row) => {
+                  const profile: any = profileMap.get(
+                    String(row.user_id ?? ""),
+                  );
+                  return {
+                    ...row,
+                    user_display: profile
+                      ? `${profile.full_name || profile.username || "User"} · ${profile.public_uid}`
+                      : "User",
+                  };
+                }),
+              );
+            } else {
+              setProfitLedger(ledger);
+            }
+          } else {
+            setProfitLedger(ledger);
+          }
+
+          setRevenuePlans(plans);
+          setReferrerRecoveryReserve(recoveryReserve);
+          return;
+        }
+
+        if (active === "users") {
+          const userRows = (await getUsersPage("", "", 1, 1000)).map(
+            mapUserForDisplay,
+          );
+          if (requestVersion !== loadVersion.current) return;
+          setUserPageRows(userRows);
+          setUserTotal(userRows.length);
+          return;
+        }
+
+        const table = tableFor[active];
+        if (!table) return;
+
+        const moduleRows = await queryRows(table);
+        if (requestVersion !== loadVersion.current) return;
+        setRows({ [table]: moduleRows });
+      };
+
+      await loadModuleData();
+
+      // Sidebar badges are useful, but they must not block the first paint.
+      // Run them in the background and update only the badge state.
+      void Promise.allSettled(
+        [
+          ["deposits", "pending"],
+          ["withdrawals", "pending"],
+          ["fraud_flags", "open"],
+          ["support_tickets", "open"],
+        ].map(async ([table, status]) => {
+          return [
+            table,
+            await queryCount(table, { status }),
+          ] as const;
+        }),
+      ).then((badgeResults) => {
+        if (requestVersion !== loadVersion.current) return;
+        const nextCounts: Record<string, number> = {};
+        for (const result of badgeResults) {
+          if (result.status === "fulfilled") {
+            nextCounts[result.value[0]] = result.value[1];
+          }
+        }
+        setCounts(nextCounts);
+      });
     } catch (cause) {
+      if (requestVersion !== loadVersion.current) return;
       setError(
         cause instanceof Error
           ? cause.message
           : "Admin data could not be loaded.",
       );
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestVersion === loadVersion.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [active, navigate, page, query]);
+  }, [active, navigate, location.pathname]);
+
   useEffect(() => {
     const searchSection = new URLSearchParams(window.location.search).get("section");
     const section = searchSection || (location.pathname.startsWith("/admin/") ? location.pathname.split("/")[2] : "overview");
