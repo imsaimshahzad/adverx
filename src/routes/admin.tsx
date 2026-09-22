@@ -2092,6 +2092,9 @@ function ModuleTable({
   const pageSize = 20;
   const pageCount = Math.max(1, Math.ceil(displayRows.length / pageSize));
   const visibleRows = displayRows.slice((page - 1) * pageSize, page * pageSize);
+  // Build table columns from the actual Supabase rows. Previously rawColumns was referenced
+  // without being defined, causing ModuleTable to throw a ReferenceError for most admin modules.
+  const rawColumns = Array.from(new Set(displayRows.flatMap((row) => Object.keys(row))));
   const columns = active === "notifications"
   ? ["title", "body", "recipient_count", "created_at"]
   : active === "plans"
