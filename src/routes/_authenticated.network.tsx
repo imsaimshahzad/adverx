@@ -46,7 +46,7 @@ function NetworkPage() {
         <StatTile label="Active" value={`${active}`} />
         <StatTile label="No plan" value={`${members.filter((m) => !m.active).length}`} />
         <StatTile label="This month" value={`+${thisMonth}`} />
-        <StatTile label="Commission" value={`Rs. ${members.reduce((total, member) => total + member.commission, 0).toLocaleString("en-PK")}`} />
+        <StatTile label="Commission" value={`Rs. ${state.totalReferralCommission.toLocaleString("en-PK")}`} />
       </div>
 
       <div className="glass-panel mt-3 p-4">
