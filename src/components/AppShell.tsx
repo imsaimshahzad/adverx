@@ -13,7 +13,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode, Fragment } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { usePlatform } from "@/lib/platform-store";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,7 @@ export function AppShell({
   const changeCurrency = (next: "PKR" | "USD") => {
     window.localStorage.setItem("adverx-display-currency", next);
     setCurrency(next);
+    window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: next }));
   };
 
   const dismissWhatsAppPrompt = () => {
@@ -169,7 +170,7 @@ export function AppShell({
             </div>
             <span className="shrink-0 text-xs font-semibold text-primary">Join Channel →</span>
           </a>
-          <Fragment key={currency}>{children}</Fragment>
+          {children}
         </main>
         {showWhatsAppPrompt ? (
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
