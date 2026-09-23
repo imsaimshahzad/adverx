@@ -50,3 +50,18 @@
 .admin-shell tr[class*="fff8f2"]:hover { background:#f8fafc; }
 .admin-button:hover { background:#4f46e5; }
 @media (prefers-reduced-motion:reduce) { .admin-shell * { transition-duration:.01ms!important; } }
+
+.dark .admin-shell { background:#0b1120; color:#f8fafc; }
+.dark .admin-shell .admin-sidebar { background:#111827; border-color:#334155; }
+.dark .admin-shell .admin-nav-item { color:#cbd5e1; }
+.dark .admin-shell .admin-nav-item:hover { background:#1e293b; color:#c7d2fe; }
+.dark .admin-shell .admin-nav-item[data-active="true"] { background:#312e81; color:#c7d2fe; border-left-color:#818cf8; }
+.dark .admin-shell [data-slot="card"],.dark .admin-shell .bg-white,.dark .admin-shell .bg-card,.dark .admin-shell .admin-stat-card,.dark .admin-shell .admin-table-wrap { background:#111827; border-color:#334155; color:#f8fafc; }
+.dark .admin-shell table { background:#111827; }
+.dark .admin-shell thead { background:#1e293b; }
+.dark .admin-shell th { color:#cbd5e1; border-color:#334155; }
+.dark .admin-shell td { color:#f8fafc; border-color:#1e293b; }
+.dark .admin-shell tbody tr { background:#111827; }
+.dark .admin-shell tbody tr:hover { background:#1e293b; }
+.dark .admin-shell h2,.dark .admin-shell h3,.dark .admin-shell .admin-section-heading,.dark .admin-shell .admin-stat-card strong { color:#f8fafc; }
+.dark .admin-shell input,.dark .admin-shell textarea,.dark .admin-shell select { background:#0f172a; color:#f8fafc; border-color:#475569; }
