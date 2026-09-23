@@ -184,7 +184,7 @@ export function AppShell({
               </button>
             </div>
           </div>
-        ) : null
+        ) : null}
       </div>
     </div>
   );
