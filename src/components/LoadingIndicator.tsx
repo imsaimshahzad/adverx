@@ -15,23 +15,13 @@ const sizes = {
 
 export function LoadingIndicator({ size = "md", label = "Loading", className }: LoadingIndicatorProps) {
   return (
-    <span
-      className={cn("loader-wrapper wallet-loader", sizes[size], className)}
-      role="status"
-      aria-label={label}
-    >
-      <span className="wallet-back" />
-      <span className="bill bill-1" />
-      <span className="bill bill-2" />
-      <span className="bill bill-3" />
-      <span className="wallet-front">
-        <span className="wallet-loading-text">
-          {label}
-          <span className="dot">.</span>
-          <span className="dot">.</span>
-          <span className="dot">.</span>
-        </span>
-      </span>
+    <span className={cn("loader-wrapper", sizes[size], className)} role="status" aria-label={label}>
+      <span className="circle" />
+      <span className="circle" />
+      <span className="circle" />
+      <span className="shadow" />
+      <span className="shadow" />
+      <span className="shadow" />
       <span className="sr-only">{label}</span>
     </span>
   );
