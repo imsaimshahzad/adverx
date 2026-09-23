@@ -79,7 +79,8 @@ export function AppShell({
     window.localStorage.setItem("adverx-display-currency", next);
     window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: next }));
     setCurrency(next);
-  };\n
+  };
+
   const dismissWhatsAppPrompt = () => {
     if (!user?.id) return;
     window.localStorage.setItem(`adverx-whatsapp-channel-prompt:${user.id}`, "seen");
