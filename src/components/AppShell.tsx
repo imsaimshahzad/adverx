@@ -21,6 +21,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePlatform } from "@/lib/platform-store";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/LoadingIndicator";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/BrandLogo";
 import "@/dashboard-design.css";
@@ -191,6 +192,7 @@ export function AppShell({
                 </div>
               ) : null}
             </div>
+            <ThemeToggle />
             <Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
             <Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link>
           </div>
