@@ -650,6 +650,7 @@ async function loadState(user: {
 
 type Ctx = {
   ready: boolean;
+  displayCurrency: "PKR" | "USD";
   dataError: string | null;
   catalogReady: boolean;
   catalogError: string | null;
@@ -697,7 +698,22 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const [dataError, setDataError] = useState<string | null>(null);
   const [catalogReady, setCatalogReady] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [displayCurrency, setDisplayCurrency] = useState<"PKR" | "USD">(() => {
+    if (typeof window === "undefined") return "PKR";
+    return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
+  });
   const refreshVersion = useRef(0);
+
+  useEffect(() => {
+    const onCurrencyChange = (event: Event) => {
+      const next = (event as CustomEvent<"PKR" | "USD">).detail;
+      if (next === "USD" || next === "PKR") {
+        setDisplayCurrency(next);
+      }
+    };
+    window.addEventListener("adverx-currency-change", onCurrencyChange);
+    return () => window.removeEventListener("adverx-currency-change", onCurrencyChange);
+  }, []);
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refresh = useCallback(
     async (
@@ -1021,6 +1037,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     <StoreContext.Provider
       value={{
         ready,
+        displayCurrency,
         dataError,
         catalogReady,
         catalogError,
