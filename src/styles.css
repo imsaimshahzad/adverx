@@ -192,6 +192,20 @@ input:not([type="checkbox"]):not([type="radio"]):disabled, textarea:disabled, se
   --background: #0b1120; --foreground: #f8fafc; --card: #111827; --card-foreground: #f8fafc; --popover: #111827; --popover-foreground: #f8fafc; --secondary: #1e293b; --secondary-foreground: #f8fafc; --muted: #1e293b; --muted-foreground: #cbd5e1; --border: #334155; --input: #475569; --sidebar: #111827; --sidebar-foreground: #f8fafc; --sidebar-border: #334155;
 }
 .dark body { background: #0b1120; }
+/* Dark theme wallet surfaces: deep slate with a subtle AdverX teal glow. */
+.dark .wallet-card,
+.dark .wallet-balance-card,
+.dark [data-wallet-card="true"] {
+  background: linear-gradient(145deg, #16252a, #0d171b) !important;
+  border-color: rgba(20, 184, 166, .28) !important;
+  box-shadow: 0 0 0 1px rgba(20,184,166,.08), 0 10px 30px rgba(0,0,0,.28), 0 0 24px rgba(20,184,166,.10) !important;
+}
+.dark .wallet-card::after,
+.dark .wallet-balance-card::after,
+.dark [data-wallet-card="true"]::after {
+  box-shadow: 0 0 18px rgba(20,184,166,.16);
+}
+
 .dark .glass-panel { background: rgba(17,24,39,.9); }
 .dark .loading-skeleton { background: linear-gradient(90deg, #111827 25%, #1e293b 37%, #111827 63%); background-size: 700px 100%; }
 
