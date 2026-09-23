@@ -11,6 +11,9 @@ import {
   BadgeCheck,
   ShieldCheck,
   X,
+  ChevronDown,
+  Check,
+  Phone,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -61,6 +64,7 @@ export function AppShell({
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);
+  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
   const [currency, setCurrency] = useState<"PKR" | "USD">(() => {
     if (typeof window === "undefined") return "PKR";
     return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
@@ -76,8 +80,16 @@ export function AppShell({
   const changeCurrency = (next: "PKR" | "USD") => {
     window.localStorage.setItem("adverx-display-currency", next);
     setCurrency(next);
+    setCurrencyMenuOpen(false);
     window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: next }));
   };
+
+  useEffect(() => {
+    if (!currencyMenuOpen) return;
+    const close = () => setCurrencyMenuOpen(false);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [currencyMenuOpen]);
 
   const dismissWhatsAppPrompt = () => {
     if (!user?.id) return;
@@ -149,15 +161,36 @@ export function AppShell({
         <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between border-b px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></Button><div className="min-w-0"><p className="hidden text-xs font-medium text-muted-foreground sm:block">AdverX workspace</p><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1>{subtitle ? <p className="truncate text-xs text-muted-foreground sm:hidden">{subtitle}</p> : null}</div></div>
           <div className="flex items-center gap-2">
-            <select
-              value={currency}
-              onChange={(event) => changeCurrency(event.target.value as "PKR" | "USD")}
-              aria-label="Display currency"
-              className="h-9 rounded-lg border border-border/70 bg-muted/50 px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="PKR">PKR — Rs</option>
-              <option value="USD">USD — $</option>
-            </select>
+            <div className="relative" onClick={(event) => event.stopPropagation()}>
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={currencyMenuOpen}
+                aria-label="Display currency"
+                onClick={() => setCurrencyMenuOpen((open) => !open)}
+                className="flex h-9 items-center gap-2 rounded-xl border border-border/70 bg-background/80 px-3 text-xs font-semibold text-foreground shadow-sm backdrop-blur transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold">{currency}</span>
+                <span className="text-muted-foreground">{currency === "PKR" ? "Rs" : "$"}</span>
+                <ChevronDown className={`size-3.5 text-muted-foreground transition-transform ${currencyMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              {currencyMenuOpen ? (
+                <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-50 w-36 overflow-hidden rounded-xl border border-border/70 bg-popover p-1.5 shadow-xl backdrop-blur-xl">
+                  {(["PKR", "USD"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => changeCurrency(option)}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-foreground transition hover:bg-muted"
+                    >
+                      <span>{option === "PKR" ? "PKR — Rs" : "USD — $"}</span>
+                      {currency === option ? <Check className="size-3.5 text-primary" /> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
             <Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
             <Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link>
           </div>
@@ -165,7 +198,10 @@ export function AppShell({
         <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
           <a href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42" target="_blank" rel="noreferrer" className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-3 shadow-sm transition hover:bg-primary/[0.1]">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-sm"><svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 fill-current"><path d="M20.52 3.48A11.77 11.77 0 0 0 12.08 0C5.56 0 .26 5.3.26 11.82c0 2.08.54 4.1 1.57 5.88L.16 23.99l6.43-1.68a11.8 11.8 0 0 0 5.48 1.35h.01c6.51 0 11.81-5.3 11.81-11.82 0-3.16-1.23-6.12-3.37-8.36ZM12.08 21.7h-.01a9.85 9.85 0 0 1-5.02-1.37l-.36-.21-3.82 1 1.02-3.72.01-3.72a9.82 9.82 0 1 1 8.43 4.68Zm5.4-7.38c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.68-2.08-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.2.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.21 5.09 4.5.71.31 1.35.2 1.86.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg></div>
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-sm"><svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none">
+  <path d="M20 11.5a8 8 0 0 1-12.5 6.6L4 19l.9-3.4A8 8 0 1 1 20 11.5Z" fill="currentColor"/>
+  <path d="M8.8 8.3c.2-.3.5-.4.8-.2l1 .7c.3.2.4.5.2.8l-.4.6c.6 1 1.4 1.8 2.4 2.4l.6-.4c.3-.2.6-.1.8.2l.7 1c.2.3.1.6-.2.8l-.5.3c-.5.3-1.1.3-1.6.1-1.8-.7-4-2.9-4.7-4.7-.2-.5-.2-1.1.1-1.6l.3-.5Z" fill="#25D366"/>
+</svg></div>
               <div className="min-w-0"><p className="text-sm font-semibold text-foreground">Stay connected with AdverX 📢</p><p className="truncate text-xs text-muted-foreground">Join our official WhatsApp Channel for updates & announcements.</p></div>
             </div>
             <span className="shrink-0 text-xs font-semibold text-primary">Join Channel →</span>
@@ -175,7 +211,10 @@ export function AppShell({
         {showWhatsAppPrompt ? (
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
             <div role="dialog" aria-modal="true" aria-labelledby="whatsapp-channel-title" className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-background p-6 shadow-2xl">
-              <div className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-md"><svg viewBox="0 0 24 24" aria-hidden="true" className="size-7 fill-current"><path d="M20.52 3.48A11.77 11.77 0 0 0 12.08 0C5.56 0 .26 5.3.26 11.82c0 2.08.54 4.1 1.57 5.88L.16 23.99l6.43-1.68a11.8 11.8 0 0 0 5.48 1.35h.01c6.51 0 11.81-5.3 11.81-11.82 0-3.16-1.23-6.12-3.37-8.36ZM12.08 21.7h-.01a9.85 9.85 0 0 1-5.02-1.37l-.36-.21-3.82 1 1.02-3.72.01-3.72a9.82 9.82 0 1 1 8.43 4.68Zm5.4-7.38c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.68-2.08-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.2.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.21 5.09 4.5.71.31 1.35.2 1.86.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg></div>
+              <div className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-md"><svg viewBox="0 0 24 24" aria-hidden="true" className="size-7" fill="none">
+  <path d="M20 11.5a8 8 0 0 1-12.5 6.6L4 19l.9-3.4A8 8 0 1 1 20 11.5Z" fill="currentColor"/>
+  <path d="M8.8 8.3c.2-.3.5-.4.8-.2l1 .7c.3.2.4.5.2.8l-.4.6c.6 1 1.4 1.8 2.4 2.4l.6-.4c.3-.2.6-.1.8.2l.7 1c.2.3.1.6-.2.8l-.5.3c-.5.3-1.1.3-1.6.1-1.8-.7-4-2.9-4.7-4.7-.2-.5-.2-1.1.1-1.6l.3-.5Z" fill="#25D366"/>
+</svg></div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">AdverX Community</p>
               <h2 id="whatsapp-channel-title" className="mt-2 text-2xl font-bold tracking-tight">Stay updated with AdverX 🚀</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">Join our official WhatsApp Channel for important announcements, platform updates, offers and community news.</p>
