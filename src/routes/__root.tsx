@@ -137,6 +137,12 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    const theme = window.localStorage.getItem("adverx-theme") === "dark" ? "dark" : "light";
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <PlatformProvider>
