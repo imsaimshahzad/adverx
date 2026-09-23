@@ -179,8 +179,14 @@ type State = {
   adminProfitSummary: AdminProfitSummary | null;
 };
 const DAY = 86400000;
-export const money = (n: number) =>
-  `Rs. ${n.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const money = (n: number) => {
+  const value = Number(n ?? 0);
+  const currency = typeof window !== "undefined" && window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
+  if (currency === "USD") {
+    return `$ ${ (value / 300).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }`;
+  }
+  return `Rs. ${value.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 const pakistanDate = (value: number | Date = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date(value));
 const isToday = (value: number) => pakistanDate(value) === pakistanDate();
