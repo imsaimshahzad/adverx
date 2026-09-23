@@ -49,6 +49,8 @@
 }
 .dark .morphic-hero .morphic-orb-one { background:#5eead4; opacity:.16; }
 .dark .morphic-hero .morphic-orb-two { background:#99f6e4; opacity:.12; }
+.dark .morphic-icon-button { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); color:#fff; }
+.dark .morphic-icon-button:hover { background:rgba(255,255,255,.2); color:#fff; }
 .dark .morphic-action { color:#0f766e; background:#ecfdf5; border:1px solid rgba(236,253,245,.9); opacity:1 !important; }
 .dark .morphic-action:hover { color:#0f766e; background:#f0fdf4; opacity:1 !important; }
 
