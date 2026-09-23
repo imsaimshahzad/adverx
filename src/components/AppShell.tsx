@@ -61,7 +61,20 @@ export function AppShell({
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);
   const user = state.user;
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const key = `adverx-whatsapp-channel-prompt:${user.id}`;
+    if (window.localStorage.getItem(key) !== "seen") setShowWhatsAppPrompt(true);
+  }, [user?.id]);
+
+  const dismissWhatsAppPrompt = () => {
+    if (!user?.id) return;
+    window.localStorage.setItem(`adverx-whatsapp-channel-prompt:${user.id}`, "seen");
+    setShowWhatsAppPrompt(false);
+  };
 
   useEffect(() => {
     if (ready && requireAuth && !user) navigate({ to: "/auth", replace: true });
@@ -130,7 +143,48 @@ export function AppShell({
           <div className="flex min-w-0 items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></Button><div className="min-w-0"><p className="hidden text-xs font-medium text-muted-foreground sm:block">AdverX workspace</p><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1>{subtitle ? <p className="truncate text-xs text-muted-foreground sm:hidden">{subtitle}</p> : null}</div></div>
           <div className="flex items-center gap-2"><Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button><Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link></div>
         </header>
-        <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
+          <a
+            href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42"
+            target="_blank"
+            rel="noreferrer"
+            className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-3 shadow-sm transition hover:bg-primary/[0.1]"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">WA</div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Stay connected with AdverX 📢</p>
+                <p className="truncate text-xs text-muted-foreground">Join our official WhatsApp Channel for updates & announcements.</p>
+              </div>
+            </div>
+            <span className="shrink-0 text-xs font-semibold text-primary">Join Channel →</span>
+          </a>
+          {children}
+        </main>
+        {showWhatsAppPrompt ? (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+            <div role="dialog" aria-modal="true" aria-labelledby="whatsapp-channel-title" className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-background p-6 shadow-2xl">
+              <div className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">WA</div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">AdverX Community</p>
+              <h2 id="whatsapp-channel-title" className="mt-2 text-2xl font-bold tracking-tight">Stay updated with AdverX 🚀</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Join our official WhatsApp Channel for important announcements, platform updates, offers and community news.
+              </p>
+              <a
+                href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42"
+                target="_blank"
+                rel="noreferrer"
+                onClick={dismissWhatsAppPrompt}
+                className="mt-6 flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              >
+                Join WhatsApp Channel →
+              </a>
+              <button type="button" onClick={dismissWhatsAppPrompt} className="mt-3 w-full rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                Maybe later
+              </button>
+            </div>
+          </div>
+        ) : null
       </div>
     </div>
   );
