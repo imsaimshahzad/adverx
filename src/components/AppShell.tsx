@@ -62,7 +62,11 @@ export function AppShell({
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);\n  const [currency, setCurrency] = useState<"PKR" | "USD">(() => {\n    if (typeof window === "undefined") return "PKR";\n    return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";\n  });
+  const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);
+  const [currency, setCurrency] = useState<"PKR" | "USD">(() => {
+    if (typeof window === "undefined") return "PKR";
+    return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
+  });
   const user = state.user;
 
   useEffect(() => {
@@ -71,7 +75,12 @@ export function AppShell({
     if (window.localStorage.getItem(key) !== "seen") setShowWhatsAppPrompt(true);
   }, [user?.id]);
 
-  const changeCurrency = (next: "PKR" | "USD") => {\n    window.localStorage.setItem("adverx-display-currency", next);\n    window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: next }));\n    setCurrency(next);\n  };\n\n  const dismissWhatsAppPrompt = () => {
+  const changeCurrency = (next: "PKR" | "USD") => {
+    window.localStorage.setItem("adverx-display-currency", next);
+    window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: next }));
+    setCurrency(next);
+  };\n
+  const dismissWhatsAppPrompt = () => {
     if (!user?.id) return;
     window.localStorage.setItem(`adverx-whatsapp-channel-prompt:${user.id}`, "seen");
     setShowWhatsAppPrompt(false);
