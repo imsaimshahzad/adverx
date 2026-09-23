@@ -14,7 +14,7 @@ import {
   MessageCircle,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { cloneElement, isValidElement, useEffect, useState, type ReactNode } from "react";
 
 import { usePlatform } from "@/lib/platform-store";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,7 @@ export function AppShell({
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);
+  const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);\n  const [currency, setCurrency] = useState<"PKR" | "USD">(() => {\n    if (typeof window === "undefined") return "PKR";\n    return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";\n  });
   const user = state.user;
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export function AppShell({
     if (window.localStorage.getItem(key) !== "seen") setShowWhatsAppPrompt(true);
   }, [user?.id]);
 
-  const dismissWhatsAppPrompt = () => {
+  const changeCurrency = (next: "PKR" | "USD") => {\n    window.localStorage.setItem("adverx-display-currency", next);\n    window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: next }));\n    setCurrency(next);\n  };\n\n  const dismissWhatsAppPrompt = () => {
     if (!user?.id) return;
     window.localStorage.setItem(`adverx-whatsapp-channel-prompt:${user.id}`, "seen");
     setShowWhatsAppPrompt(false);
@@ -142,7 +142,7 @@ export function AppShell({
       <div className="min-w-0 flex-1">
         <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between border-b px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></Button><div className="min-w-0"><p className="hidden text-xs font-medium text-muted-foreground sm:block">AdverX workspace</p><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1>{subtitle ? <p className="truncate text-xs text-muted-foreground sm:hidden">{subtitle}</p> : null}</div></div>
-          <div className="flex items-center gap-2"><Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button><Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link></div>
+          <div className="flex items-center gap-2"><div className="flex items-center rounded-full border border-border/70 bg-muted/50 p-0.5" role="group" aria-label="Display currency"><button type="button" onClick={() => changeCurrency("PKR")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${currency === "PKR" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Rs</button><button type="button" onClick={() => changeCurrency("USD")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${currency === "USD" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>$</button></div><Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button><Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link></div>
         </header>
         <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
           <a
