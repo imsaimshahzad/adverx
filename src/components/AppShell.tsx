@@ -11,6 +11,7 @@ import {
   BadgeCheck,
   ShieldCheck,
   X,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -151,7 +152,7 @@ export function AppShell({
             className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-3 shadow-sm transition hover:bg-primary/[0.1]"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">WA</div>
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-sm"><MessageCircle className="size-5" fill="currentColor" /></div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground">Stay connected with AdverX 📢</p>
                 <p className="truncate text-xs text-muted-foreground">Join our official WhatsApp Channel for updates & announcements.</p>
@@ -164,7 +165,7 @@ export function AppShell({
         {showWhatsAppPrompt ? (
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
             <div role="dialog" aria-modal="true" aria-labelledby="whatsapp-channel-title" className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-background p-6 shadow-2xl">
-              <div className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">WA</div>
+              <div className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-md"><MessageCircle className="size-7" fill="currentColor" /></div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">AdverX Community</p>
               <h2 id="whatsapp-channel-title" className="mt-2 text-2xl font-bold tracking-tight">Stay updated with AdverX 🚀</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
