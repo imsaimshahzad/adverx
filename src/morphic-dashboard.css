@@ -22,7 +22,8 @@
 .morphic-caption { margin-top:.2rem; font-size:11px; opacity:.68; }
 .morphic-icon-button { display:flex; align-items:center; justify-content:center; width:2rem;height:2rem;border:1px solid rgba(255,255,255,.25);border-radius:.8rem;background:rgba(255,255,255,.12);color:inherit;transition:transform .25s,background .25s; }
 .morphic-icon-button:hover { transform:rotate(12deg) scale(1.08); background:rgba(255,255,255,.2); }
-.morphic-action { color:#8f4c39; border:0; }
+.morphic-action { color:#8f4c39; border:0; opacity:1; }
+.morphic-action:hover { opacity:1; }
 .morphic-detail { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.18);opacity:0;transform:translateY(12px);transition:opacity .35s,transform .45s; }
 .morphic-detail.is-visible { opacity:1;transform:none; }
 .morphic-tools { display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem .85rem;border:1px solid #eadfd5;border-radius:1rem;background:#f7f4ef;transition:background .3s,transform .3s; }
@@ -35,4 +36,20 @@
 .morphic-stats > .surface { transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s, border-color .35s; }
 .morphic-stats > .surface:hover { transform:translateY(-4px) scale(1.015); border-color:#d99a7d;box-shadow:0 14px 28px rgba(94,69,52,.1); }
 .morphic-stats.is-focused > .surface:nth-child(2) { transform:translateY(-3px) scale(1.025); border-color:#d99a7d; }
+
+/* Dark mode: the earnings/wallet hero becomes deep slate with an AdverX teal glow. */
+.dark .morphic-hero {
+  background: linear-gradient(145deg, #16252a 0%, #0d171b 62%, #102b2a 100%);
+  border-color: rgba(20,184,166,.28);
+  box-shadow: 0 0 0 1px rgba(20,184,166,.08), 0 18px 44px rgba(0,0,0,.34), 0 0 30px rgba(20,184,166,.12);
+}
+.dark .morphic-hero.is-expanded {
+  background: linear-gradient(145deg, #18302f 0%, #0c181b 62%, #123c38 100%);
+  box-shadow: 0 0 0 1px rgba(20,184,166,.1), 0 20px 48px rgba(0,0,0,.38), 0 0 34px rgba(20,184,166,.16);
+}
+.dark .morphic-hero .morphic-orb-one { background:#5eead4; opacity:.16; }
+.dark .morphic-hero .morphic-orb-two { background:#99f6e4; opacity:.12; }
+.dark .morphic-action { color:#0f766e; background:#ecfdf5; border:1px solid rgba(236,253,245,.9); opacity:1 !important; }
+.dark .morphic-action:hover { color:#0f766e; background:#f0fdf4; opacity:1 !important; }
+
 @media (prefers-reduced-motion:reduce) { .morphic-hero,.morphic-detail,.morphic-orb,.morphic-stats > .surface { transition:none!important; } }
