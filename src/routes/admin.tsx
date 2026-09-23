@@ -49,6 +49,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { LoadingButtonContent, LoadingIndicator, LoadingScreen } from "@/components/LoadingIndicator";
 import { BrandLogo } from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { HomepageHeroSettings } from "@/components/HomepageHeroSettings";
 import { SupportTicketPanel } from "@/components/SupportTicketPanel";
 import "@/admin-design.css";
@@ -887,6 +888,7 @@ export function AdminRoute() {
               <RefreshCw className={`size-4 sm:mr-2 ${refreshing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
+            <ThemeToggle />
             <Link
               to="/profile"
               aria-label="Open admin profile and user account"
