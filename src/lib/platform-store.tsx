@@ -340,6 +340,7 @@ async function loadState(user: {
       .from("wallet_transactions")
       .select("*")
       .eq("user_id", uid)
+      .eq("currency", "PKR")
       .order("created_at", { ascending: false }),
     db
       .from("ledger_entries")
