@@ -301,7 +301,7 @@ async function loadState(user: {
     { data: walletTransactions, error: walletTransactionsError },
     { data: ledgerEntries, error: ledgerEntriesError },
     { data: withdrawals },
-    { data: completions },
+    { data: adViewSessions },
     { data: notifications },
     { data: ignoredReferredProfiles },
     { data: depositMethods },
@@ -353,10 +353,12 @@ async function loadState(user: {
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
     db
-      .from("task_completions")
-      .select("*")
+      .from("ad_view_sessions")
+      .select("id, ad_id, completed_at, reward_amount_pkr, status, user_plan_id")
       .eq("user_id", uid)
-      .order("created_at", { ascending: false }),
+      .eq("status", "completed")
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: false }),
     db
       .from("notifications")
       .select("*")
@@ -612,7 +614,10 @@ async function loadState(user: {
       status: w.status,
       createdAt: new Date(w.created_at).getTime(),
     })),
-    adViews: ((completions ?? []) as any[]).map((c) => ({
+    // Ad rewards are completed by public.complete_ad_view(), which records the
+    // authoritative completion in ad_view_sessions. task_completions is a legacy
+    // table and can remain empty even when a reward was successfully credited.
+    adViews: ((adViewSessions ?? []) as any[]).map((c) => ({
       adId: c.ad_id,
       completedAt: new Date(c.completed_at).getTime(),
       reward: num(c.reward_amount_pkr),
