@@ -105,7 +105,8 @@ export async function reviewWithdrawal(
   });
   if (error) {
     if (error.code === "42501") throw new Error("You do not have permission to review withdrawals.");
-    throw new Error(error.message ?? "Unable to update withdrawal.");
+    console.error("[AdverX] reviewWithdrawal failed", error);
+    throw new Error("Unable to update withdrawal.");
   }
   // Transactional email is optional; the withdrawal status change must remain successful even if Brevo fails.
   try {
@@ -139,8 +140,7 @@ export async function approveDeposit(
       depositId: id,
       nextStatus,
     });
-    const detail = [error.message, error.code ? `code ${error.code}` : "", error.details, error.hint].filter(Boolean).join(" — ");
-    throw new Error(detail || "Deposit approval failed.");
+    throw new Error("Deposit approval failed.");
   }
 
   // Deposit approval is the source of truth. The transactional approval must
@@ -210,8 +210,10 @@ export async function transitionRow(
     .eq("status", expectedStatus)
     .select()
     .maybeSingle();
-  if (result.error)
-    throw new Error(`Unable to update ${table}: ${result.error.message}`);
+  if (result.error) {
+    console.error(`[AdverX] update ${table} failed`, result.error);
+    throw new Error("Unable to update this record.");
+  }
   if (!result.data) {
     const current = await db.from(table).select("status").eq("id", id).maybeSingle();
     if (current.data?.status && current.data.status !== expectedStatus) {
@@ -254,10 +256,10 @@ export async function updateRow(
     entity_id: id,
     metadata: changes,
   });
-  if (audit.error)
-    throw new Error(
-      `Updated ${table}, but audit logging failed: ${audit.error.message}`,
-    );
+  if (audit.error) {
+    console.error(`[AdverX] audit logging failed after updating ${table}`, audit.error);
+    throw new Error("The record was updated, but the audit log could not be saved.");
+  }
   return result.data as AdminRow;
 }
 
@@ -269,8 +271,10 @@ export async function insertRow(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Your session has expired.");
   const result = await db.from(table).insert(values).select().single();
-  if (result.error)
-    throw new Error(`${table} insert failed: ${result.error.message}`);
+  if (result.error) {
+    console.error(`[AdverX] insert into ${table} failed`, result.error);
+    throw new Error("Unable to create this record.");
+  }
   const audit = await db.from("audit_logs").insert({
     actor_id: auth.user.id,
     action,
@@ -278,10 +282,10 @@ export async function insertRow(
     entity_id: result.data?.id,
     metadata: values,
   });
-  if (audit.error)
-    throw new Error(
-      `Record created, but audit logging failed: ${audit.error.message}`,
-    );
+  if (audit.error) {
+    console.error(`[AdverX] audit logging failed after inserting into ${table}`, audit.error);
+    throw new Error("The record was created, but the audit log could not be saved.");
+  }
   return result.data as AdminRow;
 }
 
@@ -408,7 +412,7 @@ export async function getRecoveryFundActivity() {
     .select("id, entry_type, amount_pkr, reference_id, user_id, plan_id, note, created_at")
     .is("user_id", null)
     .order("created_at", { ascending: true });
-  if (error) throw new Error(`Unable to load Unallocated Recovery activity: ${error.message}`);
+  if (error) { console.error("[AdverX] Unallocated Recovery activity query failed", error); throw new Error("Unable to load Unallocated Recovery activity."); }
 
   let balance = 0;
   const chronological = (data ?? []).map((row: AdminRow) => {
@@ -435,7 +439,7 @@ export async function getReferrerRecoveryReserve() {
     .from("profiles")
     .select("recovery_reserve_pkr")
     .gt("recovery_reserve_pkr", 0);
-  if (error) throw new Error(`Unable to load referrer recovery reserve: ${error.message}`);
+  if (error) { console.error("[AdverX] referrer recovery reserve query failed", error); throw new Error("Unable to load referrer recovery reserve."); }
   return (data ?? []).reduce(
     (total: number, row: AdminRow) => total + Number(row.recovery_reserve_pkr ?? 0),
     0,
@@ -447,7 +451,7 @@ export async function getRevenuePlans() {
     .from("plans")
     .select("id, name, price_pkr, admin_profit_pct, direct_referral_pct, referrer_commission_pct, indirect_referral_pct, recovery_fund_pct, ad_budget_pct, activity_rules")
     .order("price_pkr", { ascending: true });
-  if (error) throw new Error(`Unable to load plan allocation details: ${error.message}`);
+  if (error) { console.error("[AdverX] plan allocation query failed", error); throw new Error("Unable to load plan allocation details."); }
   return (data ?? []) as AdminRow[];
 }
 
@@ -465,7 +469,7 @@ export async function useRecoveryFund(values: {
     p_reason: values.reason,
     p_reference: values.reference?.trim() || null,
   });
-  if (error) throw new Error(error.message || "Unable to use Recovery Fund.");
+  if (error) { console.error("[AdverX] Recovery Fund action failed", error); throw new Error("Unable to use Recovery Fund."); }
   return data as AdminRow;
 }
 
@@ -475,7 +479,7 @@ export async function replySupportTicket(ticketId: string, status: "open" | "in_
     p_status: status,
     p_reply: reply.trim() || null,
   });
-  if (error) throw new Error(error.message || "Unable to update complaint.");
+  if (error) { console.error("[AdverX] complaint update failed", error); throw new Error("Unable to update the complaint."); }
   return data as AdminRow;
 }
 
@@ -484,7 +488,7 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
     p_user_id: userId,
     p_status: status,
   });
-  if (error) throw new Error(error.message || "Unable to update user status.");
+  if (error) { console.error("[AdverX] user status update failed", error); throw new Error("Unable to update user status."); }
 
   try {
     const { data: emailResult, error: emailError } = await supabase.functions.invoke("admin-send-email", {
@@ -634,7 +638,7 @@ export async function adjustUserReserve(userPlanId: string, amount: number, reas
     p_amount: amount,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message.includes("not authorized") ? "You do not have permission to adjust reserves." : error.message);
+  if (error) { console.error("[AdverX] reserve adjustment failed", error); throw new Error(error.message?.includes("not authorized") ? "You do not have permission to adjust reserves." : "Unable to adjust reserves."); }
   return data as AdminRow;
 }
 
