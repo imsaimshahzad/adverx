@@ -16,6 +16,7 @@ import {
   Copy,
   Eye,
   Inbox,
+  Mail,
   Sparkles,
   BookOpen,
   ChevronRight,
@@ -52,6 +53,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HomepageHeroSettings } from "@/components/HomepageHeroSettings";
 import { SupportTicketPanel } from "@/components/SupportTicketPanel";
+import { AdminEmailComposer } from "@/components/AdminEmailComposer";
 import "@/admin-design.css";
 import "@/morphic-system.css";
 import { isImpersonating, supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
@@ -193,6 +195,7 @@ const menu: Array<[AdminModule, string, Icon]> = [
   ["reports", "Reports", BarChart3],
   ["settings", "Settings", Settings],
   ["notifications", "Notifications", Bell],
+  ["email", "Send Email", Mail],
   ["support", "Support", FileText],
   ["audit-logs", "Audit Logs", ShieldCheck],
 ];
@@ -942,6 +945,8 @@ export function AdminRoute() {
             <HomepageHeroSettings />
           ) : active === "support" ? (
             <SupportTicketPanel admin />
+          ) : active === "email" ? (
+            <AdminEmailComposer />
           ) : active === "revenue" ? (
             <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} plans={revenuePlans} referrerRecoveryReserve={referrerRecoveryReserve} onRefresh={load} />
           ) : (
