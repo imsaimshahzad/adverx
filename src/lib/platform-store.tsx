@@ -745,7 +745,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   } catch (error) {
   console.error("[v0] Supabase data sync failed", error);
   if (version === refreshVersion.current) {
-    setDataError(error instanceof Error ? error.message : "Unable to load your account data.");
+    setDataError("Unable to load your account data. Please try again.");
   }
   } finally {
   if (version === refreshVersion.current) setReady(true);
@@ -771,7 +771,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   } catch (error) {
     console.error("[v0] Public catalog/account bootstrap failed", error);
     if (mounted) {
-      setCatalogError(error instanceof Error ? error.message : "Unable to load available plans.");
+      setCatalogError("Unable to load available plans. Please try again.");
     }
   }
 };
@@ -1027,7 +1027,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       p_session_id: sessionId,
       p_idempotency_key: crypto.randomUUID(),
     });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[AdverX] ad completion failed", error); throw new Error("Unable to complete the ad task."); }
     const { data: authData } = await supabase.auth.getUser();
     if (authData.user) await refresh(authData.user);
     return num(data);
