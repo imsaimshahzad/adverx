@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { money, PAYMENT_METHODS, type Plan, usePlatform } from "@/lib/platform-store";
+import { transactionIdSchema } from "@/lib/input-validation";
 
 export const Route = createFileRoute("/_authenticated/deposit/$planId")({
   head: () => ({ meta: [{ title: "Submit deposit — AdverX" }] }),
@@ -74,8 +75,9 @@ function DepositPage() {
       <div className="space-y-1.5"><Label className="text-xs">Transaction ID</Label><Input value={txnId} onChange={(e) => setTxnId(e.target.value)} placeholder="e.g. TXN9284712" disabled={submitting} /></div>
       <div className="space-y-1.5"><Label className="text-xs">Payment proof</Label><label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-input px-3 py-4 text-sm text-muted-foreground"><Upload className="size-4" />{proofFile?.name ?? "Upload screenshot or receipt"}<input type="file" accept="image/*" className="hidden" disabled={submitting} onChange={(e) => setProofFile(e.target.files?.[0] ?? null)} /></label></div>
       <Button className="w-full" disabled={submitting || !method} onClick={async () => {
-        if (!txnId.trim()) { toast.error("Enter the transaction ID from your payment."); return; }
+        if (!transactionIdSchema.safeParse(txnId).success) { toast.error("Enter a valid transaction ID (3-100 characters, letters/numbers and . _ : / - only)."); return; }
         if (!proofFile) { toast.error("Upload your payment proof."); return; }
+        if (proofFile.size > 5 * 1024 * 1024 || !/^image\/(jpeg|png|webp)$/.test(proofFile.type)) { toast.error("Upload a JPG, PNG or WebP image up to 5MB."); return; }
         if (!method) { toast.error("Choose a payment method."); return; }
         setSubmitting(true);
         try {
