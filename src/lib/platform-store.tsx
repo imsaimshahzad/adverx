@@ -241,9 +241,9 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     reward: num(a.reward),
   })));
 
-  if (adsError) throw new Error(`Unable to load active ads: ${adsError.message}`);
-  if (plansError) throw new Error(`Unable to load plans: ${plansError.message}`);
-  if (methodsError) throw new Error(`Unable to load deposit methods: ${methodsError.message}`);
+  if (adsError) { console.error("[AdverX] active ads query failed", adsError); throw new Error("Unable to load available ads."); }
+  if (plansError) { console.error("[AdverX] plans query failed", plansError); throw new Error("Unable to load available plans."); }
+  if (methodsError) { console.error("[AdverX] deposit methods query failed", methodsError); throw new Error("Unable to load payment methods."); }
 
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({
     id: method.id,
@@ -370,11 +370,12 @@ async function loadState(user: {
     db.from("withdrawal_methods").select("*").eq("is_active", true).order("sort_order"),
     db.from("ad_budget_recoveries").select("id, amount_pkr, status, created_at, referred_id").eq("referrer_id", uid).order("created_at", { ascending: false }),
   ]);
-  if (profileError) throw new Error(`Unable to load your profile: ${profileError.message}`);
-  if (plansError) throw new Error(`Unable to load active plans: ${plansError.message}`);
-  if (adsError) throw new Error(`Unable to load active ads: ${adsError.message}`);
+  if (profileError) { console.error("[AdverX] profile query failed", profileError); throw new Error("Unable to load your account profile."); }
+  if (plansError) { console.error("[AdverX] active plans query failed", plansError); throw new Error("Unable to load available plans."); }
+  if (adsError) { console.error("[AdverX] active ads query failed", adsError); throw new Error("Unable to load available ads."); }
   if (walletTransactionsError && ledgerEntriesError) {
-    throw new Error(`Unable to load your wallet transactions: ${walletTransactionsError.message}`);
+    console.error("[AdverX] wallet transactions query failed", walletTransactionsError);
+    throw new Error("Unable to load your wallet activity.");
   }
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, accountTitle: method.account_title, accountNumber: method.account_number, instructions: method.instructions ?? "" })));
   WITHDRAWAL_METHODS.splice(0, WITHDRAWAL_METHODS.length, ...((withdrawalMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, type: method.destination_label ?? method.name, instructions: method.instructions ?? "", isActive: Boolean(method.is_active), minWithdrawal: num(method.min_withdrawal_pkr), maxWithdrawal: num(method.max_withdrawal_pkr) })));
@@ -478,7 +479,8 @@ async function loadState(user: {
         message: referralQuery.error.message,
         details: referralQuery.error.details,
       });
-      throw new Error(`Unable to load your referral network: ${referralQuery.error.message}`);
+      console.error("[AdverX] referral network query failed", referralQuery.error);
+    throw new Error("Unable to load your referral network.");
     }
     referredProfiles = (referralQuery.data ?? []) as any[];
   }
@@ -967,17 +969,17 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     }
     if (phone && !/^\+?[0-9 ()-]{7,20}$/.test(phone)) throw new Error("Enter a valid phone number.");
     const { error } = await db.from("profiles").update({ full_name: fullName }).eq("id", state.user.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[AdverX] account operation failed", error); throw new Error("Unable to complete that action."); }
     const authUpdates: { email?: string; data?: Record<string, string> } = { data: { phone } };
     if (email && email !== state.user.email) authUpdates.email = email;
     const { error: authError } = await supabase.auth.updateUser(authUpdates);
-    if (authError) throw new Error(authError.message);
+    if (authError) { console.error("[AdverX] authentication operation failed", authError); throw new Error("Unable to complete authentication."); }
     const { data } = await supabase.auth.getUser();
     if (data.user) await refresh(data.user);
   }, [refresh, state.user]);
   const logout = useCallback(async () => {
     const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) throw new Error(`Sign out failed: ${error.message}`);
+    if (error) { console.error("[AdverX] sign out failed", error); throw new Error("Unable to sign out. Please try again."); }
     setState(EMPTY as unknown as State);
     setDataError(null);
   }, []);
@@ -993,7 +995,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       .select("id, price_pkr, active, status")
       .eq("id", input.planId)
       .maybeSingle();
-    if (planError) throw new Error(`Unable to validate plan: ${planError.message}`);
+    if (planError) { console.error("[AdverX] plan validation query failed", planError); throw new Error("Unable to validate the selected plan."); }
     if (!selectedPlan) throw new Error("Plan not found");
     if (!selectedPlan.active || selectedPlan.status !== "active") throw new Error("Plan is inactive");
     const amount = num(selectedPlan.price_pkr);
@@ -1005,17 +1007,17 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       p_method: input.method,
       p_plan_id: input.planId,
     });
-    if (error) throw new Error(`Deposit creation failed: ${error.message}`);
+    if (error) { console.error("[AdverX] deposit creation failed", error); throw new Error("Unable to submit the deposit request."); }
     await refresh(auth.user);
   if (input.imageHash) {
     const { error: hashError } = await db.from("deposits").update({ image_hash: input.imageHash }).eq("user_id", auth.user.id).eq("transaction_id", input.transactionId).is("image_hash", null);
-    if (hashError) throw new Error(`Receipt hash could not be saved: ${hashError.message}`);
+    if (hashError) { console.error("[AdverX] receipt hash update failed", hashError); throw new Error("Unable to finish saving the payment receipt."); }
   }
   }, [refresh]);
   const startAd = useCallback(async (adId: string) => {
     if (!adIdSchema.safeParse(adId).success) throw new Error("Invalid ad identifier.");
     const { data, error } = await db.rpc("start_ad_view", { p_ad_id: adId });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[AdverX] ad operation failed", error); throw new Error("Unable to complete the ad task."); }
     if (!data) throw new Error("The ad session could not be started.");
     return String(data);
   }, []);
@@ -1040,7 +1042,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       p_method: input.method,
       p_account: input.account,
     });
-    if (error) throw new Error(error.message ?? "Withdrawal request failed");
+    if (error) { console.error("[AdverX] withdrawal request failed", error); throw new Error("Unable to submit the withdrawal request."); }
     const { data } = await supabase.auth.getUser();
     if (data.user) await refresh(data.user);
   }, [refresh]);
