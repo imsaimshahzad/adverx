@@ -121,6 +121,25 @@ export async function approveDeposit(
     const detail = [error.message, error.code ? `code ${error.code}` : "", error.details, error.hint].filter(Boolean).join(" — ");
     throw new Error(detail || "Deposit approval failed.");
   }
+
+  // Deposit approval is the source of truth. The transactional approval must
+  // succeed even if the optional notification email fails.
+  if (nextStatus === "approved") {
+    try {
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke(
+        "admin-send-email",
+        { body: { deposit_id: id } },
+      );
+      if (emailError) {
+        console.warn("[AdverX] Deposit approved email failed:", emailError);
+      } else if (emailResult?.success === false) {
+        console.warn("[AdverX] Deposit approved email rejected:", emailResult.error);
+      }
+    } catch (emailCause) {
+      console.warn("[AdverX] Deposit approved email could not be sent:", emailCause);
+    }
+  }
+
   return data as AdminRow;
 }
 
