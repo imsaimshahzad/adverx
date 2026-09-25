@@ -198,7 +198,8 @@ export function AuthPage() {
                   });
                   if (error) {
                     console.error("[v0] Signup failed", error);
-                    toast.error(error.message || "Unable to create account. Please check your details.");
+                    console.error("[AdverX] signup failed", error);
+      toast.error("Unable to create your account. Please check your details.");
                     return;
                   }
                   if (!data.user) {
@@ -210,7 +211,8 @@ export function AuthPage() {
                   if (data.session) navigate({ to: "/", replace: true });
                 } catch (error) {
                   console.error("[v0] Signup request failed", error);
-                  toast.error(error instanceof Error ? error.message : "Unable to create your account.");
+                  console.error("[AdverX] signup flow failed", error);
+      toast.error("Unable to create your account. Please try again.");
                 } finally {
                   setSubmitting(false);
                 }
@@ -283,7 +285,8 @@ export function AuthPage() {
                     .then(({ error }) => {
                       setSubmitting(false);
                       if (error) {
-                        toast.error(error.message || "Unable to send the reset email.");
+                        console.error("[AdverX] password reset failed", error);
+    toast.error("Unable to send the reset email. Please try again.");
                         return;
                       }
                       setResetRequested(true);
@@ -329,7 +332,8 @@ export function AuthPage() {
                   .then(({ error }) => {
                     setSubmitting(false);
                     if (error) {
-                      toast.error(error.message || "Unable to sign in. Please check your credentials.");
+                      console.error("[AdverX] sign-in failed", error);
+    toast.error("Unable to sign in. Please check your credentials.");
                       return;
                     }
                     toast.success("Signed in. Loading your workspace…");
