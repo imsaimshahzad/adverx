@@ -154,10 +154,40 @@ export async function approveDeposit(
       if (emailError) {
         console.warn("[AdverX] Deposit approved email failed:", emailError);
       } else if (emailResult?.success === false) {
-        console.warn("[AdverX] Deposit approved email rejected:", emailResult.error);
+        console.warn("[AdverX] Deposit status email rejected:", emailResult.error);
       }
     } catch (emailCause) {
-      console.warn("[AdverX] Deposit approved email could not be sent:", emailCause);
+      console.warn("[AdverX] Deposit status email could not be sent:", emailCause);
+    }
+
+    // The approval RPC activates the user's plan. If an active user_plans row
+    // exists for this purchase, send the dedicated plan-activation email too.
+    try {
+      const { data: deposit } = await db
+        .from("deposits")
+        .select("user_id, plan_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (deposit?.user_id && deposit?.plan_id) {
+        const { data: userPlan } = await db
+          .from("user_plans")
+          .select("id")
+          .eq("user_id", deposit.user_id)
+          .eq("plan_id", deposit.plan_id)
+          .eq("status", "active")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (userPlan?.id) {
+          const { data: planEmail, error: planEmailError } = await supabase.functions.invoke("admin-send-email", {
+            body: { user_plan_id: userPlan.id },
+          });
+          if (planEmailError) console.warn("[AdverX] Plan activation email failed:", planEmailError);
+          else if (planEmail?.success === false) console.warn("[AdverX] Plan activation email rejected:", planEmail.error);
+        }
+      }
+    } catch (planEmailCause) {
+      console.warn("[AdverX] Plan activation email could not be sent:", planEmailCause);
     }
   }
 
