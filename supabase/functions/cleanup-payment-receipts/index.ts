@@ -16,7 +16,7 @@ Deno.serve(async (request) => {
     .lte("approved_at", cutoff)
     .not("proof_url", "is", null)
     .is("receipt_deleted_at", null);
-  if (queryError) return Response.json({ error: queryError.message }, { status: 500 });
+  if (queryError) { console.error("[AdverX] cleanup payment receipts query failed", queryError); return Response.json({ error: "Unable to clean payment receipts." }, { status: 500 }); }
   let cleaned = 0;
   for (const deposit of deposits ?? []) {
     const path = typeof deposit.proof_url === "string" ? deposit.proof_url : "";
@@ -25,7 +25,8 @@ Deno.serve(async (request) => {
       .from("deposits")
       .update({ proof_url: null, receipt_deleted_at: new Date().toISOString() })
       .eq("id", deposit.id);
-    if (!error) cleaned += 1;
+    if (error) console.error("[AdverX] cleanup payment receipt update failed", { depositId: deposit.id, error });
+    else cleaned += 1;
   }
   return Response.json({ cleaned });
 });
