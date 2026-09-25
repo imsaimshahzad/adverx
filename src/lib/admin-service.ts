@@ -56,6 +56,17 @@ export async function adjustLedger(
     p_reason: note,
   });
   if (error) throw error;
+
+  try {
+    const { data: emailResult, error: emailError } = await supabase.functions.invoke("admin-send-email", {
+      body: { ledger_adjustment_user_id: userId, amount: value, note },
+    });
+    if (emailError) console.warn("[AdverX] Ledger adjustment email failed:", emailError);
+    else if (emailResult?.success === false) console.warn("[AdverX] Ledger adjustment email rejected:", emailResult.error);
+  } catch (emailCause) {
+    console.warn("[AdverX] Ledger adjustment email could not be sent:", emailCause);
+  }
+
   return data as AdminRow;
 }
 
@@ -96,6 +107,16 @@ export async function reviewWithdrawal(
     if (error.code === "42501") throw new Error("You do not have permission to review withdrawals.");
     throw new Error(error.message ?? "Unable to update withdrawal.");
   }
+  // Transactional email is optional; the withdrawal status change must remain successful even if Brevo fails.
+  try {
+    const { data: emailResult, error: emailError } = await supabase.functions.invoke("admin-send-email", {
+      body: { withdrawal_id: id, note: note ?? null },
+    });
+    if (emailError) console.warn("[AdverX] Withdrawal status email failed:", emailError);
+    else if (emailResult?.success === false) console.warn("[AdverX] Withdrawal status email rejected:", emailResult.error);
+  } catch (emailCause) {
+    console.warn("[AdverX] Withdrawal status email could not be sent:", emailCause);
+  }
   return data as AdminRow;
 }
 
@@ -124,11 +145,11 @@ export async function approveDeposit(
 
   // Deposit approval is the source of truth. The transactional approval must
   // succeed even if the optional notification email fails.
-  if (nextStatus === "approved") {
+  if (nextStatus === "approved" || nextStatus === "rejected") {
     try {
       const { data: emailResult, error: emailError } = await supabase.functions.invoke(
         "admin-send-email",
-        { body: { deposit_id: id } },
+        { body: { deposit_id: id, reason: rejectionReason ?? null } },
       );
       if (emailError) {
         console.warn("[AdverX] Deposit approved email failed:", emailError);
@@ -434,6 +455,17 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
     p_status: status,
   });
   if (error) throw new Error(error.message || "Unable to update user status.");
+
+  try {
+    const { data: emailResult, error: emailError } = await supabase.functions.invoke("admin-send-email", {
+      body: { user_id: userId, user_status: status },
+    });
+    if (emailError) console.warn("[AdverX] Account status email failed:", emailError);
+    else if (emailResult?.success === false) console.warn("[AdverX] Account status email rejected:", emailResult.error);
+  } catch (emailCause) {
+    console.warn("[AdverX] Account status email could not be sent:", emailCause);
+  }
+
   return data as AdminRow;
 }
 
