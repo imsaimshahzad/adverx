@@ -247,8 +247,10 @@ export async function updateRow(
     .eq("id", id)
     .select()
     .single();
-  if (result.error)
-    throw new Error(`Unable to update ${table}: ${result.error.message}`);
+  if (result.error) {
+    console.error(`[AdverX] update ${table} failed`, result.error);
+    throw new Error("Unable to update this record.");
+  }
   const audit = await db.from("audit_logs").insert({
     actor_id: auth.user.id,
     action,
