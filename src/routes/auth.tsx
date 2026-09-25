@@ -2,6 +2,7 @@ import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { loginSchema, signupSchema, resetRequestSchema } from "@/lib/input-validation";
 
 import { usePlatform } from "@/lib/platform-store";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -270,7 +271,7 @@ export function AuthPage() {
                 className="w-full"
                 disabled={submitting}
                 onClick={() => {
-                  if (!resetEmail.trim()) {
+                  if (!resetRequestSchema.safeParse({ email: resetEmail }).success) {
                     toast.error("Enter your email address.");
                     return;
                   }
@@ -314,7 +315,8 @@ export function AuthPage() {
               className="w-full"
               disabled={submitting}
               onClick={() => {
-                if (!form.email || !form.password) {
+                const parsedLogin = loginSchema.safeParse({ email: form.email, password: form.password });
+                if (!parsedLogin.success) {
                   toast.error("Enter your email and password.");
                   return;
                 }
