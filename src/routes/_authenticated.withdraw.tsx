@@ -18,6 +18,7 @@ import {
 import { money, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
 import { isImpersonating } from "@/integrations/supabase/client";
 import { supabase } from "@/integrations/supabase/client";
+import { amountSchema, supportTextSchema, uuidSchema } from "@/lib/input-validation";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({
   head: () => ({
@@ -136,6 +137,9 @@ function WithdrawPage() {
               toast.error(`Maximum withdrawal for ${selectedMethod.name} is ${money(methodMax)}.`);
               return;
             }
+            if (!amountSchema.safeParse(requestedPaise / 100).success) { toast.error("Enter a valid withdrawal amount."); return; }
+            if (!selectedMethod || !uuidSchema.safeParse(selectedMethod.id).success) { toast.error("Choose a valid payout method."); return; }
+            if (!supportTextSchema.safeParse(details.holder ?? "").success) { toast.error("Enter a valid account holder name."); return; }
             if (requestedPaise < minPaise) {
               toast.error(`Minimum withdrawal is ${money(min)}.`);
               return;
