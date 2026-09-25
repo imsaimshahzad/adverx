@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { passwordResetSchema } from "@/lib/input-validation";
 
 const INVALID_LINK_MESSAGE =
   "This password reset link is invalid or has expired. Please request a new one.";
@@ -65,8 +66,9 @@ function ResetPasswordPage() {
       toast.error("Password changes are disabled while viewing as another user.");
       return;
     }
-    if (password.length < 8) {
-      toast.error("Your password must be at least 8 characters.");
+    const parsed = passwordResetSchema.safeParse({ password, confirmation });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Invalid password.");
       return;
     }
     if (password !== confirmation) {
