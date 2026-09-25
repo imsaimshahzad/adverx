@@ -21,10 +21,11 @@ export const Route = createFileRoute("/api/impersonation/consume")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          const tokenHash =
-            typeof body?.tokenHash === "string" ? body.tokenHash.trim() : "";
+          const keys = body && typeof body === "object" ? Object.keys(body) : [];
+          const tokenHash = typeof body?.tokenHash === "string" ? body.tokenHash.trim() : "";
+          if (keys.length !== 1 || keys[0] !== "tokenHash") return Response.json({ ok: false }, { status: 400 });
 
-          if (!tokenHash || tokenHash.length > 1000) {
+          if (!/^[a-f0-9]{64}$/i.test(tokenHash)) {
             return Response.json({ ok: false }, { status: 400 });
           }
 
