@@ -1,6 +1,7 @@
 import { ensureSupabaseSessionReady, isImpersonating, supabase } from "@/integrations/supabase/client";
 import { getAdminProfitSummary, type AdminProfitSummary } from "@/lib/admin-service";
 import { toast } from "sonner";
+import { signupSchema, profileSchema, depositSchema, withdrawalSchema, adIdSchema, sessionIdSchema } from "@/lib/input-validation";
 import {
   createContext,
   useCallback,
@@ -934,6 +935,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     };
   }, [state, plan]);
   const register = useCallback((input: any) => {
+    const parsed = signupSchema.safeParse(input);
+    if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid registration details.");
     void supabase.auth.signUp({
       email: input.email,
       password: input.password,
@@ -950,6 +953,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     throw new Error("Use Supabase authentication from the sign-in form.");
   }, []);
   const updateProfile = useCallback(async (input: { fullName: string; username: string; email: string; phone: string }) => {
+    const parsedInput = profileSchema.safeParse(input);
+    if (!parsedInput.success) throw new Error(parsedInput.error.issues[0]?.message ?? "Invalid profile details.");
     if (isImpersonating()) throw new Error("Profile, email and account-detail changes are disabled while viewing as another user.");
     if (!state.user) throw new Error("Please sign in again.");
     const fullName = input.fullName.trim();
@@ -977,6 +982,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     setDataError(null);
   }, []);
   const submitDeposit = useCallback(async (input: any) => {
+    const parsedInput = depositSchema.safeParse(input);
+    if (!parsedInput.success) throw new Error(parsedInput.error.issues[0]?.message ?? "Invalid deposit details.");
+    input = parsedInput.data;
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) throw new Error("Invalid authenticated user");
     if (!input.planId) throw new Error("Missing plan ID");
@@ -1005,12 +1013,14 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   }
   }, [refresh]);
   const startAd = useCallback(async (adId: string) => {
+    if (!adIdSchema.safeParse(adId).success) throw new Error("Invalid ad identifier.");
     const { data, error } = await db.rpc("start_ad_view", { p_ad_id: adId });
     if (error) throw new Error(error.message);
     if (!data) throw new Error("The ad session could not be started.");
     return String(data);
   }, []);
   const completeAd = useCallback(async (sessionId: string) => {
+    if (!sessionIdSchema.safeParse(sessionId).success) throw new Error("Invalid ad session identifier.");
     const { data, error } = await db.rpc("complete_ad_view", {
       p_session_id: sessionId,
       p_idempotency_key: crypto.randomUUID(),
@@ -1021,6 +1031,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return num(data);
   }, [refresh]);
   const requestWithdrawal = useCallback(async (input: any) => {
+    const parsedInput = withdrawalSchema.safeParse(input);
+    if (!parsedInput.success) throw new Error(parsedInput.error.issues[0]?.message ?? "Invalid withdrawal details.");
+    input = parsedInput.data;
     if (isImpersonating()) throw new Error("Withdrawals are disabled while viewing as another user.");
     const { error } = await db.rpc("request_withdrawal", {
       p_amount: input.amount,
