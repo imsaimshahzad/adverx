@@ -19,8 +19,13 @@ export const Route = createFileRoute("/api/upload-hero")({
         if (!["image/jpeg","image/png","image/webp"].includes(file.type)) return Response.json({ error: "Only JPG, PNG or WebP images are allowed." }, { status: 415 });
         if (!/^.{1,180}$/.test(file.name) || !/^[a-zA-Z0-9._-]+$/.test(file.name)) return Response.json({ error: "Invalid file name." }, { status: 400 });
         if (file.size > 5 * 1024 * 1024) return Response.json({ error: "Image must be 5MB or smaller." }, { status: 413 });
-        const blob = await put(`homepage-hero/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`, file, { access: "public", addRandomSuffix: false });
-        return Response.json({ url: blob.url });
+        try {
+          const blob = await put(`homepage-hero/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`, file, { access: "public", addRandomSuffix: false });
+          return Response.json({ url: blob.url });
+        } catch (error) {
+          console.error("[AdverX] hero image upload failed", error);
+          return Response.json({ error: "Unable to upload the hero image. Please try again." }, { status: 500 });
+        }
       },
     },
   },
