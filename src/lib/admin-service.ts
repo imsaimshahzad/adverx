@@ -21,6 +21,7 @@ export type AdminModule =
   | "reports"
   | "settings"
   | "notifications"
+  | "email"
   | "support"
   | "audit-logs";
 
