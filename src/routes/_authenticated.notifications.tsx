@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/display";
 import { createFileRoute } from "@tanstack/react-router";
 import { BellOff } from "lucide-react";
 import { useEffect } from "react";
@@ -45,7 +46,7 @@ function NotificationsPage() {
               <p className="text-sm font-medium">{n.title}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                {new Date(n.createdAt).toLocaleString()}
+                {formatDate(n.createdAt)}
               </p>
             </div>
           ))}
