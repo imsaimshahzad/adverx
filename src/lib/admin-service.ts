@@ -29,36 +29,25 @@ const db = supabase as any;
 
 async function invokeAdminEmail(body: Record<string, unknown>) {
   const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (!accessToken) {
+  if (!sessionData.session?.access_token) {
     console.warn("[AdVerX] admin email skipped: no authenticated session");
     return { data: null, error: new Error("Missing authenticated session.") };
   }
 
   try {
-    const response = await fetch("/api/admin-send-email", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + accessToken,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(body),
+    const { data, error } = await supabase.functions.invoke("admin-send-email", {
+      body,
     });
 
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      console.error("[AdVerX] admin email request failed", {
-        status: response.status,
-        payload,
-      });
-      return { data: payload, error: new Error("Email service request failed.") };
+    if (error) {
+      console.error("[AdVerX] admin email function failed", error);
+      return { data, error };
     }
 
-    return { data: payload, error: null };
+    return { data, error: null };
   } catch (error) {
-    console.error("[AdVerX] admin email request failed", error);
-    return { data: null, error: new Error("Email service request failed.") };
+    console.error("[AdVerX] admin email function failed", error);
+    return { data: null, error: error instanceof Error ? error : new Error("Email service request failed.") };
   }
 }
 
@@ -522,7 +511,7 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
     .from("profiles")
     .update({ status })
     .eq("id", normalizedUserId)
-    .select("id, full_name, username, email, public_uid, role, status")
+    .select("id, full_name, username, public_uid, role, status")
     .maybeSingle();
 
   if (error) {
