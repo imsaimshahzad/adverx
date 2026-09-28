@@ -68,14 +68,27 @@ function AdsPage() {
     });
   }, [state.user?.id, state.adViews.length]);
 
+  const isPrivilegedAccount = ["admin", "super_admin", "moderator"].includes(
+    String(state.user?.role ?? "").toLowerCase(),
+  );
   const dailyLimitReached = adsCompletedToday >= dailyAdLimit;
   const remainingAds = Math.max(0, dailyAdLimit - adsCompletedToday);
 
   return (
     <AppShell
       title="Ad tasks"
-      subtitle={plan ? `${adsCompletedToday} of ${dailyAdLimit} completed today` : "Locked"}
+      subtitle={isPrivilegedAccount ? "Admin account" : plan ? `${adsCompletedToday} of ${dailyAdLimit} completed today` : "Locked"}
     >
+      {isPrivilegedAccount ? (
+        <div className="surface flex flex-col items-center gap-3 p-8 text-center">
+          <ShieldCheck className="size-6 text-muted-foreground" />
+          <p className="text-sm font-semibold">Ad rewards are disabled</p>
+          <p className="max-w-md text-xs text-muted-foreground">
+            Admin and moderator accounts can manage the platform but cannot earn personal ad rewards.
+          </p>
+        </div>
+      ) : (
+      <>
       {!plan && (
         <div className="surface flex flex-col items-center gap-3 p-8 text-center">
           <Lock className="size-6 text-muted-foreground" />
@@ -194,8 +207,10 @@ function AdsPage() {
         </>
       ) : null}
 
+      </>
+      )}
       <AdPlayer
-        ad={openAd}
+        ad={isPrivilegedAccount ? null : openAd}
         onClose={() => setOpenAd(null)}
         completing={completing}
         onComplete={async () => {
