@@ -520,13 +520,17 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   });
   if (error) { console.error("[AdverX] user status update failed", error); throw new Error("Unable to update user status."); }
 
-  try {
-    const { data: emailResult, error: emailError } = await invokeAdminEmail({ user_id: userId, user_status: status });
-    if (emailError) console.warn("[AdverX] Account status email failed:", emailError);
-    else if (emailResult?.success === false) console.warn("[AdverX] Account status email rejected:", emailResult.error);
-  } catch (emailCause) {
-    console.warn("[AdverX] Account status email could not be sent:", emailCause);
-  }
+  // Status changes must not depend on the optional notification email service.
+  // The RPC has already committed the database change; email delivery runs
+  // independently so a mail failure can never make the admin action appear stuck.
+  void invokeAdminEmail({ user_id: userId, user_status: status })
+    .then(({ data: emailResult, error: emailError }) => {
+      if (emailError) console.warn("[AdverX] Account status email failed:", emailError);
+      else if (emailResult?.success === false) console.warn("[AdverX] Account status email rejected:", emailResult.error);
+    })
+    .catch((emailCause) => {
+      console.warn("[AdverX] Account status email could not be sent:", emailCause);
+    });
 
   return data as AdminRow;
 }
