@@ -1285,7 +1285,7 @@ function RevenueDashboard({
                 return (
                   <tr key={String(row.id ?? index)} className="border-b border-slate-100 align-middle transition-colors last:border-0 hover:bg-slate-50">
                     <td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td>
-                    <td className="p-4 whitespace-nowrap font-mono text-xs font-semibold text-primary">{transactionDisplayId(purchaseId)}</td>
+                    <td className="p-4 whitespace-nowrap font-mono text-xs font-semibold text-primary">{shortId(purchaseId)}</td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.user_display ?? "User")}>{formatValue(row.user_display ?? "User")}</span></td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.plan_name ?? row.plan_id ?? "—")}>{formatValue(row.plan_name ?? row.plan_id)}</span></td>
                     <td className="p-4"><Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/5 capitalize">{categoryLabel}</Badge></td>
@@ -1432,7 +1432,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">{formatValue(row.created_at)}</p>
-                      <p className="mt-1 font-mono text-[11px] font-semibold text-primary">{transactionDisplayId(String(row.id ?? ""))}</p>
+                      <p className="mt-1 font-mono text-[11px] font-semibold text-primary">{shortId(String(row.id ?? ""))}</p>
                       <p className="mt-1 font-medium">{formatValue(row.entry_type ?? row.usage_type)}</p>
                     </div>
                     <p className={`shrink-0 font-semibold tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>
@@ -1467,7 +1467,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                   return (
                     <tr className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50" key={String(row.id)}>
                       <td className="whitespace-nowrap p-4 text-muted-foreground">{formatValue(row.created_at)}</td>
-                      <td className="whitespace-nowrap p-4 font-mono text-xs font-semibold text-primary">{transactionDisplayId(String(row.id ?? ""))}</td>
+                      <td className="whitespace-nowrap p-4 font-mono text-xs font-semibold text-primary">{shortId(String(row.id ?? ""))}</td>
                       <td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td>
                       <td className={`whitespace-nowrap p-4 text-right font-medium tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td>
                       <td className="max-w-0 p-4"><span className="block truncate" title={String(row.reason ?? "—")}>{formatValue(row.reason)}</span></td>
@@ -2627,7 +2627,7 @@ function ModuleTable({
                         ) : active === "transactions" && column === "description" ? (
                           <span className="block min-w-[180px] max-w-[360px] truncate text-sm text-slate-700">{String(row.description ?? "—")}</span>
                         ) : active === "ledger" && column === "id" ? (
-                          <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">{transactionNoMap[String(row.transaction_id ?? "")] ?? transactionNoMap[String(row.id ?? "")] ?? transactionDisplayId(String(row.id ?? ""))}</span>
+                          <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">{transactionNoMap[String(row.transaction_id ?? "")] ?? transactionNoMap[String(row.id ?? "")] ?? shortId(String(row.id ?? ""))}</span>
                         ) : active === "ledger" && column === "user_id" ? (
                           <div className="min-w-[130px]" >
                             <div className="truncate font-medium text-slate-900">{String(ledgerProfileMap[String(row.user_id ?? "")]?.full_name ?? ledgerProfileMap[String(row.user_id ?? "")]?.username ?? "Unknown user")}</div>
@@ -2654,7 +2654,7 @@ function ModuleTable({
                             {Number(row.amount ?? 0) < 0 ? "−" : "+"}PKR {Math.abs(Number(row.amount ?? 0)).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         ) : active === "ledger" && column === "reference_id" ? (
-                          <span className="font-mono text-xs text-primary" title="Related transaction">{transactionNoMap[String(row.transaction_id ?? "")] ?? (row.reference_id ? transactionDisplayId(String(row.reference_id)) : "—")}</span>
+                          <span className="font-mono text-xs text-primary" title="Related transaction">{transactionNoMap[String(row.transaction_id ?? "")] ?? (row.reference_id ? shortId(String(row.reference_id)) : "—")}</span>
                         ) : active === "ledger" && column === "note" ? (
                           <span className="block min-w-[240px] max-w-[420px] whitespace-normal text-sm leading-5 text-slate-700" title={String(row.note ?? "")}>{String(row.note ?? "No additional details")}</span>
                         ) : active === "ledger" && column === "created_at" ? (
@@ -2669,7 +2669,7 @@ function ModuleTable({
                           <Badge variant="outline" className={`border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${actionBadgeClass(String(row[column] ?? ""))}`}>{String(row[column] ?? "—").replaceAll("_", " ")}</Badge>
                         ) : ["deposits", "withdrawals", "ledger", "revenue"].includes(active) && ["id", "reference_id"].includes(column) ? (
                           <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">
-                            {transactionNoMap[String(row[column] ?? "")] ?? transactionDisplayId(String(row[column] ?? ""))}
+                            {transactionNoMap[String(row[column] ?? "")] ?? shortId(String(row[column] ?? ""))}
                           </span>
                         ) : <span title={String(row[column] ?? "")}>{active === "tasks" && column !== "created_at" ? String(row[column] ?? "—") : formatValue(row[column])}</span>}
                       </td>
@@ -2840,7 +2840,7 @@ function ModuleTable({
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>{String(transactionDetail?.description ?? "Transaction")}</DialogTitle>
-              <DialogDescription>Human-readable transaction record. Internal UUIDs remain hidden from normal admin view.</DialogDescription>
+              <DialogDescription>Clean transaction view. Technical database fields stay hidden until you request them.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Transaction ID</p><p className="mt-1 font-mono text-sm font-semibold text-primary">{String(transactionDetail?.transaction_no ?? "—")}</p></div>
@@ -2871,7 +2871,24 @@ function ModuleTable({
                 </div>
               ) : <p className="mt-2 text-sm text-muted-foreground">No ledger entries linked.</p>}
             </div>
-            <div className="flex justify-end"><Button variant="outline" onClick={() => setTransactionDetail(null)}>Close</Button></div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+               <Button variant="ghost" size="sm" onClick={() => setShowTechnicalDetails((value) => !value)}>{showTechnicalDetails ? "Hide technical details" : "Show technical details"}</Button>
+               <Button variant="outline" onClick={() => setTransactionDetail(null)}>Close</Button>
+             </div>
+             {showTechnicalDetails ? (
+               <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Technical details</p>
+                 <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-5 text-slate-700">{JSON.stringify({
+                   id: transactionDetail?.id ?? null,
+                   transaction_no: transactionDetail?.transaction_no ?? null,
+                   user_id: transactionDetail?.user_id ?? null,
+                   reference_id: transactionDetail?.reference_id ?? null,
+                   source_type: transactionDetail?.source_type ?? null,
+                   source_id: transactionDetail?.source_id ?? null,
+                   kind: transactionDetail?.kind ?? null,
+                 }, null, 2)}</pre>
+               </div>
+             ) : null>
           </DialogContent>
         </Dialog>
         <Dialog open={Boolean(notificationDetail)} onOpenChange={(open) => !open && setNotificationDetail(null)}>
