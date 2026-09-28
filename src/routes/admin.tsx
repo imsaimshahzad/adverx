@@ -197,7 +197,7 @@ const menu: Array<[AdminModule, string, Icon]> = [
   ["referrals", "Referrals", Users],
   ["referral-commissions", "Referral Commissions", TrendingUp],
   ["transactions", "Transactions", ReceiptText],
-  ["ledger", "Wallet Ledger", FileText],
+  ["ledger", "Accounting Ledger", FileText],
   ["fraud", "Fraud & Risk", Flag],
   ["reports", "Reports", BarChart3],
   ["settings", "Settings", Settings],
