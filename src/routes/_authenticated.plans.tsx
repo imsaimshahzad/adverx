@@ -103,7 +103,7 @@ function PlansPage() {
                     <div className="mt-3 flex items-baseline text-foreground">
                       <span className="text-2xl font-semibold">Rs.</span>
                       <span className="num text-5xl font-extrabold tracking-tight">
-                        {money(p.price).replace(/^Rs\\.\\s?/, "")}
+                        {money(p.price).replace(/^Rs\.?\s?/, "")}
                       </span>
                       <span className="ml-2 text-lg font-normal text-muted-foreground">
                         one-time
