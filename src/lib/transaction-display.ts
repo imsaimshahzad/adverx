@@ -29,6 +29,7 @@ export function transactionSourceId(
   return String(
     row.reference_id ??
       row.transaction_id ??
+      row.reference ??
       row.id ??
       "",
   );
