@@ -2889,7 +2889,7 @@ function ModuleTable({
                    kind: transactionDetail?.kind ?? null,
                  }, null, 2)}</pre>
                </div>
-             ) : null>
+             ) : null}
           </DialogContent>
         </Dialog>
         <Dialog open={Boolean(notificationDetail)} onOpenChange={(open) => !open && setNotificationDetail(null)}>
