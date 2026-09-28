@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { AdsterraBanner } from "@/components/AdsterraBanner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -208,6 +209,7 @@ function AdsPage() {
       ) : null}
 
       </>
+      <AdsterraBanner />
       <AdPlayer
         ad={openAd}
         onClose={() => setOpenAd(null)}
