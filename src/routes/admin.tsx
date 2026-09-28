@@ -61,6 +61,7 @@ import "@/admin-design.css";
 import "@/morphic-system.css";
 import { isImpersonating, supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
 import { checkRouteAccess } from "@/lib/auth-guard.functions";
+import { transactionDisplayId } from "@/lib/transaction-display";
 import {
   AdminModule,
   type AdminRow,
