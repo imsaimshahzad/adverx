@@ -114,9 +114,7 @@ export async function adjustLedger(
   if (error) throw error;
 
   try {
-    const { data: emailResult, error: emailError } = await invokeAdminEmail( {
-      body: { ledger_adjustment_user_id: userId, amount: value, note },
-    });
+    const { data: emailResult, error: emailError } = await invokeAdminEmail({ ledger_adjustment_user_id: userId, amount: value, note });
     if (emailError) console.warn("[AdverX] Ledger adjustment email failed:", emailError);
     else if (emailResult?.success === false) console.warn("[AdverX] Ledger adjustment email rejected:", emailResult.error);
   } catch (emailCause) {
@@ -166,9 +164,7 @@ export async function reviewWithdrawal(
   }
   // Transactional email is optional; the withdrawal status change must remain successful even if Brevo fails.
   try {
-    const { data: emailResult, error: emailError } = await invokeAdminEmail( {
-      body: { withdrawal_id: id, note: note ?? null },
-    });
+    const { data: emailResult, error: emailError } = await invokeAdminEmail({ withdrawal_id: id, note: note ?? null });
     if (emailError) console.warn("[AdverX] Withdrawal status email failed:", emailError);
     else if (emailResult?.success === false) console.warn("[AdverX] Withdrawal status email rejected:", emailResult.error);
   } catch (emailCause) {
@@ -203,8 +199,7 @@ export async function approveDeposit(
   // succeed even if the optional notification email fails.
   if (nextStatus === "approved" || nextStatus === "rejected") {
     try {
-      const { data: emailResult, error: emailError } = await invokeAdminEmail(
-        { body: { deposit_id: id, reason: rejectionReason ?? null } },
+      const { data: emailResult, error: emailError } = await invokeAdminEmail({ deposit_id: id, reason: rejectionReason ?? null } },
       );
       if (emailError) {
         console.warn("[AdverX] Deposit approved email failed:", emailError);
@@ -235,8 +230,7 @@ export async function approveDeposit(
           .maybeSingle();
         if (userPlan?.id) {
           const { data: planEmail, error: planEmailError } = await invokeAdminEmail( {
-            body: { user_plan_id: userPlan.id },
-          });
+            body: { user_plan_id: userPlan.id });
           if (planEmailError) console.warn("[AdverX] Plan activation email failed:", planEmailError);
           else if (planEmail?.success === false) console.warn("[AdverX] Plan activation email rejected:", planEmail.error);
         }
@@ -548,9 +542,7 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   if (error) { console.error("[AdverX] user status update failed", error); throw new Error("Unable to update user status."); }
 
   try {
-    const { data: emailResult, error: emailError } = await invokeAdminEmail( {
-      body: { user_id: userId, user_status: status },
-    });
+    const { data: emailResult, error: emailError } = await invokeAdminEmail({ user_id: userId, user_status: status });
     if (emailError) console.warn("[AdverX] Account status email failed:", emailError);
     else if (emailResult?.success === false) console.warn("[AdverX] Account status email rejected:", emailResult.error);
   } catch (emailCause) {
