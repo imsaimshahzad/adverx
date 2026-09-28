@@ -2134,11 +2134,6 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
     </div>
   );
 }
-function shortId(value: unknown) {
-  const text = String(value ?? "");
-  return text.length > 14 ? `${text.slice(0, 8)}…${text.slice(-4)}` : text || "—";
-}
-
 function actionBadgeClass(value: string) {
   const action = value.toLowerCase();
   if (action.includes("approved") || action.includes("resolved") || action.includes("credited")) return "border-emerald-200 bg-emerald-50 text-emerald-700";
