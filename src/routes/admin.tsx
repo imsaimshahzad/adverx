@@ -86,6 +86,7 @@ import {
   saveManagementRow,
   queryCount,
   queryRows,
+  queryAllRows,
   transitionRow,
   reviewWithdrawal,
   replySupportTicket,
@@ -456,7 +457,9 @@ export function AdminRoute() {
         const table = tableFor[active];
         if (!table) return;
 
-        const moduleRows = await queryRows(table);
+        const moduleRows = active === "ledger"
+          ? await queryAllRows(table)
+          : await queryRows(table);
         if (requestVersion !== loadVersion.current) return;
         setRows({ [table]: moduleRows });
       };
@@ -2472,7 +2475,15 @@ function ModuleTable({
                           direction: current?.column === column && current.direction === "asc" ? "desc" : "asc",
                         }))}
                       >
-                        <span>{active === "plans" && column === "ads_per_day" ? "Daily Ads Limit" : column.replaceAll("_", " ")}</span>
+                        <span>{active === "ledger" ? ({
+                          id: "Tracking ID",
+                          user_id: "User",
+                          entry_type: "Transaction Type",
+                          amount: "Amount (PKR)",
+                          reference_id: "Reference",
+                          note: "Description",
+                          created_at: "Date & Time",
+                        } as Record<string, string>)[column] ?? column : active === "plans" && column === "ads_per_day" ? "Daily Ads Limit" : column.replaceAll("_", " ")}</span>
                         <ArrowUpDown className="size-3.5 shrink-0 text-slate-400" aria-hidden="true" />
                       </button>
                     </th>
@@ -2525,7 +2536,7 @@ function ModuleTable({
                         ) : active === "ledger" && column === "id" ? (
                           <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">{transactionDisplayId(String(row.id ?? ""))}</span>
                         ) : active === "ledger" && column === "user_id" ? (
-                          <div className="min-w-[130px]" title={String(row.user_id ?? "")}>
+                          <div className="min-w-[130px]" >
                             <div className="truncate font-medium text-slate-900">{String(ledgerProfileMap[String(row.user_id ?? "")]?.full_name ?? ledgerProfileMap[String(row.user_id ?? "")]?.username ?? "Unknown user")}</div>
                             <div className="text-[11px] text-slate-500">UID {String(ledgerProfileMap[String(row.user_id ?? "")]?.public_uid ?? "—")}</div>
                           </div>
