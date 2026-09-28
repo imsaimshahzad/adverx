@@ -79,15 +79,15 @@ function AdsPage() {
       title="Ad tasks"
       subtitle={isPrivilegedAccount ? "Admin account" : plan ? `${adsCompletedToday} of ${dailyAdLimit} completed today` : "Locked"}
     >
-      {isPrivilegedAccount ? (
-        <div className="surface flex flex-col items-center gap-3 p-8 text-center">
-          <ShieldCheck className="size-6 text-muted-foreground" />
-          <p className="text-sm font-semibold">Ad rewards are disabled</p>
+      {isPrivilegedAccount && (
+        <div className="surface mb-3 flex flex-col items-center gap-2 p-4 text-center">
+          <ShieldCheck className="size-5 text-muted-foreground" />
+          <p className="text-sm font-semibold">Testing mode — rewards disabled</p>
           <p className="max-w-md text-xs text-muted-foreground">
-            Admin and moderator accounts can manage the platform but cannot earn personal ad rewards.
+            You can watch ads to test playback and completion. Admin, super admin, and moderator accounts receive Rs. 0.
           </p>
         </div>
-      ) : (
+      )}
       <>
       {!plan && (
         <div className="surface flex flex-col items-center gap-3 p-8 text-center">
@@ -208,9 +208,8 @@ function AdsPage() {
       ) : null}
 
       </>
-      )}
       <AdPlayer
-        ad={isPrivilegedAccount ? null : openAd}
+        ad={openAd}
         onClose={() => setOpenAd(null)}
         completing={completing}
         onComplete={async () => {
@@ -223,7 +222,7 @@ function AdsPage() {
             }
             setOpenAd(null);
             setSessionId(null);
-            toast.success(`Reward credited: ${money(reward)}`);
+            toast.success(isPrivilegedAccount ? "Test ad completed — no reward credited." : `Reward credited: ${money(reward)}`);
           } catch (error) {
             const message = error instanceof Error ? error.message : "Reward could not be credited";
             if (message.toLowerCase().includes("already completed today") && openAd) {
