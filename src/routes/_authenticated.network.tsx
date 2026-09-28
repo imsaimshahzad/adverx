@@ -1,3 +1,4 @@
+import { formatDate, formatMoney, statusBadge } from "@/lib/display";
 import { createFileRoute } from "@tanstack/react-router";
 import { Copy, Share2, UserPlus } from "lucide-react";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
@@ -46,7 +47,7 @@ function NetworkPage() {
         <StatTile label="Active" value={`${active}`} />
         <StatTile label="No plan" value={`${members.filter((m) => !m.active).length}`} />
         <StatTile label="This month" value={`+${thisMonth}`} />
-        <StatTile label="Commission" value={`Rs. ${state.totalReferralCommission.toLocaleString("en-PK")}`} />
+        <StatTile label="Commission" value={formatMoney(state.totalReferralCommission, "PKR")} />
       </div>
 
       <div className="glass-panel mt-3 p-4">
@@ -91,10 +92,10 @@ function NetworkPage() {
               <div>
                 <p className="text-sm font-medium">{m.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {m.planName} · Joined {new Date(m.joinedAt).toLocaleDateString()}
+                  {m.planName} · Joined {formatDate(m.joinedAt)}
                 </p>
               </div>
-              <div className="text-right"><Badge variant={m.active ? "default" : "secondary"}>{m.status}</Badge><p className="mt-1 text-xs text-muted-foreground">Rs. {m.commission.toLocaleString("en-PK")}</p></div>
+              <div className="text-right"><Badge className={statusBadge(m.status).className}>{statusBadge(m.status).label}</Badge><p className="mt-1 text-xs text-muted-foreground">{formatMoney(m.commission, "PKR")}</p></div>
             </div>
           ))
         )}
