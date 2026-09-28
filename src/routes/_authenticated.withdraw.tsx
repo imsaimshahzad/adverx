@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { money, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
+import { WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
+import { formatMoney } from "@/lib/display";
 import { isImpersonating } from "@/integrations/supabase/client";
 import { supabase } from "@/integrations/supabase/client";
 import { amountSchema, supportTextSchema, uuidSchema } from "@/lib/input-validation";
@@ -83,7 +84,7 @@ function WithdrawPage() {
       <div className="mb-3 surface px-4 py-3 sm:px-5">
         <p className="text-sm font-medium">Withdrawable Balance</p>
         <div className="mt-1 flex min-h-7 items-center gap-2">
-          {ready ? <p className="num text-xl font-semibold">{money(availableBalance)}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
+          {ready ? <p className="num text-xl font-semibold">{formatMoney(availableBalance)}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
         </div>
       </div>
       <div className="glass-panel space-y-3 p-4 sm:p-5">
@@ -96,9 +97,9 @@ function WithdrawPage() {
             placeholder="Enter amount here"
           />
           <p className="text-xs text-muted-foreground">
-            Processing fee 2% · You receive {money(Math.max(0, value - fee))}
+            Processing fee 2% · You receive {formatMoney(Math.max(0, value - fee))}
           </p>
-          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {money(methodMin)} – {money(methodMax)}</p> : null}
+          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatMoney(methodMin)} – {formatMoney(methodMax)}</p> : null}
         </div>
 
         <div className="space-y-1.5">
@@ -130,18 +131,18 @@ function WithdrawPage() {
           onClick={async () => {
             if (submitting) return;
             if (selectedMethod && requestedPaise < methodMinPaise) {
-              toast.error(`Minimum withdrawal for ${selectedMethod.name} is ${money(methodMin)}.`);
+              toast.error(`Minimum withdrawal for ${selectedMethod.name} is ${formatMoney(methodMin)}.`);
               return;
             }
             if (selectedMethod && requestedPaise > methodMaxPaise) {
-              toast.error(`Maximum withdrawal for ${selectedMethod.name} is ${money(methodMax)}.`);
+              toast.error(`Maximum withdrawal for ${selectedMethod.name} is ${formatMoney(methodMax)}.`);
               return;
             }
             if (!amountSchema.safeParse(requestedPaise / 100).success) { toast.error("Enter a valid withdrawal amount."); return; }
             if (!selectedMethod || !uuidSchema.safeParse(selectedMethod.id).success) { toast.error("Choose a valid payout method."); return; }
             if (!supportTextSchema.safeParse(details.holder ?? "").success) { toast.error("Enter a valid account holder name."); return; }
             if (requestedPaise < minPaise) {
-              toast.error(`Minimum withdrawal is ${money(min)}.`);
+              toast.error(`Minimum withdrawal is ${formatMoney(min)}.`);
               return;
             }
             if (requestedPaise > availablePaise) {
