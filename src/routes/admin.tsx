@@ -1425,6 +1425,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">{formatValue(row.created_at)}</p>
+                      <p className="mt-1 font-mono text-[11px] font-semibold text-primary">{transactionDisplayId(String(row.id ?? ""))}</p>
                       <p className="mt-1 font-medium">{formatValue(row.entry_type ?? row.usage_type)}</p>
                     </div>
                     <p className={`shrink-0 font-semibold tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>
