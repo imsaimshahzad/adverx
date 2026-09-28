@@ -2225,6 +2225,7 @@ function ModuleTable({
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
   const [notificationProfileCount, setNotificationProfileCount] = useState(0);
   const [ledgerProfileMap, setLedgerProfileMap] = useState<Record<string, AdminRow>>({});
+  const [transactionNoMap, setTransactionNoMap] = useState<Record<string, string>>({});
   useEffect(() => {
     if (active !== "ledger" && active !== "transactions") return;
     const ids = [...new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean))];
@@ -2264,6 +2265,35 @@ function ModuleTable({
     })();
     return () => { cancelled = true; };
   }, [transactionDetail]);
+
+  useEffect(() => {
+    if (!["transactions", "deposits", "withdrawals", "ledger", "revenue"].includes(active)) {
+      setTransactionNoMap({});
+      return;
+    }
+    const sourceIds = [...new Set(rows.map((row) => String(row.id ?? "")).filter(Boolean))];
+    const linkedIds = [...new Set(rows.map((row) => String(row.transaction_id ?? "")).filter(Boolean))];
+    if (!sourceIds.length && !linkedIds.length) {
+      setTransactionNoMap({});
+      return;
+    }
+    void (async () => {
+      const db = supabase as any;
+      const filters = [];
+      if (sourceIds.length) filters.push(db.from("transactions").select("id, transaction_no, source_id").in("source_id", sourceIds));
+      if (linkedIds.length) filters.push(db.from("transactions").select("id, transaction_no, source_id").in("id", linkedIds));
+      const results = await Promise.all(filters);
+      const map: Record<string, string> = {};
+      for (const result of results) {
+        if (result.error) continue;
+        for (const tx of result.data ?? []) {
+          if (tx.id && tx.transaction_no) map[String(tx.id)] = String(tx.transaction_no);
+          if (tx.source_id && tx.transaction_no) map[String(tx.source_id)] = String(tx.transaction_no);
+        }
+      }
+      setTransactionNoMap(map);
+    })();
+  }, [active, rows]);
 
   useEffect(() => {
     if (active !== "notifications") return;
@@ -2593,7 +2623,7 @@ function ModuleTable({
                         ) : active === "transactions" && column === "description" ? (
                           <span className="block min-w-[180px] max-w-[360px] truncate text-sm text-slate-700">{String(row.description ?? "—")}</span>
                         ) : active === "ledger" && column === "id" ? (
-                          <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">{transactionDisplayId(String(row.id ?? ""))}</span>
+                          <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">{transactionNoMap[String(row.transaction_id ?? "")] ?? transactionNoMap[String(row.id ?? "")] ?? transactionDisplayId(String(row.id ?? ""))}</span>
                         ) : active === "ledger" && column === "user_id" ? (
                           <div className="min-w-[130px]" >
                             <div className="truncate font-medium text-slate-900">{String(ledgerProfileMap[String(row.user_id ?? "")]?.full_name ?? ledgerProfileMap[String(row.user_id ?? "")]?.username ?? "Unknown user")}</div>
@@ -2620,7 +2650,7 @@ function ModuleTable({
                             {Number(row.amount ?? 0) < 0 ? "−" : "+"}PKR {Math.abs(Number(row.amount ?? 0)).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         ) : active === "ledger" && column === "reference_id" ? (
-                          <span className="font-mono text-xs text-primary" title={String(row.reference_id ?? "")}>{row.reference_id ? transactionDisplayId(String(row.reference_id)) : "—"}</span>
+                          <span className="font-mono text-xs text-primary" title="Related transaction">{transactionNoMap[String(row.transaction_id ?? "")] ?? (row.reference_id ? transactionDisplayId(String(row.reference_id)) : "—")}</span>
                         ) : active === "ledger" && column === "note" ? (
                           <span className="block min-w-[240px] max-w-[420px] whitespace-normal text-sm leading-5 text-slate-700" title={String(row.note ?? "")}>{String(row.note ?? "No additional details")}</span>
                         ) : active === "ledger" && column === "created_at" ? (
@@ -2635,7 +2665,7 @@ function ModuleTable({
                           <Badge variant="outline" className={`border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${actionBadgeClass(String(row[column] ?? ""))}`}>{String(row[column] ?? "—").replaceAll("_", " ")}</Badge>
                         ) : ["deposits", "withdrawals", "ledger", "revenue"].includes(active) && ["id", "reference_id"].includes(column) ? (
                           <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">
-                            {transactionDisplayId(String(row[column] ?? ""))}
+                            {transactionNoMap[String(row[column] ?? "")] ?? transactionDisplayId(String(row[column] ?? ""))}
                           </span>
                         ) : <span title={String(row[column] ?? "")}>{active === "tasks" && column !== "created_at" ? String(row[column] ?? "—") : formatValue(row[column])}</span>}
                       </td>
