@@ -73,7 +73,7 @@
 .admin-shell .text-slate-700 { color:#334155 !important; }
 .admin-shell .text-slate-600 { color:#475569 !important; }
 .admin-shell .text-slate-500 { color:#64748b !important; }
-.admin-shell .text-slate-400 { color:#94a3b8 !important; }
+.admin-shell .text-slate-400 { color:#64748b !important; }
 .admin-shell .text-muted-foreground { color:#64748b !important; }
 .admin-shell input::placeholder,.admin-shell textarea::placeholder { color:#94a3b8; opacity:1; }
 .dark .admin-shell { color:#f8fafc; }
@@ -81,7 +81,7 @@
 .dark .admin-shell .text-slate-700 { color:#e2e8f0 !important; }
 .dark .admin-shell .text-slate-600 { color:#cbd5e1 !important; }
 .dark .admin-shell .text-slate-500 { color:#94a3b8 !important; }
-.dark .admin-shell .text-slate-400 { color:#64748b !important; }
+.dark .admin-shell .text-slate-400 { color:#cbd5e1 !important; }
 .dark .admin-shell .text-muted-foreground { color:#94a3b8 !important; }
 .dark .admin-shell .bg-white { background:#111827 !important; }
 .dark .admin-shell .bg-slate-50,.dark .admin-shell .bg-slate-50\/70 { background:#1e293b !important; }
@@ -98,6 +98,18 @@
 .dark .admin-shell .text-rose-600 { color:#fda4af !important; }
 .dark .admin-shell .text-emerald-600 { color:#6ee7b7 !important; }
 .dark .admin-shell select { color-scheme:dark; }
+
+
+/* Final admin contrast hardening: readable muted text and semantic accents in dark mode. */
+.admin-shell .text-slate-400 { color:#64748b !important; }
+.dark .admin-shell .text-slate-400 { color:#cbd5e1 !important; }
+.dark .admin-shell .text-emerald-700 { color:#6ee7b7 !important; }
+.dark .admin-shell .text-rose-700 { color:#fda4af !important; }
+.dark .admin-shell .bg-emerald-50 { background:#064e3b !important; }
+.dark .admin-shell .border-emerald-200 { border-color:#065f46 !important; }
+.dark .admin-shell .bg-rose-50 { background:#4c0519 !important; }
+.dark .admin-shell .border-rose-200 { border-color:#881337 !important; }
+.dark .admin-shell [role="tab"] { outline-color:#475569; }
 
 /* Final admin contrast pass: keep neutral surfaces and text readable in both themes. */
 .admin-shell,
@@ -127,8 +139,10 @@
 .dark .admin-shell .border-gray-200,.dark .admin-shell .border-zinc-200,.dark .admin-shell .border-neutral-200 { border-color:#334155 !important; }
 
 /* Native controls and shadcn controls: never let a light surface keep dark-theme text. */
-.admin-shell button:not([class*="bg-"]),.admin-shell [role="button"]:not([class*="bg-"]) { color:#0f172a; }
-.dark .admin-shell button:not([class*="bg-"]),.dark .admin-shell [role="button"]:not([class*="bg-"]) { color:#f8fafc; }
+.admin-shell button:not([class*="bg-"]):not([class*="text-"]),
+.admin-shell [role="button"]:not([class*="bg-"]):not([class*="text-"]) { color:#0f172a; }
+.dark .admin-shell button:not([class*="bg-"]):not([class*="text-"]),
+.dark .admin-shell [role="button"]:not([class*="bg-"]):not([class*="text-"]) { color:#f8fafc; }
 .admin-shell input,.admin-shell textarea,.admin-shell select {
   color:#0f172a;
   background:#fff;
@@ -148,10 +162,10 @@
 .dark .admin-shell .hover\:text-slate-600:hover { color:#e2e8f0 !important; }
 
 /* Keep links visible when they sit on neutral admin surfaces. */
-.admin-shell a { color:#334155; }
-.admin-shell a:hover { color:#1e293b; }
-.dark .admin-shell a { color:#e2e8f0; }
-.dark .admin-shell a:hover { color:#fff; }
+.admin-shell a:not([class*="text-"]) { color:#334155; }
+.admin-shell a:not([class*="text-"]):hover { color:#1e293b; }
+.dark .admin-shell a:not([class*="text-"]) { color:#e2e8f0; }
+.dark .admin-shell a:not([class*="text-"]):hover { color:#fff; }
 
 /* Dialogs/dropdowns/popovers rendered inside the admin shell. */
 .dark .admin-shell [role="dialog"],
@@ -168,9 +182,9 @@
 .dark .admin-shell [data-slot="dialog-description"] { color:#cbd5e1 !important; }
 
 /* Table and pagination controls. */
-.admin-shell .admin-table-wrap button,
-.admin-shell table button { color:#0f172a; }
-.dark .admin-shell .admin-table-wrap button,
-.dark .admin-shell table button { color:#f8fafc; }
+.admin-shell .admin-table-wrap button:not([class*="text-"]),
+.admin-shell table button:not([class*="text-"]) { color:#0f172a; }
+.dark .admin-shell .admin-table-wrap button:not([class*="text-"]),
+.dark .admin-shell table button:not([class*="text-"]) { color:#f8fafc; }
 .dark .admin-shell .admin-table-wrap .text-slate-400,
 .dark .admin-shell table .text-slate-400 { color:#94a3b8 !important; }
