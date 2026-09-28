@@ -35,10 +35,52 @@ async function invokeAdminEmail(body: Record<string, unknown>) {
     return { data: null, error: new Error("Missing authenticated session.") };
   }
 
-  return supabase.functions.invoke("admin-send-email", {
-    body,
-    headers: { Authorization: "Bearer " + accessToken },
-  });
+  const supabaseUrl =
+    import.meta.env.VITE_SUPABASE_URL ||
+    import.meta.env.SUPABASE_URL ||
+    import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "";
+  const supabaseKey =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.SUPABASE_ANON_KEY ||
+    "";
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("[AdverX] admin email skipped: Supabase endpoint configuration is missing");
+    return { data: null, error: new Error("Email service configuration is unavailable.") };
+  }
+
+  try {
+    const response = await fetch(supabaseUrl.replace(/\\/$/, "") + "/functions/v1/admin-send-email", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + accessToken,
+        apikey: supabaseKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      console.error("[AdverX] admin email request failed", {
+        status: response.status,
+        payload,
+      });
+      return {
+        data: payload,
+        error: new Error("Email service request failed."),
+      };
+    }
+
+    return { data: payload, error: null };
+  } catch (error) {
+    console.error("[AdverX] admin email request failed", error);
+    return { data: null, error: new Error("Email service request failed.") };
+  }
 }
 
 export async function queryRows(table: string, columns = "*") {
