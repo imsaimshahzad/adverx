@@ -1251,8 +1251,9 @@ function RevenueDashboard({
         <CardContent className="overflow-x-auto p-0">
           <table className="w-full min-w-[900px] table-fixed text-sm">
             <colgroup>
-              <col className="w-[17%]" />
+              <col className="w-[13%]" />
               <col className="w-[15%]" />
+              <col className="w-[11%]" />
               <col className="w-[13%]" />
               <col className="w-[17%]" />
               <col className="w-[12%]" />
@@ -1261,6 +1262,7 @@ function RevenueDashboard({
             <thead className="bg-slate-50/95">
               <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
                 <th scope="col" className="p-4 font-medium">Date</th>
+                <th scope="col" className="p-4 font-medium">Tracking ID</th>
                 <th scope="col" className="p-4 font-medium">User</th>
                 <th scope="col" className="p-4 font-medium">Plan</th>
                 <th scope="col" className="p-4 font-medium">Category</th>
@@ -1276,6 +1278,7 @@ function RevenueDashboard({
                 return (
                   <tr key={String(row.id ?? index)} className="border-b border-slate-100 align-middle transition-colors last:border-0 hover:bg-slate-50">
                     <td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td>
+                    <td className="p-4 whitespace-nowrap font-mono text-xs font-semibold text-primary">{transactionDisplayId(purchaseId)}</td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.user_display ?? "User")}>{formatValue(row.user_display ?? "User")}</span></td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.plan_name ?? row.plan_id ?? "—")}>{formatValue(row.plan_name ?? row.plan_id)}</span></td>
                     <td className="p-4"><Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/5 capitalize">{categoryLabel}</Badge></td>
@@ -1283,7 +1286,7 @@ function RevenueDashboard({
                     <td className="max-w-0 p-4"><span className="block truncate text-muted-foreground" title={String(row.source ?? "No eligible referrer")}>{category.toLowerCase().includes("unassigned") ? "No eligible referrer" : formatValue(row.source)}</span></td>
                   </tr>
                 );
-              }) : <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}
+              }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}
             </tbody>
           </table>
         </CardContent>
@@ -1441,11 +1444,11 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
           <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[760px] table-fixed text-sm">
               <colgroup>
-                <col className="w-[17%]" /><col className="w-[13%]" /><col className="w-[14%]" /><col className="w-[24%]" /><col className="w-[16%]" /><col className="w-[16%]" />
+                <col className="w-[14%]" /><col className="w-[12%]" /><col className="w-[13%]" /><col className="w-[14%]" /><col className="w-[24%]" /><col className="w-[16%]" /><col className="w-[16%]" />
               </colgroup>
               <thead className="bg-slate-50/95">
                 <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th scope="col" className="p-4">Date</th><th scope="col" className="p-4">Type</th><th scope="col" className="p-4 text-right">Amount</th><th scope="col" className="p-4">Purpose / Reason</th><th scope="col" className="p-4">Reference</th><th scope="col" className="p-4 text-right">Balance After</th>
+                  <th scope="col" className="p-4">Date</th><th scope="col" className="p-4">Tracking ID</th><th scope="col" className="p-4">Type</th><th scope="col" className="p-4 text-right">Amount</th><th scope="col" className="p-4">Purpose / Reason</th><th scope="col" className="p-4">Reference</th><th scope="col" className="p-4 text-right">Balance After</th>
                 </tr>
               </thead>
               <tbody>
@@ -1456,6 +1459,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                   return (
                     <tr className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50" key={String(row.id)}>
                       <td className="whitespace-nowrap p-4 text-muted-foreground">{formatValue(row.created_at)}</td>
+                      <td className="whitespace-nowrap p-4 font-mono text-xs font-semibold text-primary">{transactionDisplayId(String(row.id ?? ""))}</td>
                       <td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td>
                       <td className={`whitespace-nowrap p-4 text-right font-medium tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td>
                       <td className="max-w-0 p-4"><span className="block truncate" title={String(row.reason ?? "—")}>{formatValue(row.reason)}</span></td>
@@ -1463,7 +1467,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                       <td className="whitespace-nowrap p-4 text-right font-medium tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td>
                     </tr>
                   );
-                }) : <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No Unallocated Recovery activity yet.</td></tr>}
+                }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Unallocated Recovery activity yet.</td></tr>}
               </tbody>
             </table>
           </div>
