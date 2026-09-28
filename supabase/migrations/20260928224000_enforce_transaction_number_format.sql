@@ -1,0 +1,2 @@
+alter table public.transactions drop constraint if exists transactions_transaction_no_format;
+alter table public.transactions add constraint transactions_transaction_no_format check (transaction_no ~ '^TXN-[0-9]{8}$');
