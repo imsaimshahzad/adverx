@@ -15,6 +15,25 @@ import {
 
 const db = supabase as any;
 
+const AD_TASK_ERRORS = new Set([
+  "Admin accounts cannot earn ad rewards",
+  "An ad session is already active. Finish it before starting another ad.",
+  "Please wait a few seconds before starting another ad.",
+  "Ad already completed today",
+  "Daily ad limit reached",
+  "No active plan",
+  "Ad session not found",
+  "Ad session is not claimable",
+  "Ad engagement time is incomplete",
+  "Ad unavailable",
+  "Reward reserve changed, retry",
+  "Recovery Reserve changed, retry",
+]);
+const adTaskErrorMessage = (message: unknown, fallback: string) => {
+  const value = String(message ?? "").trim();
+  return AD_TASK_ERRORS.has(value) ? value : fallback;
+};
+
 export type Plan = {
   id: string;
   name: string;
@@ -1017,7 +1036,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const startAd = useCallback(async (adId: string) => {
     if (!adIdSchema.safeParse(adId).success) throw new Error("Invalid ad identifier.");
     const { data, error } = await db.rpc("start_ad_view", { p_ad_id: adId });
-    if (error) { console.error("[AdverX] ad operation failed", error); throw new Error("Unable to complete the ad task."); }
+    if (error) {
+      console.error("[AdverX] ad operation failed", error);
+      throw new Error(adTaskErrorMessage(error.message, "Unable to start the ad task."));
+    }
     if (!data) throw new Error("The ad session could not be started.");
     return String(data);
   }, []);
@@ -1027,7 +1049,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       p_session_id: sessionId,
       p_idempotency_key: crypto.randomUUID(),
     });
-    if (error) { console.error("[AdverX] ad completion failed", error); throw new Error("Unable to complete the ad task."); }
+    if (error) {
+      console.error("[AdverX] ad completion failed", error);
+      throw new Error(adTaskErrorMessage(error.message, "Unable to complete the ad task."));
+    }
     const { data: authData } = await supabase.auth.getUser();
     if (authData.user) await refresh(authData.user);
     return num(data);
