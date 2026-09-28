@@ -2355,7 +2355,7 @@ function ModuleTable({
                   aria-selected={userPartition === filter}
                   onClick={() => onUserPartition(filter)}
                   className={`h-9 shrink-0 rounded-lg border px-3 capitalize shadow-none ${
-                    (userPartition === filter || adsFilter === status || statusPartition === status)
+                    userPartition === filter
                       ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 dark:border-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
                       : "border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
                   }`}
@@ -2373,7 +2373,11 @@ function ModuleTable({
                   role="tab"
                   aria-selected={adsFilter === status}
                   onClick={() => onAdsFilter(status)}
-                  className="h-9 shrink-0 rounded-lg border-slate-200 bg-white px-3 capitalize shadow-none"
+                  className={`h-9 shrink-0 rounded-lg border px-3 capitalize shadow-none ${
+                    adsFilter === status
+                      ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 dark:border-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                      : "border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+                  }`}
                 >
                   {status} ({adsCounts[status]})
                 </Button>
@@ -2388,7 +2392,11 @@ function ModuleTable({
                   role="tab"
                   aria-selected={statusPartition === status}
                   onClick={() => onStatusPartition(status)}
-                  className="h-9 shrink-0 rounded-lg border-slate-200 bg-white px-3 capitalize shadow-none"
+                  className={`h-9 shrink-0 rounded-lg border px-3 capitalize shadow-none ${
+                    statusPartition === status
+                      ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 dark:border-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                      : "border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+                  }`}
                 >
                   {status} ({statusCounts[status]})
                 </Button>
