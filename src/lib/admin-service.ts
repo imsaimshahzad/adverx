@@ -27,6 +27,20 @@ export type AdminModule =
 
 const db = supabase as any;
 
+async function invokeAdminEmail(body: Record<string, unknown>) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) {
+    console.warn("[AdverX] admin email skipped: no authenticated session");
+    return { data: null, error: new Error("Missing authenticated session.") };
+  }
+
+  return supabase.functions.invoke("admin-send-email", {
+    body,
+    headers: { Authorization: "Bearer " + accessToken },
+  });
+}
+
 export async function queryRows(table: string, columns = "*") {
   const result = await db.from(table).select(columns).limit(100);
   if (result.error) throw result.error;
