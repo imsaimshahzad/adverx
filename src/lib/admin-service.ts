@@ -514,27 +514,41 @@ export async function replySupportTicket(ticketId: string, status: "open" | "in_
 }
 
 export async function setUserStatus(userId: string, status: "active" | "suspended" | "restricted") {
-  const { data, error } = await db.rpc("admin_set_user_status", {
-    p_user_id: userId,
-    p_status: status,
-  });
-  if (error) { console.error("[AdverX] user status update failed", error); throw new Error("Unable to update user status."); }
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) throw new Error("Your session has expired.");
 
-  // Status changes must not depend on the optional notification email service.
-  // The RPC has already committed the database change; email delivery runs
-  // independently so a mail failure can never make the admin action appear stuck.
+  const response = await fetch("/api/admin-user-status", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + accessToken,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ user_id: userId, status }),
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.success !== true) {
+    console.error("[AdVerX] server user status update failed", {
+      status: response.status,
+      payload,
+    });
+    throw new Error(String(payload?.error || "Unable to update user status."));
+  }
+
+  // Status is already committed. Email is optional and cannot block the admin action.
   void invokeAdminEmail({ user_id: userId, user_status: status })
     .then(({ data: emailResult, error: emailError }) => {
-      if (emailError) console.warn("[AdverX] Account status email failed:", emailError);
-      else if (emailResult?.success === false) console.warn("[AdverX] Account status email rejected:", emailResult.error);
+      if (emailError) console.warn("[AdVerX] Account status email failed:", emailError);
+      else if (emailResult?.success === false) console.warn("[AdVerX] Account status email rejected:", emailResult.error);
     })
     .catch((emailCause) => {
-      console.warn("[AdverX] Account status email could not be sent:", emailCause);
+      console.warn("[AdVerX] Account status email could not be sent:", emailCause);
     });
 
-  return data as AdminRow;
+  return payload.data as AdminRow;
 }
-
 export async function getUserDetails(identifier: string) {
   let profileResult = await db.from("profiles").select("*").eq("public_uid", identifier).maybeSingle();
   if (!profileResult.data && !profileResult.error) {
