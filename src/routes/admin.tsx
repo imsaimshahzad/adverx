@@ -2220,7 +2220,8 @@ function ModuleTable({
   const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
   const [transactionDetail, setTransactionDetail] = useState<AdminRow | null>(null);
   const [transactionLedger, setTransactionLedger] = useState<AdminRow[]>([]);
-  const [transactionAllocation, setTransactionAllocation] = useState<AdminRow | null>(null);\n  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+  const [transactionAllocation, setTransactionAllocation] = useState<AdminRow | null>(null);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ column: string; direction: "asc" | "desc" } | null>(null);
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
   const [notificationProfileCount, setNotificationProfileCount] = useState(0);
