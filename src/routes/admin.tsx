@@ -2354,7 +2354,11 @@ function ModuleTable({
                   role="tab"
                   aria-selected={userPartition === filter}
                   onClick={() => onUserPartition(filter)}
-                  className="h-9 shrink-0 rounded-lg border-slate-200 bg-white px-3 capitalize shadow-none"
+                  className={`h-9 shrink-0 rounded-lg border px-3 capitalize shadow-none ${
+                    (userPartition === filter || adsFilter === status || statusPartition === status)
+                      ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 dark:border-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                      : "border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+                  }`}
                 >
                   {filter === "all" ? "All" : filter.slice(0, 1).toUpperCase() + filter.slice(1)} ({userCounts[filter]})
                 </Button>
@@ -2390,7 +2394,7 @@ function ModuleTable({
                 </Button>
               ))
             ) : (
-              <span className="inline-flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+              <span className="inline-flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-700 dark:text-slate-200">
                 <Filter className="size-3.5" />
                 All records
               </span>
