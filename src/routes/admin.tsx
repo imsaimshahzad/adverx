@@ -820,7 +820,7 @@ export function AdminRoute() {
       {mobileMenuOpen ? (
         <div className="fixed inset-0 z-30 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin navigation">
           <button className="absolute inset-0 bg-foreground/30" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="admin-sidebar relative flex h-full w-[min(18rem,85vw)] flex-col overflow-y-auto border-r p-5 shadow-xl">
+          <aside className="admin-sidebar relative flex h-full w-[min(18rem,85vw)] flex-col overflow-y-auto border-r p-4 shadow-xl">
             <div className="flex items-center justify-between gap-3">
   <Link to="/" className="flex items-center gap-2 text-lg font-bold" onClick={() => setMobileMenuOpen(false)}>
   <BrandLogo compact className="max-w-[11.5rem] rounded bg-white/95 p-1" />
@@ -828,11 +828,11 @@ export function AdminRoute() {
   </Link>
               <Button variant="ghost" size="icon" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)}><X /></Button>
             </div>
-            <p className="mt-8 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Operations</p>
+            <p className="mt-7 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Operations</p>
             <nav className="mt-3 flex flex-col gap-1">
               {menu.map(([key, label, Icon]) => (
-                <button key={key} data-active={active === key} className="admin-nav-item flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-all" onClick={() => { setActive(key); setQuery(""); setPage(1); setSelectedUser(null); setMobileMenuOpen(false); }}>
-                  <Icon className="size-4" />
+                <button key={key} data-active={active === key} className="admin-nav-item group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors" onClick={() => { setActive(key); setQuery(""); setPage(1); setSelectedUser(null); setMobileMenuOpen(false); }}>
+                  <Icon className="size-5 shrink-0 transition-colors" />
                   <span className="min-w-0 flex-1">{label}</span>
                   {key === "deposits" && counts.deposits ? <Badge className="ml-auto">{counts.deposits}</Badge> : null}
                   {key === "withdrawals" && counts.withdrawals ? <Badge className="ml-auto">{counts.withdrawals}</Badge> : null}
@@ -843,19 +843,19 @@ export function AdminRoute() {
           </aside>
         </div>
       ) : null}
-      <aside className="admin-sidebar fixed inset-y-0 hidden w-64 overflow-y-auto border-r p-5 lg:block">
+      <aside className="admin-sidebar fixed inset-y-0 hidden w-64 overflow-y-auto border-r p-4 lg:block">
   <Link to="/" className="flex items-center gap-2 text-lg font-bold">
   <BrandLogo compact className="max-w-[11.5rem] rounded bg-white/95 p-1" />
   <span className="sr-only">AdverX Admin</span>
   </Link>
-        <p className="mt-8 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="mt-7 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Operations
         </p>
-        <nav className="mt-4 space-y-1.5">
+        <nav className="mt-3 space-y-1">
           {menu.map(([key, label, Icon]) => (
             <button
               key={key}
-              className="admin-nav-item flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-all" data-active={active === key}
+              className="admin-nav-item group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors" data-active={active === key}
               onClick={() => {
                 setActive(key);
                 setQuery("");
@@ -864,8 +864,8 @@ export function AdminRoute() {
                 if (key === "overview") void navigate({ to: "/admin" });
               }}
             >
-              <Icon className="size-4" />
-              {label}
+              <Icon className="size-5 shrink-0 transition-colors" />
+              <span className="min-w-0 flex-1 text-left">{label}</span>
               {key === "deposits" && counts.deposits ? (
                 <Badge className="ml-auto">{counts.deposits}</Badge>
               ) : null}
