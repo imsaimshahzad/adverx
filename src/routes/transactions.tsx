@@ -57,6 +57,7 @@ function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Tx | null>(null);
   const [copied, setCopied] = useState(false);
+  const [accountUid, setAccountUid] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -69,10 +70,11 @@ function TransactionsPage() {
         if (authError || !authData.user) throw new Error("Please sign in again.");
 
         const uid = authData.user.id;
-        const { data: profile, error: profileError } = await db.from("profiles").select("role").eq("id", uid).maybeSingle();
+        const { data: profile, error: profileError } = await db.from("profiles").select("role, public_uid").eq("id", uid).maybeSingle();
         if (profileError) throw new Error(profileError.message);
 
         const isAdmin = ["admin", "super_admin", "moderator"].includes(String(profile?.role ?? ""));
+        if (mounted) setAccountUid(String(profile?.public_uid ?? "").trim() || null);
         const [
           { data: wallet, error: walletError },
           { data: ledger, error: ledgerError },
@@ -198,7 +200,7 @@ function TransactionsPage() {
   }, []);
 
   return (
-    <AppShell title="Transaction History" subtitle="Every important account movement in one place">
+    <AppShell title="Transaction History" subtitle={accountUid ? `Every important account movement in one place · UID ${accountUid}` : "Every important account movement in one place"}>
       <div className="surface p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <ReceiptText className="mt-0.5 size-5 text-primary" />
