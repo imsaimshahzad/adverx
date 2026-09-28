@@ -28,6 +28,7 @@ import {
   LogOut,
   Menu as MenuIcon,
   RefreshCw,
+  ReceiptText,
   Search,
   Filter,
   X,
