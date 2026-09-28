@@ -57,6 +57,28 @@ export async function queryRows(table: string, columns = "*") {
   return (result.data ?? []) as AdminRow[];
 }
 
+/**
+ * Fetch every ledger row in stable newest-first order.
+ * The generic admin tables intentionally use a small preview; Wallet Ledger
+ * must not silently stop at the first 100 entries.
+ */
+export async function queryAllRows(table: string, columns = "*") {
+  const pageSize = 1000;
+  const allRows: AdminRow[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const result = await db
+      .from(table)
+      .select(columns)
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (result.error) throw result.error;
+    const page = (result.data ?? []) as AdminRow[];
+    allRows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return allRows;
+}
+
 export async function queryCount(
   table: string,
   filters: Record<string, unknown> = {},
