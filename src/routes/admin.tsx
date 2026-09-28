@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  ArrowUpDown,
   BarChart3,
   Bell,
   Check,
@@ -1255,8 +1256,8 @@ function RevenueDashboard({
               <col className="w-[12%]" />
               <col className="w-[26%]" />
             </colgroup>
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className="bg-slate-50/95">
+              <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
                 <th scope="col" className="p-4 font-medium">Date</th>
                 <th scope="col" className="p-4 font-medium">User</th>
                 <th scope="col" className="p-4 font-medium">Plan</th>
@@ -1271,7 +1272,7 @@ function RevenueDashboard({
                 const category = String(row.category ?? row.status ?? "—");
                 const categoryLabel = category.replaceAll("_", " ");
                 return (
-                  <tr key={String(row.id ?? index)} className="border-b align-middle last:border-0 hover:bg-muted/30">
+                  <tr key={String(row.id ?? index)} className="border-b border-slate-100 align-middle transition-colors last:border-0 hover:bg-slate-50">
                     <td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.user_display ?? "User")}>{formatValue(row.user_display ?? "User")}</span></td>
                     <td className="max-w-0 p-4"><span className="block truncate" title={String(row.plan_name ?? row.plan_id ?? "—")}>{formatValue(row.plan_name ?? row.plan_id)}</span></td>
@@ -1440,8 +1441,8 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
               <colgroup>
                 <col className="w-[17%]" /><col className="w-[13%]" /><col className="w-[14%]" /><col className="w-[24%]" /><col className="w-[16%]" /><col className="w-[16%]" />
               </colgroup>
-              <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="bg-slate-50/95">
+                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
                   <th scope="col" className="p-4">Date</th><th scope="col" className="p-4">Type</th><th scope="col" className="p-4 text-right">Amount</th><th scope="col" className="p-4">Purpose / Reason</th><th scope="col" className="p-4">Reference</th><th scope="col" className="p-4 text-right">Balance After</th>
                 </tr>
               </thead>
@@ -1451,7 +1452,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                   const amountPkr = Number(row.amount_pkr ?? row.amount ?? 0);
                   const signedAmount = entryType === "debit" ? -Math.abs(amountPkr) : entryType === "credit" || entryType === "reversal" ? Math.abs(amountPkr) : amountPkr;
                   return (
-                    <tr className="border-b last:border-0" key={String(row.id)}>
+                    <tr className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50" key={String(row.id)}>
                       <td className="whitespace-nowrap p-4 text-muted-foreground">{formatValue(row.created_at)}</td>
                       <td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td>
                       <td className={`whitespace-nowrap p-4 text-right font-medium tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td>
@@ -2203,6 +2204,7 @@ function ModuleTable({
 }) {
   const [metadataRow, setMetadataRow] = useState<AdminRow | null>(null);
   const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ column: string; direction: "asc" | "desc" } | null>(null);
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
   const [notificationProfileCount, setNotificationProfileCount] = useState(0);
   useEffect(() => {
@@ -2247,9 +2249,26 @@ function ModuleTable({
       }))
     : [];
   const displayRows = active === "notifications" ? notificationGroups : rows;
+  const sortedRows = useMemo(() => {
+    if (!sortConfig) return displayRows;
+    const sorted = [...displayRows];
+    sorted.sort((a, b) => {
+      const av = a[sortConfig.column];
+      const bv = b[sortConfig.column];
+      const an = Number(av);
+      const bn = Number(bv);
+      const bothNumbers = av !== null && bv !== null && av !== undefined && bv !== undefined && Number.isFinite(an) && Number.isFinite(bn) && String(av).trim() !== "" && String(bv).trim() !== "";
+      const left = bothNumbers ? an : String(av ?? "").toLowerCase();
+      const right = bothNumbers ? bn : String(bv ?? "").toLowerCase();
+      if (left < right) return sortConfig.direction === "asc" ? -1 : 1;
+      if (left > right) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [displayRows, sortConfig]);
   const pageSize = 20;
-  const pageCount = Math.max(1, Math.ceil(displayRows.length / pageSize));
-  const visibleRows = displayRows.slice((page - 1) * pageSize, page * pageSize);
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / pageSize));
+  const visibleRows = sortedRows.slice((page - 1) * pageSize, page * pageSize);
   // Build table columns from the actual Supabase rows. Previously rawColumns was referenced
   // without being defined, causing ModuleTable to throw a ReferenceError for most admin modules.
   const rawColumns = Array.from(new Set(displayRows.flatMap((row) => Object.keys(row))));
@@ -2359,19 +2378,27 @@ function ModuleTable({
             <p className="mt-1 max-w-xs text-sm text-muted-foreground">Records will appear here as activity is created.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] table-auto text-xs">
-              <thead className="sticky top-0 z-10 bg-slate-50">
-                <tr className="border-b border-slate-200/80 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full min-w-[760px] table-auto text-sm">
+              <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 backdrop-blur-sm">
+                <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   {columns.map((column) => (
-                    <th className="whitespace-nowrap px-2 py-1.5 text-[11px]" key={column}>
-                      {active === "plans" && column === "ads_per_day"
-                        ? "Daily Ads Limit"
-                        : column.replaceAll("_", " ")}
+                    <th className="whitespace-nowrap px-2 py-2.5 text-[11px]" key={column}>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left font-semibold uppercase tracking-[0.08em] text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                        onClick={() => setSortConfig((current) => ({
+                          column,
+                          direction: current?.column === column && current.direction === "asc" ? "desc" : "asc",
+                        }))}
+                      >
+                        <span>{active === "plans" && column === "ads_per_day" ? "Daily Ads Limit" : column.replaceAll("_", " ")}</span>
+                        <ArrowUpDown className="size-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                      </button>
                     </th>
                   ))}
   {actions.length || managementTable || active === "support" ? (
-  <th className="whitespace-nowrap px-2 py-2">Actions</th>
+  <th className="whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Actions</th>
 
                   ) : null}
                 </tr>
@@ -2385,7 +2412,7 @@ function ModuleTable({
                   >
                     {columns.map((column) => (
                       <td
-                        className="max-w-[180px] truncate px-2 py-1.5 align-middle text-xs"
+                        className="max-w-[180px] truncate px-3 py-2.5 align-middle text-sm"
                         key={column}
                       >
                         {active === "notifications" && column === "recipient_count" ? (
@@ -2427,7 +2454,7 @@ function ModuleTable({
                       </td>
                     ))}
                     {active === "notifications" ? (
-                      <td className="whitespace-nowrap px-2 py-1.5 align-middle">
+                      <td className="whitespace-nowrap px-3 py-2.5 align-middle">
                         <Button
                           variant="outline"
                           size="sm"
@@ -2536,7 +2563,7 @@ function ModuleTable({
                 ))}
               </tbody>
             </table>
-            <div className="flex items-center justify-between border-t pt-4">
+            <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3">
               <p className="text-sm text-muted-foreground">
                 Showing {visibleRows.length} of {rows.length}
               </p>
