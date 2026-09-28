@@ -16,6 +16,7 @@ export type AdminModule =
   | "withdrawal-methods"
   | "referrals"
   | "referral-commissions"
+  | "transactions"
   | "ledger"
   | "fraud"
   | "reports"
