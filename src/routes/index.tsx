@@ -159,7 +159,103 @@ function FeatureSection() {
   return <section className="border-y border-border/70 bg-muted/20"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-20"><SectionIntro eyebrow="FEATURES" title="Designed around the information you need" text="Keep an eye on daily activity without losing the context behind your account." /><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{features.map(([Icon, title, text]) => <div key={title as string} className="surface p-5"><Icon className="size-5 text-primary" /><h3 className="mt-5 text-sm font-semibold">{title as string}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{text as string}</p></div>)}</div></div></section>;
 }
 
-function PlansPreview({ plans }: { plans: typeof PLANS }) { return <section id="plans" className="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20"><SectionIntro eyebrow="PLANS" title="Choose your plan" text="Review the plans currently available in your account system." /><div className="mt-8 grid gap-4 md:grid-cols-3">{plans.length ? plans.map((plan) => <div key={plan.id} className="surface flex flex-col p-6"><h3 className="font-semibold">{plan.name}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.description}</p><p className="mt-6 text-3xl font-semibold">{money(plan.price)}</p><p className="mt-1 text-sm text-muted-foreground">One-time payment · Lifetime access</p><div className="mt-6 space-y-2 border-t border-border/70 pt-4 text-sm text-muted-foreground"><p>✓ {plan.dailyAdLimit} eligible tasks per day</p><p>✓ Direct referral: {plan.referrerCommissionPct}%</p>{plan.indirectReferralPct > 0 ? <p>✓ Indirect referral: {plan.indirectReferralPct}% · Up to Level 6 earnings</p> : <p>✓ Indirect referral: Not included</p>}</div><Button asChild variant="outline" className="mt-6 w-full"><Link to="/plans">View Plan <ArrowRight className="size-4" /></Link></Button></div>) : <div className="surface p-8 text-sm text-muted-foreground md:col-span-3">No plans are currently available.</div>}</div></section>; }
+function PlansPreview({ plans }: { plans: typeof PLANS }) {
+  return (
+    <section id="plans" className="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+      <SectionIntro
+        eyebrow="PLANS"
+        title="Choose your plan"
+        text="Review the plans currently available in your account system."
+      />
+      <div className="mt-8 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {plans.length ? plans.map((plan) => (
+          <div
+            key={plan.id}
+            className={[
+              "relative flex h-full flex-col overflow-hidden rounded-xl border bg-background p-6 shadow-sm transition-all duration-200",
+              "hover:-translate-y-1 hover:shadow-lg",
+              plan.highlight
+                ? "border-primary/50 ring-2 ring-primary/15"
+                : "border-border",
+            ].join(" ")}
+          >
+            {plan.highlight && (
+              <div className="absolute right-4 top-4">
+                <Badge>Popular</Badge>
+              </div>
+            )}
+
+            <div className="mb-5">
+              <div className="flex items-center gap-2 pr-20">
+                <h3 className="text-xl font-medium text-muted-foreground">{plan.name}</h3>
+              </div>
+
+              <div className="mt-3 flex items-baseline text-foreground">
+                <span className="text-2xl font-semibold">Rs.</span>
+                <span className="num text-5xl font-extrabold tracking-tight">
+                  {money(plan.price).replace(/^Rs\.?\s?/, "")}
+                </span>
+                <span className="ml-2 text-lg font-normal text-muted-foreground">
+                  one-time
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
+            </div>
+
+            <ul className="my-5 flex-1 space-y-4">
+              <PlanFeature>{plan.dailyAdLimit} ad tasks per day</PlanFeature>
+              <PlanFeature>{plan.durationDays ? `${plan.durationDays} days validity` : "Lifetime access"}</PlanFeature>
+              <PlanFeature>Direct referral: {plan.referrerCommissionPct}%</PlanFeature>
+              <PlanFeature>
+                {plan.indirectReferralPct > 0
+                  ? `Indirect referral: ${plan.indirectReferralPct}% · Up to Level 6 earnings`
+                  : "Indirect referral not included"}
+              </PlanFeature>
+              <PlanFeature>Minimum withdrawal {money(plan.minWithdrawal)}</PlanFeature>
+              {plan.networkEligible ? (
+                <PlanFeature>Network rewards enabled</PlanFeature>
+              ) : (
+                <PlanFeature muted>No network rewards</PlanFeature>
+              )}
+            </ul>
+
+            <Button asChild className="mt-2 w-full rounded-lg">
+              <Link to="/plans">
+                View Plan <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        )) : (
+          <div className="surface p-8 text-sm text-muted-foreground md:col-span-3">
+            No plans are currently available.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function PlanFeature({
+  children,
+  muted = false,
+}: {
+  children: React.ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <li className={`flex items-start gap-3 ${muted ? "line-through decoration-muted-foreground/60" : ""}`}>
+      <CheckCircle2
+        className={`mt-0.5 size-5 shrink-0 ${muted ? "text-muted-foreground" : "text-primary"}`}
+      />
+      <span
+        className={`text-base font-normal leading-tight ${muted ? "text-muted-foreground" : "text-foreground/80"}`}
+      >
+        {children}
+      </span>
+    </li>
+  );
+}
 
 function WhyAdNet() { return <section className="border-y border-border/70 bg-gradient-to-br from-violet-500/[0.06] via-muted/20 to-primary/[0.05]"><div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 lg:grid-cols-[.8fr_1.2fr] lg:px-8 lg:py-20"><SectionIntro eyebrow="WHY ADVERX" title="Built around clarity" text="A structured account experience makes it easier to understand what is available and what has already happened." /><div className="grid gap-3 sm:grid-cols-2">{["Clear task eligibility", "Visible reward history", "Wallet transaction history", "Structured withdrawal flow", "Protected account access"].map((item) => <div key={item} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background p-4 text-sm"><CheckCircle2 className="size-4 text-primary" />{item}</div>)}</div></div></section>; }
 
