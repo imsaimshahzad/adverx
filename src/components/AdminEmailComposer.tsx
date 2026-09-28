@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { LoadingButtonContent } from "@/components/LoadingIndicator";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeAdminEmail } from "@/lib/admin-service";
 
 type Template = { name: string; subject: string; html: string };
 
@@ -96,15 +96,14 @@ export function AdminEmailComposer() {
     }
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-send-email", {
-        body: { to: finalRecipients, subject: subject.trim(), htmlContent: html.trim(), textContent: textFallback },
-      });
-      if (error) throw new Error(error.message || "Unable to send email.");
-      if (!data?.success) throw new Error(data?.error || "Unable to send email.");
+      const { data, error } = await invokeAdminEmail({ to: finalRecipients, subject: subject.trim(), htmlContent: html.trim(), textContent: textFallback });
+      if (error) throw error;
+      if (!data?.success) throw new Error("Unable to send email.");
       toast.success(`Email sent to ${finalRecipients.length} recipient${finalRecipients.length === 1 ? "" : "s"}.`);
       setRecipients([]); setRecipientInput(""); setSubject(""); setHtml(TEMPLATES[0].html);
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Unable to send email.");
+      console.error("[AdverX] custom email send failed", cause);
+      toast.error("Unable to send email. Please try again.");
     } finally { setBusy(false); }
   }
 
