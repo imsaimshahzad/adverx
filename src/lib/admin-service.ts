@@ -140,16 +140,15 @@ export async function reviewWithdrawal(
   });
   if (error) {
     if (error.code === "42501") throw new Error("You do not have permission to review withdrawals.");
-    console.error("[AdverX] reviewWithdrawal failed", error);
+    console.error("[AdVerX] reviewWithdrawal failed", error);
     throw new Error("Unable to update withdrawal.");
   }
-  // Transactional email is optional; the withdrawal status change must remain successful even if Brevo fails.
   try {
     const { data: emailResult, error: emailError } = await invokeAdminEmail({ withdrawal_id: id, note: note ?? null });
-    if (emailError) console.warn("[AdverX] Withdrawal status email failed:", emailError);
-    else if (emailResult?.success === false) console.warn("[AdverX] Withdrawal status email rejected:", emailResult.error);
+    if (emailError) console.warn("[AdVerX] Withdrawal status email failed:", emailError);
+    else if (emailResult?.success === false) console.warn("[AdVerX] Withdrawal status email rejected:", emailResult.error);
   } catch (emailCause) {
-    console.warn("[AdverX] Withdrawal status email could not be sent:", emailCause);
+    console.warn("[AdVerX] Withdrawal status email could not be sent:", emailCause);
   }
   return data as AdminRow;
 }
@@ -176,22 +175,18 @@ export async function approveDeposit(
     throw new Error("Deposit approval failed.");
   }
 
-  // Deposit approval is the source of truth. The transactional approval must
-  // succeed even if the optional notification email fails.
   if (nextStatus === "approved" || nextStatus === "rejected") {
     try {
       const { data: emailResult, error: emailError } = await invokeAdminEmail({ deposit_id: id, reason: rejectionReason ?? null });
       if (emailError) {
-        console.warn("[AdverX] Deposit approved email failed:", emailError);
+        console.warn("[AdVerX] Deposit approved email failed:", emailError);
       } else if (emailResult?.success === false) {
-        console.warn("[AdverX] Deposit status email rejected:", emailResult.error);
+        console.warn("[AdVerX] Deposit status email rejected:", emailResult.error);
       }
     } catch (emailCause) {
-      console.warn("[AdverX] Deposit status email could not be sent:", emailCause);
+      console.warn("[AdVerX] Deposit status email could not be sent:", emailCause);
     }
 
-    // The approval RPC activates the user's plan. If an active user_plans row
-    // exists for this purchase, send the dedicated plan-activation email too.
     try {
       const { data: deposit } = await db
         .from("deposits")
@@ -210,12 +205,12 @@ export async function approveDeposit(
           .maybeSingle();
         if (userPlan?.id) {
           const { data: planEmail, error: planEmailError } = await invokeAdminEmail({ user_plan_id: userPlan.id })
-          if (planEmailError) console.warn("[AdverX] Plan activation email failed:", planEmailError);
-          else if (planEmail?.success === false) console.warn("[AdverX] Plan activation email rejected:", planEmail.error);
+          if (planEmailError) console.warn("[AdVerX] Plan activation email failed:", planEmailError);
+          else if (planEmail?.success === false) console.warn("[AdVerX] Plan activation email rejected:", planEmail.error);
         }
       }
     } catch (planEmailCause) {
-      console.warn("[AdverX] Plan activation email could not be sent:", planEmailCause);
+      console.warn("[AdVerX] Plan activation email could not be sent:", planEmailCause);
     }
   }
 
@@ -239,7 +234,7 @@ export async function transitionRow(
     .select()
     .maybeSingle();
   if (result.error) {
-    console.error(`[AdverX] update ${table} failed`, result.error);
+    console.error(`[AdVerX] update ${table} failed`, result.error);
     throw new Error("Unable to update this record.");
   }
   if (!result.data) {
@@ -276,7 +271,7 @@ export async function updateRow(
     .select()
     .single();
   if (result.error) {
-    console.error(`[AdverX] update ${table} failed`, result.error);
+    console.error(`[AdVerX] update ${table} failed`, result.error);
     throw new Error("Unable to update this record.");
   }
   const audit = await db.from("audit_logs").insert({
@@ -287,7 +282,7 @@ export async function updateRow(
     metadata: changes,
   });
   if (audit.error) {
-    console.error(`[AdverX] audit logging failed after updating ${table}`, audit.error);
+    console.error(`[AdVerX] audit logging failed after updating ${table}`, audit.error);
     throw new Error("The record was updated, but the audit log could not be saved.");
   }
   return result.data as AdminRow;
@@ -302,7 +297,7 @@ export async function insertRow(
   if (!auth.user) throw new Error("Your session has expired.");
   const result = await db.from(table).insert(values).select().single();
   if (result.error) {
-    console.error(`[AdverX] insert into ${table} failed`, result.error);
+    console.error(`[AdVerX] insert into ${table} failed`, result.error);
     throw new Error("Unable to create this record.");
   }
   const audit = await db.from("audit_logs").insert({
@@ -313,7 +308,7 @@ export async function insertRow(
     metadata: values,
   });
   if (audit.error) {
-    console.error(`[AdverX] audit logging failed after inserting into ${table}`, audit.error);
+    console.error(`[AdVerX] audit logging failed after inserting into ${table}`, audit.error);
     throw new Error("The record was created, but the audit log could not be saved.");
   }
   return result.data as AdminRow;
@@ -442,7 +437,7 @@ export async function getRecoveryFundActivity() {
     .select("id, entry_type, amount_pkr, reference_id, user_id, plan_id, note, created_at")
     .is("user_id", null)
     .order("created_at", { ascending: true });
-  if (error) { console.error("[AdverX] Unallocated Recovery activity query failed", error); throw new Error("Unable to load Unallocated Recovery activity."); }
+  if (error) { console.error("[AdVerX] Unallocated Recovery activity query failed", error); throw new Error("Unable to load Unallocated Recovery activity."); }
 
   let balance = 0;
   const chronological = (data ?? []).map((row: AdminRow) => {
@@ -469,7 +464,7 @@ export async function getReferrerRecoveryReserve() {
     .from("profiles")
     .select("recovery_reserve_pkr")
     .gt("recovery_reserve_pkr", 0);
-  if (error) { console.error("[AdverX] referrer recovery reserve query failed", error); throw new Error("Unable to load referrer recovery reserve."); }
+  if (error) { console.error("[AdVerX] referrer recovery reserve query failed", error); throw new Error("Unable to load referrer recovery reserve."); }
   return (data ?? []).reduce(
     (total: number, row: AdminRow) => total + Number(row.recovery_reserve_pkr ?? 0),
     0,
@@ -481,7 +476,7 @@ export async function getRevenuePlans() {
     .from("plans")
     .select("id, name, price_pkr, admin_profit_pct, direct_referral_pct, referrer_commission_pct, indirect_referral_pct, recovery_fund_pct, ad_budget_pct, activity_rules")
     .order("price_pkr", { ascending: true });
-  if (error) { console.error("[AdverX] plan allocation query failed", error); throw new Error("Unable to load plan allocation details."); }
+  if (error) { console.error("[AdVerX] plan allocation query failed", error); throw new Error("Unable to load plan allocation details."); }
   return (data ?? []) as AdminRow[];
 }
 
@@ -499,7 +494,7 @@ export async function useRecoveryFund(values: {
     p_reason: values.reason,
     p_reference: values.reference?.trim() || null,
   });
-  if (error) { console.error("[AdverX] Recovery Fund action failed", error); throw new Error("Unable to use Recovery Fund."); }
+  if (error) { console.error("[AdVerX] Recovery Fund action failed", error); throw new Error("Unable to use Recovery Fund."); }
   return data as AdminRow;
 }
 
@@ -509,36 +504,44 @@ export async function replySupportTicket(ticketId: string, status: "open" | "in_
     p_status: status,
     p_reply: reply.trim() || null,
   });
-  if (error) { console.error("[AdverX] complaint update failed", error); throw new Error("Unable to update the complaint."); }
+  if (error) { console.error("[AdVerX] complaint update failed", error); throw new Error("Unable to update the complaint."); }
   return data as AdminRow;
 }
 
 export async function setUserStatus(userId: string, status: "active" | "suspended" | "restricted") {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (!accessToken) throw new Error("Your session has expired.");
-
-  const response = await fetch("/api/admin-user-status", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + accessToken,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ user_id: userId, status }),
-  });
-
-  const payload = await response.json().catch(() => null);
-  if (!response.ok || payload?.success !== true) {
-    console.error("[AdVerX] server user status update failed", {
-      status: response.status,
-      payload,
-    });
-    throw new Error(String(payload?.error || "Unable to update user status."));
+  const normalizedUserId = String(userId ?? "").trim();
+  if (!normalizedUserId) throw new Error("Invalid user ID.");
+  if (!["active", "suspended", "restricted"].includes(status)) {
+    throw new Error("Invalid user status.");
   }
 
-  // Status is already committed. Email is optional and cannot block the admin action.
-  void invokeAdminEmail({ user_id: userId, user_status: status })
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Your session has expired.");
+
+  const { data, error } = await db
+    .from("profiles")
+    .update({ status })
+    .eq("id", normalizedUserId)
+    .select("id, full_name, username, email, public_uid, role, status")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[AdVerX] profile status update failed", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      userId: normalizedUserId,
+      status,
+    });
+    throw new Error(error.message || "Unable to update user status.");
+  }
+
+  if (!data) {
+    throw new Error("User not found or you do not have permission to update this user.");
+  }
+
+  void invokeAdminEmail({ user_id: normalizedUserId, user_status: status })
     .then(({ data: emailResult, error: emailError }) => {
       if (emailError) console.warn("[AdVerX] Account status email failed:", emailError);
       else if (emailResult?.success === false) console.warn("[AdVerX] Account status email rejected:", emailResult.error);
@@ -547,8 +550,9 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
       console.warn("[AdVerX] Account status email could not be sent:", emailCause);
     });
 
-  return payload.data as AdminRow;
+  return data as AdminRow;
 }
+
 export async function getUserDetails(identifier: string) {
   let profileResult = await db.from("profiles").select("*").eq("public_uid", identifier).maybeSingle();
   if (!profileResult.data && !profileResult.error) {
@@ -580,11 +584,6 @@ export async function getUserDetails(identifier: string) {
   const paidWithdrawals = (withdrawals ?? []).filter((row: AdminRow) => row.status === "paid");
   const completedCommissions = (commissions ?? []).filter((row: AdminRow) => row.status === "completed");
 
-  // Wallet balance must use the same user-owned ledger entries as the member
-  // dashboard. Plan purchases, ad-budget reserves, platform profit, deposits
-  // and other internal allocation rows are NOT spendable wallet balance.
-  // Keep this calculation server-data-backed and deterministic so admin/user
-  // screens cannot disagree about a member's available balance.
   const balanceEntryTypes = new Set([
     "ad_reward",
     "referral_reward",
@@ -684,7 +683,7 @@ export async function adjustUserReserve(userPlanId: string, amount: number, reas
     p_amount: amount,
     p_reason: reason,
   });
-  if (error) { console.error("[AdverX] reserve adjustment failed", error); throw new Error(error.message?.includes("not authorized") ? "You do not have permission to adjust reserves." : "Unable to adjust reserves."); }
+  if (error) { console.error("[AdVerX] reserve adjustment failed", error); throw new Error(error.message?.includes("not authorized") ? "You do not have permission to adjust reserves." : "Unable to adjust reserves."); }
   return data as AdminRow;
 }
 
@@ -714,4 +713,3 @@ export function amount(
     0,
   );
 }
-
