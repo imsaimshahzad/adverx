@@ -454,55 +454,50 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
-          email: string | null
-          email_verified: boolean
-          full_name: string
+          full_name: string | null
           id: string
-          phone: string | null
-          referral_code: string
+          plan_activated_at: string | null
+          plan_id: string | null
+          public_uid: string
+          recovery_reserve_pkr: number
+          referral_code: string | null
           referred_by: string | null
-          risk_status: Database["public"]["Enums"]["risk_level"]
-          status: Database["public"]["Enums"]["account_status"]
-          updated_at: string
+          role: "member" | "admin" | "super_admin" | "moderator"
+          status: "active" | "restricted" | "suspended"
           username: string | null
+          verified: boolean | null
         }
         Insert: {
           created_at?: string
-          email?: string | null
-          email_verified?: boolean
-          full_name?: string
+          full_name?: string | null
           id: string
-          phone?: string | null
-          referral_code: string
+          plan_activated_at?: string | null
+          plan_id?: string | null
+          public_uid?: string
+          recovery_reserve_pkr?: number
+          referral_code?: string | null
           referred_by?: string | null
-          risk_status?: Database["public"]["Enums"]["risk_level"]
-          status?: Database["public"]["Enums"]["account_status"]
-          updated_at?: string
+          role?: "member" | "admin" | "super_admin" | "moderator"
+          status?: "active" | "restricted" | "suspended"
           username?: string | null
+          verified?: boolean | null
         }
         Update: {
           created_at?: string
-          email?: string | null
-          email_verified?: boolean
-          full_name?: string
+          full_name?: string | null
           id?: string
-          phone?: string | null
-          referral_code?: string
+          plan_activated_at?: string | null
+          plan_id?: string | null
+          public_uid?: string
+          recovery_reserve_pkr?: number
+          referral_code?: string | null
           referred_by?: string | null
-          risk_status?: Database["public"]["Enums"]["risk_level"]
-          status?: Database["public"]["Enums"]["account_status"]
-          updated_at?: string
+          role?: "member" | "admin" | "super_admin" | "moderator"
+          status?: "active" | "restricted" | "suspended"
           username?: string | null
+          verified?: boolean | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_referred_by_fkey"
-            columns: ["referred_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       referral_commissions: {
         Row: {
