@@ -101,6 +101,8 @@ export async function queryCount(
   return result.count ?? 0;
 }
 
+export { invokeAdminEmail };
+
 export async function adjustLedger(
   userId: string,
   value: number,
@@ -199,8 +201,7 @@ export async function approveDeposit(
   // succeed even if the optional notification email fails.
   if (nextStatus === "approved" || nextStatus === "rejected") {
     try {
-      const { data: emailResult, error: emailError } = await invokeAdminEmail({ deposit_id: id, reason: rejectionReason ?? null } },
-      );
+      const { data: emailResult, error: emailError } = await invokeAdminEmail({ deposit_id: id, reason: rejectionReason ?? null });
       if (emailError) {
         console.warn("[AdverX] Deposit approved email failed:", emailError);
       } else if (emailResult?.success === false) {
@@ -229,8 +230,7 @@ export async function approveDeposit(
           .limit(1)
           .maybeSingle();
         if (userPlan?.id) {
-          const { data: planEmail, error: planEmailError } = await invokeAdminEmail( {
-            body: { user_plan_id: userPlan.id });
+          const { data: planEmail, error: planEmailError } = await invokeAdminEmail({ user_plan_id: userPlan.id })
           if (planEmailError) console.warn("[AdverX] Plan activation email failed:", planEmailError);
           else if (planEmail?.success === false) console.warn("[AdverX] Plan activation email rejected:", planEmail.error);
         }
