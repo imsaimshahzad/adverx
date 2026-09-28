@@ -507,6 +507,23 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Your session has expired.");
 
+  const { data: targetProfile, error: targetProfileError } = await db
+    .from("profiles")
+    .select("id, full_name, username, public_uid, role, status")
+    .eq("id", normalizedUserId)
+    .maybeSingle();
+
+  if (targetProfileError) {
+    throw new Error(targetProfileError.message || "Unable to load this user.");
+  }
+  if (!targetProfile) {
+    throw new Error("User not found or you do not have permission to update this user.");
+  }
+
+  if (["admin", "super_admin", "moderator"].includes(String(targetProfile.role).toLowerCase())) {
+    throw new Error("Protected admin account: role and status cannot be changed.");
+  }
+
   const { data, error } = await db
     .from("profiles")
     .update({ status })
