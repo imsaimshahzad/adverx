@@ -660,6 +660,17 @@ export function AdminRoute() {
 
   function setStatus(row: AdminRow, status: string) {
     if (!row.id || !currentTable) return;
+
+    if (
+      active === "users" &&
+      ["admin", "super_admin", "moderator"].includes(
+        String(row.role ?? "").toLowerCase(),
+      )
+    ) {
+      toast.error("Protected admin account: role and status cannot be changed.");
+      return;
+    }
+
     setStatusConfirm({ row, status });
     setRejectionReason("");
   }
