@@ -28,6 +28,8 @@ import {
   LogOut,
   Menu as MenuIcon,
   RefreshCw,
+  Search,
+  Filter,
   X,
   Settings,
   ShieldCheck,
@@ -2311,63 +2313,102 @@ function ModuleTable({
   : rawColumns.slice(0, 6);
   return (
     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-      <CardHeader className="gap-4 border-b border-slate-200/80 bg-slate-50 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="h-1 w-10 rounded-full bg-[#6366f1]" />
-        <div>
-          <CardTitle>{active.replaceAll("-", " ")}</CardTitle>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {active === "notifications"
-              ? `${displayRows.length} notification${displayRows.length === 1 ? "" : "s"}`
-              : `${totalRecords ?? rows.length} live records from Supabase.`}
-          </p>
+      <CardHeader className="gap-0 border-b border-slate-200/80 bg-white p-0">
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+              <LayoutDashboard className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <CardTitle className="truncate text-base font-semibold capitalize text-slate-900">
+                {active.replaceAll("-", " ")}
+              </CardTitle>
+              <p className="mt-1 text-sm text-slate-500">
+                {active === "notifications" ? (
+                  <>{displayRows.length} notification{displayRows.length === 1 ? "" : "s"} ready to review.</>
+                ) : (
+                  <>{totalRecords ?? rows.length} live records from Supabase.</>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0">
+            <CreateRecordButton
+              active={active}
+              open={createOpen}
+              onOpenChange={setCreateOpen}
+              onCreated={onCreated}
+            />
+          </div>
         </div>
-        {active === "users" && userCounts && onUserPartition ? (
-          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="User filters">
-            {(["all", "paid", "unpaid", "starter", "growth", "pro"] as const).map((filter) => (
-              <Button key={filter} type="button" size="sm" variant={userPartition === filter ? "default" : "outline"} role="tab" aria-selected={userPartition === filter} onClick={() => onUserPartition(filter)} className="shrink-0 capitalize">
-                {filter === "all" ? "All" : `${filter.slice(0, 1).toUpperCase()}${filter.slice(1)}`} ({userCounts[filter]})
-              </Button>
-            ))}
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/70 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label={active + " filters"}>
+            {active === "users" && userCounts && onUserPartition ? (
+              (["all", "paid", "unpaid", "starter", "growth", "pro"] as const).map((filter) => (
+                <Button
+                  key={filter}
+                  type="button"
+                  size="sm"
+                  variant={userPartition === filter ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={userPartition === filter}
+                  onClick={() => onUserPartition(filter)}
+                  className="h-9 shrink-0 rounded-lg border-slate-200 bg-white px-3 capitalize shadow-none"
+                >
+                  {filter === "all" ? "All" : filter.slice(0, 1).toUpperCase() + filter.slice(1)} ({userCounts[filter]})
+                </Button>
+              ))
+            ) : adsCounts && onAdsFilter ? (
+              (["active", "archived", "all"] as const).map((status) => (
+                <Button
+                  key={status}
+                  type="button"
+                  size="sm"
+                  variant={adsFilter === status ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={adsFilter === status}
+                  onClick={() => onAdsFilter(status)}
+                  className="h-9 shrink-0 rounded-lg border-slate-200 bg-white px-3 capitalize shadow-none"
+                >
+                  {status} ({adsCounts[status]})
+                </Button>
+              ))
+            ) : statusCounts && onStatusPartition ? (
+              (["pending", "approved", "rejected"] as const).map((status) => (
+                <Button
+                  key={status}
+                  type="button"
+                  size="sm"
+                  variant={statusPartition === status ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={statusPartition === status}
+                  onClick={() => onStatusPartition(status)}
+                  className="h-9 shrink-0 rounded-lg border-slate-200 bg-white px-3 capitalize shadow-none"
+                >
+                  {status} ({statusCounts[status]})
+                </Button>
+              ))
+            ) : (
+              <span className="inline-flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+                <Filter className="size-3.5" />
+                All records
+              </span>
+            )}
           </div>
-        ) : adsCounts && onAdsFilter ? (
-          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Ads status">
-            {(["active", "archived", "all"] as const).map((status) => (
-              <Button key={status} type="button" size="sm" variant={adsFilter === status ? "default" : "outline"} role="tab" aria-selected={adsFilter === status} onClick={() => onAdsFilter(status)} className="shrink-0 capitalize">
-                {status} ({adsCounts[status]})
-              </Button>
-            ))}
+
+          <div className="flex w-full items-center gap-2 lg:w-auto">
+            <div className="relative w-full lg:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <Input
+                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 pr-3 text-sm shadow-none placeholder:text-slate-400 focus-visible:ring-blue-500"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={"Search " + active.replaceAll("-", " ") + "..."}
+                aria-label={"Search " + active.replaceAll("-", " ")}
+              />
+            </div>
           </div>
-        ) : statusCounts && onStatusPartition ? (
-          <div className="flex w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${active} status`}>
-            {(["pending", "approved", "rejected"] as const).map((status) => (
-              <Button
-                key={status}
-                type="button"
-                size="sm"
-                variant={statusPartition === status ? "default" : "outline"}
-                role="tab"
-                aria-selected={statusPartition === status}
-                onClick={() => onStatusPartition(status)}
-                className="shrink-0 capitalize"
-              >
-                {status} ({statusCounts[status]})
-              </Button>
-            ))}
-          </div>
-        ) : null}
-        <div className="flex items-center gap-2">
-          <Input
-            className="sm:max-w-xs"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search records"
-          />
-          <CreateRecordButton
-            active={active}
-            open={createOpen}
-            onOpenChange={setCreateOpen}
-            onCreated={onCreated}
-          />
         </div>
       </CardHeader>
       <CardContent className="px-0 pb-0">
