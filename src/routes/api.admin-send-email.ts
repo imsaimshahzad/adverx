@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+const SUPABASE_FUNCTION_URL =
+  "https://iozdfcsounatmcqmgoct.supabase.co/functions/v1/admin-send-email";
+
 export const Route = createFileRoute("/api/admin-send-email")({
   server: {
     handlers: {
@@ -14,33 +17,26 @@ export const Route = createFileRoute("/api/admin-send-email")({
           }
 
           const authorization = request.headers.get("authorization");
-          const endpoint =
-            process.env["SUPABASE_URL"] ||
-            process.env["VITE_SUPABASE_URL"] ||
-            process.env["NEXT_PUBLIC_SUPABASE_URL"];
-
-          if (!endpoint || !authorization?.startsWith("Bearer ")) {
+          if (!authorization?.startsWith("Bearer ")) {
             return Response.json(
               { success: false, error: "Email service is unavailable." },
               { status: 503 },
             );
           }
 
-          const response = await fetch(
-            endpoint.replace(/\/$/, "") + "/functions/v1/admin-send-email",
-            {
-              method: "POST",
-              headers: {
-                Authorization: authorization,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                Origin: "https://adverx.online",
-              },
-              body,
+          const response = await fetch(SUPABASE_FUNCTION_URL, {
+            method: "POST",
+            headers: {
+              Authorization: authorization,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              Origin: "https://adverx.online",
             },
-          );
+            body,
+          });
 
           const responseBody = await response.text();
+
           return new Response(
             responseBody ||
               JSON.stringify({
@@ -56,7 +52,7 @@ export const Route = createFileRoute("/api/admin-send-email")({
             },
           );
         } catch (error) {
-          console.error("[AdverX] admin email proxy failed", error);
+          console.error("[AdVerX] admin email proxy failed", error);
           return Response.json(
             { success: false, error: "Unable to send email." },
             { status: 500 },
