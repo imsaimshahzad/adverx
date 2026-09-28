@@ -2215,6 +2215,25 @@ function ModuleTable({
   const [sortConfig, setSortConfig] = useState<{ column: string; direction: "asc" | "desc" } | null>(null);
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
   const [notificationProfileCount, setNotificationProfileCount] = useState(0);
+  const [ledgerProfileMap, setLedgerProfileMap] = useState<Record<string, AdminRow>>({});
+  useEffect(() => {
+    if (active !== "ledger") return;
+    const ids = [...new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean))];
+    if (!ids.length) {
+      setLedgerProfileMap({});
+      return;
+    }
+    void (async () => {
+      const { data, error } = await (supabase as any)
+        .from("profiles")
+        .select("id, public_uid, full_name, username")
+        .in("id", ids);
+      if (error) return;
+      const map: Record<string, AdminRow> = {};
+      for (const profile of data ?? []) map[String(profile.id)] = profile;
+      setLedgerProfileMap(map);
+    })();
+  }, [active, rows]);
   useEffect(() => {
     if (active !== "notifications") return;
     const ids = [...new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean))];
@@ -2282,6 +2301,8 @@ function ModuleTable({
   const rawColumns = Array.from(new Set(displayRows.flatMap((row) => Object.keys(row))));
   const columns = active === "notifications"
   ? ["title", "body", "recipient_count", "created_at"]
+  : active === "ledger"
+  ? ["id", "user_id", "entry_type", "amount", "reference_id", "note", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "plans"
   ? [
   ...[
@@ -2501,6 +2522,39 @@ function ModuleTable({
                           ) : (
                             <span>{String(row[column] ?? "—")}</span>
                           )
+                        ) : active === "ledger" && column === "id" ? (
+                          <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">{transactionDisplayId(String(row.id ?? ""))}</span>
+                        ) : active === "ledger" && column === "user_id" ? (
+                          <div className="min-w-[130px]" title={String(row.user_id ?? "")}>
+                            <div className="truncate font-medium text-slate-900">{String(ledgerProfileMap[String(row.user_id ?? "")]?.full_name ?? ledgerProfileMap[String(row.user_id ?? "")]?.username ?? "Unknown user")}</div>
+                            <div className="text-[11px] text-slate-500">UID {String(ledgerProfileMap[String(row.user_id ?? "")]?.public_uid ?? "—")}</div>
+                          </div>
+                        ) : active === "ledger" && column === "entry_type" ? (
+                          <Badge variant="outline" className="whitespace-nowrap border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700">
+                            {({
+                              plan_purchase: "Plan purchase",
+                              plan_ad_budget: "User reward reserve",
+                              ad_reward: "Ad reward",
+                              referral_commission: "Direct referral commission",
+                              indirect_referral_commission: "Indirect referral commission",
+                              platform_admin_profit: "Platform profit",
+                              recovery_fund: "Recovery fund allocation",
+                              unassigned_referral: "Unassigned referral allocation",
+                              withdrawal: "Withdrawal",
+                              deposit: "Deposit",
+                              admin_adjustment: "Admin balance adjustment",
+                            } as Record<string, string>)[String(row.entry_type ?? "")] ?? String(row.entry_type ?? "Other").replaceAll("_", " ")}
+                          </Badge>
+                        ) : active === "ledger" && column === "amount" ? (
+                          <span className={`whitespace-nowrap font-semibold tabular-nums ${Number(row.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                            {Number(row.amount ?? 0) < 0 ? "−" : "+"}PKR {Math.abs(Number(row.amount ?? 0)).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : active === "ledger" && column === "reference_id" ? (
+                          <span className="font-mono text-xs text-primary" title={String(row.reference_id ?? "")}>{row.reference_id ? transactionDisplayId(String(row.reference_id)) : "—"}</span>
+                        ) : active === "ledger" && column === "note" ? (
+                          <span className="block min-w-[240px] max-w-[420px] whitespace-normal text-sm leading-5 text-slate-700" title={String(row.note ?? "")}>{String(row.note ?? "No additional details")}</span>
+                        ) : active === "ledger" && column === "created_at" ? (
+                          <span className="whitespace-nowrap text-xs text-slate-600">{formatValue(row.created_at)}</span>
                         ) : active === "audit-logs" && column === "metadata" ? (
                           <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-indigo-700 hover:bg-indigo-50" onClick={(event) => { event.stopPropagation(); setMetadataRow(row); }}>
                             <Eye className="size-3.5" /> View details
