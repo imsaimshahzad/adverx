@@ -114,7 +114,7 @@ export async function adjustLedger(
   if (error) throw error;
 
   try {
-    const { data: emailResult, error: emailError } = await supabase.functions.invoke("admin-send-email", {
+    const { data: emailResult, error: emailError } = await invokeAdminEmail( {
       body: { ledger_adjustment_user_id: userId, amount: value, note },
     });
     if (emailError) console.warn("[AdverX] Ledger adjustment email failed:", emailError);
@@ -166,7 +166,7 @@ export async function reviewWithdrawal(
   }
   // Transactional email is optional; the withdrawal status change must remain successful even if Brevo fails.
   try {
-    const { data: emailResult, error: emailError } = await supabase.functions.invoke("admin-send-email", {
+    const { data: emailResult, error: emailError } = await invokeAdminEmail( {
       body: { withdrawal_id: id, note: note ?? null },
     });
     if (emailError) console.warn("[AdverX] Withdrawal status email failed:", emailError);
@@ -203,8 +203,7 @@ export async function approveDeposit(
   // succeed even if the optional notification email fails.
   if (nextStatus === "approved" || nextStatus === "rejected") {
     try {
-      const { data: emailResult, error: emailError } = await supabase.functions.invoke(
-        "admin-send-email",
+      const { data: emailResult, error: emailError } = await invokeAdminEmail(
         { body: { deposit_id: id, reason: rejectionReason ?? null } },
       );
       if (emailError) {
@@ -235,7 +234,7 @@ export async function approveDeposit(
           .limit(1)
           .maybeSingle();
         if (userPlan?.id) {
-          const { data: planEmail, error: planEmailError } = await supabase.functions.invoke("admin-send-email", {
+          const { data: planEmail, error: planEmailError } = await invokeAdminEmail( {
             body: { user_plan_id: userPlan.id },
           });
           if (planEmailError) console.warn("[AdverX] Plan activation email failed:", planEmailError);
@@ -549,7 +548,7 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   if (error) { console.error("[AdverX] user status update failed", error); throw new Error("Unable to update user status."); }
 
   try {
-    const { data: emailResult, error: emailError } = await supabase.functions.invoke("admin-send-email", {
+    const { data: emailResult, error: emailError } = await invokeAdminEmail( {
       body: { user_id: userId, user_status: status },
     });
     if (emailError) console.warn("[AdverX] Account status email failed:", emailError);
