@@ -4,6 +4,7 @@ import { AppShell, StatTile } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { money, usePlatform, type LedgerEntry } from "@/lib/platform-store";
+import { transactionDisplayId, transactionSourceId } from "@/lib/transaction-display";
 
 export const Route = createFileRoute("/_authenticated/history")({
   head: () => ({
@@ -71,7 +72,7 @@ function LedgerList({ entries }: { entries: LedgerEntry[] }) {
       {entries.map((e) => (
         <div key={e.id} className="flex items-start justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{e.label}</p>
+            <p className="truncate text-sm font-medium">{e.label}</p><p className="mt-0.5 font-mono text-[11px] font-medium text-primary">{transactionDisplayId(transactionSourceId(e as unknown as Record<string, unknown>))}</p>
             <p className="text-xs text-muted-foreground">
               {new Date(e.createdAt).toLocaleString("en-PK", {
                 day: "2-digit",
