@@ -14,325 +14,518 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_actions: {
+      ad_budget_recoveries: {
         Row: {
-          action: string
-          admin_id: string
+          amount_pkr: number
           created_at: string
           id: string
-          target_id: string | null
+          plan_id: string
+          purchase_id: string
+          referral_id: string
+          referred_id: string
+          referrer_id: string
+          reversed_at: string | null
+          status: string
         }
         Insert: {
-          action: string
-          admin_id: string
+          amount_pkr: number
           created_at?: string
           id?: string
-          target_id?: string | null
+          plan_id: string
+          purchase_id: string
+          referral_id: string
+          referred_id: string
+          referrer_id: string
+          reversed_at?: string | null
+          status?: string
         }
         Update: {
-          action?: string
-          admin_id?: string
+          amount_pkr?: number
           created_at?: string
           id?: string
-          target_id?: string | null
-        }
-        Relationships: []
-      }
-      admin_settings: {
-        Row: {
-          category: string
-          description: string | null
-          key: string
-          label: string
-          text_value: string | null
-          updated_at: string
-          updated_by: string | null
-          value: number | null
-        }
-        Insert: {
-          category?: string
-          description?: string | null
-          key: string
-          label: string
-          text_value?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          value?: number | null
-        }
-        Update: {
-          category?: string
-          description?: string | null
-          key?: string
-          label?: string
-          text_value?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          value?: number | null
-        }
-        Relationships: []
-      }
-      advertiser_campaigns: {
-        Row: {
-          advertiser_id: string
-          budget: number
-          created_at: string
-          ends_on: string | null
-          id: string
-          is_active: boolean
-          name: string
-          starts_on: string | null
-        }
-        Insert: {
-          advertiser_id: string
-          budget?: number
-          created_at?: string
-          ends_on?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          starts_on?: string | null
-        }
-        Update: {
-          advertiser_id?: string
-          budget?: number
-          created_at?: string
-          ends_on?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          starts_on?: string | null
+          plan_id?: string
+          purchase_id?: string
+          referral_id?: string
+          referred_id?: string
+          referrer_id?: string
+          reversed_at?: string | null
+          status?: string
         }
         Relationships: [
           {
-            foreignKeyName: "advertiser_campaigns_advertiser_id_fkey"
-            columns: ["advertiser_id"]
+            foreignKeyName: "ad_budget_recoveries_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "advertisers"
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_budget_recoveries_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "deposits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_budget_recoveries_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
             referencedColumns: ["id"]
           },
         ]
       }
-      advertiser_revenue: {
+      ad_completions: {
         Row: {
-          advertiser_id: string
-          campaign_id: string | null
+          ad_id: string
+          completed_at: string
+          id: string
+          reward: number
+          user_id: string
+        }
+        Insert: {
+          ad_id: string
+          completed_at?: string
+          id?: string
+          reward?: number
+          user_id: string
+        }
+        Update: {
+          ad_id?: string
+          completed_at?: string
+          id?: string
+          reward?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_completions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_view_sessions: {
+        Row: {
+          ad_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          reward_amount_pkr: number
+          started_at: string
+          status: string
+          user_id: string
+          user_plan_id: string
+        }
+        Insert: {
+          ad_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          reward_amount_pkr?: number
+          started_at?: string
+          status?: string
+          user_id: string
+          user_plan_id: string
+        }
+        Update: {
+          ad_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          reward_amount_pkr?: number
+          started_at?: string
+          status?: string
+          user_id?: string
+          user_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_view_sessions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_view_sessions_user_plan_id_fkey"
+            columns: ["user_plan_id"]
+            isOneToOne: false
+            referencedRelation: "user_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_profit_ledger: {
+        Row: {
+          admin_user_id: string | null
+          allocation_id: string
           created_at: string
           currency: string
-          gross_revenue: number
+          gross_amount: number
           id: string
-          notes: string | null
-          platform_revenue: number
-          received_on: string
-          reference: string | null
-          status: Database["public"]["Enums"]["revenue_status"]
+          plan_id: string
+          profit_amount: number
+          profit_percentage: number
+          purchase_id: string
+          reference_id: string | null
+          reversal_of: string | null
+          status: string
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          admin_user_id?: string | null
+          allocation_id: string
+          created_at?: string
+          currency?: string
+          gross_amount: number
+          id?: string
+          plan_id: string
+          profit_amount: number
+          profit_percentage: number
+          purchase_id: string
+          reference_id?: string | null
+          reversal_of?: string | null
+          status?: string
+          transaction_type?: string
+          user_id: string
+        }
+        Update: {
+          admin_user_id?: string | null
+          allocation_id?: string
+          created_at?: string
+          currency?: string
+          gross_amount?: number
+          id?: string
+          plan_id?: string
+          profit_amount?: number
+          profit_percentage?: number
+          purchase_id?: string
+          reference_id?: string | null
+          reversal_of?: string | null
+          status?: string
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_profit_ledger_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_profit_ledger_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_profit_ledger_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_profit_ledger_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "deposits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_profit_ledger_reversal_of_fkey"
+            columns: ["reversal_of"]
+            isOneToOne: false
+            referencedRelation: "admin_profit_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_profit_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: number
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: number
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
+      ads: {
+        Row: {
+          advertiser: string
+          created_at: string
+          description: string | null
+          destination_url: string | null
+          display_order: number
+          duration_seconds: number
+          id: string
+          reward: number
+          reward_enabled: boolean
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          advertiser: string
+          created_at?: string
+          description?: string | null
+          destination_url?: string | null
+          display_order?: number
+          duration_seconds?: number
+          id?: string
+          reward?: number
+          reward_enabled?: boolean
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          advertiser?: string
+          created_at?: string
+          description?: string | null
+          destination_url?: string | null
+          display_order?: number
+          duration_seconds?: number
+          id?: string
+          reward?: number
+          reward_enabled?: boolean
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      advertiser_revenue: {
+        Row: {
+          advertiser: string
+          amount: number
+          campaign: string
+          id: string
+          recorded_at: string
+          status: string
           verified_at: string | null
           verified_by: string | null
         }
         Insert: {
-          advertiser_id: string
-          campaign_id?: string | null
-          created_at?: string
-          currency?: string
-          gross_revenue: number
+          advertiser: string
+          amount: number
+          campaign: string
           id?: string
-          notes?: string | null
-          platform_revenue: number
-          received_on?: string
-          reference?: string | null
-          status?: Database["public"]["Enums"]["revenue_status"]
+          recorded_at?: string
+          status?: string
           verified_at?: string | null
           verified_by?: string | null
         }
         Update: {
-          advertiser_id?: string
-          campaign_id?: string | null
-          created_at?: string
-          currency?: string
-          gross_revenue?: number
+          advertiser?: string
+          amount?: number
+          campaign?: string
           id?: string
-          notes?: string | null
-          platform_revenue?: number
-          received_on?: string
-          reference?: string | null
-          status?: Database["public"]["Enums"]["revenue_status"]
+          recorded_at?: string
+          status?: string
           verified_at?: string | null
           verified_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "advertiser_revenue_advertiser_id_fkey"
-            columns: ["advertiser_id"]
-            isOneToOne: false
-            referencedRelation: "advertisers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "advertiser_revenue_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "advertiser_campaigns"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      advertisers: {
+      audit_log: {
         Row: {
-          contact_email: string | null
+          admin_id: string | null
+          amount: number | null
           created_at: string
+          event_type: string
           id: string
-          is_active: boolean
-          name: string
-          notes: string | null
-          website: string | null
+          image_hash: string | null
+          metadata: Json
+          transaction_id: string
+          user_id: string
         }
         Insert: {
-          contact_email?: string | null
+          admin_id?: string | null
+          amount?: number | null
           created_at?: string
+          event_type: string
           id?: string
-          is_active?: boolean
-          name: string
-          notes?: string | null
-          website?: string | null
+          image_hash?: string | null
+          metadata?: Json
+          transaction_id: string
+          user_id: string
         }
         Update: {
-          contact_email?: string | null
+          admin_id?: string | null
+          amount?: number | null
           created_at?: string
+          event_type?: string
           id?: string
-          is_active?: boolean
-          name?: string
-          notes?: string | null
-          website?: string | null
+          image_hash?: string | null
+          metadata?: Json
+          transaction_id?: string
+          user_id?: string
         }
         Relationships: []
       }
       audit_logs: {
         Row: {
           action: string
-          admin_id: string | null
+          actor_id: string | null
           created_at: string
+          entity_id: string | null
+          entity_type: string
           id: string
           metadata: Json
-          new_value: Json | null
-          old_value: Json | null
-          reason: string | null
-          target_id: string | null
-          target_type: string | null
         }
         Insert: {
           action: string
-          admin_id?: string | null
+          actor_id?: string | null
           created_at?: string
+          entity_id?: string | null
+          entity_type: string
           id?: string
           metadata?: Json
-          new_value?: Json | null
-          old_value?: Json | null
-          reason?: string | null
-          target_id?: string | null
-          target_type?: string | null
         }
         Update: {
           action?: string
-          admin_id?: string | null
+          actor_id?: string | null
           created_at?: string
+          entity_id?: string | null
+          entity_type?: string
           id?: string
           metadata?: Json
-          new_value?: Json | null
-          old_value?: Json | null
-          reason?: string | null
-          target_id?: string | null
-          target_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deposit_methods: {
         Row: {
           account_number: string
           account_title: string
+          icon_url: string | null
           id: string
           instructions: string
           is_active: boolean
+          max_deposit_pkr: number | null
+          min_deposit_pkr: number
           name: string
           sort_order: number
+          updated_at: string
         }
         Insert: {
-          account_number: string
-          account_title: string
+          account_number?: string
+          account_title?: string
+          icon_url?: string | null
           id?: string
           instructions?: string
           is_active?: boolean
+          max_deposit_pkr?: number | null
+          min_deposit_pkr?: number
           name: string
           sort_order?: number
+          updated_at?: string
         }
         Update: {
           account_number?: string
           account_title?: string
+          icon_url?: string | null
           id?: string
           instructions?: string
           is_active?: boolean
+          max_deposit_pkr?: number | null
+          min_deposit_pkr?: number
           name?: string
           sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
       deposits: {
         Row: {
           amount: number
-          currency: string
+          approved_at: string | null
+          created_at: string
           id: string
-          method_id: string | null
+          image_hash: string | null
+          method: string | null
           plan_id: string | null
-          proof_path: string | null
-          review_note: string | null
-          reviewed_at: string | null
-          reviewer_id: string | null
-          status: Database["public"]["Enums"]["deposit_status"]
-          submitted_at: string
-          transaction_reference: string
+          proof_url: string | null
+          receipt_deleted_at: string | null
+          status: string
+          transaction_id: string | null
           user_id: string
         }
         Insert: {
           amount: number
-          currency?: string
+          approved_at?: string | null
+          created_at?: string
           id?: string
-          method_id?: string | null
+          image_hash?: string | null
+          method?: string | null
           plan_id?: string | null
-          proof_path?: string | null
-          review_note?: string | null
-          reviewed_at?: string | null
-          reviewer_id?: string | null
-          status?: Database["public"]["Enums"]["deposit_status"]
-          submitted_at?: string
-          transaction_reference: string
+          proof_url?: string | null
+          receipt_deleted_at?: string | null
+          status?: string
+          transaction_id?: string | null
           user_id: string
         }
         Update: {
           amount?: number
-          currency?: string
+          approved_at?: string | null
+          created_at?: string
           id?: string
-          method_id?: string | null
+          image_hash?: string | null
+          method?: string | null
           plan_id?: string | null
-          proof_path?: string | null
-          review_note?: string | null
-          reviewed_at?: string | null
-          reviewer_id?: string | null
-          status?: Database["public"]["Enums"]["deposit_status"]
-          submitted_at?: string
-          transaction_reference?: string
+          proof_url?: string | null
+          receipt_deleted_at?: string | null
+          status?: string
+          transaction_id?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "deposits_method_id_fkey"
-            columns: ["method_id"]
+            foreignKeyName: "deposits_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "deposit_methods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "deposits_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -343,111 +536,251 @@ export type Database = {
           details: Json
           flag_type: string
           id: string
-          resolution_note: string | null
-          resolved: boolean
-          resolved_at: string | null
-          resolved_by: string | null
           severity: string
-          user_id: string
+          status: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           details?: Json
           flag_type: string
           id?: string
-          resolution_note?: string | null
-          resolved?: boolean
-          resolved_at?: string | null
-          resolved_by?: string | null
           severity?: string
-          user_id: string
+          status?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           details?: Json
           flag_type?: string
           id?: string
-          resolution_note?: string | null
-          resolved?: boolean
-          resolved_at?: string | null
-          resolved_by?: string | null
           severity?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      impersonation_grants: {
+        Row: {
+          admin_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          token_digest: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          token_digest: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token_digest?: string
+          used_at?: string | null
           user_id?: string
         }
         Relationships: []
+      }
+      indirect_referral_level_rates: {
+        Row: {
+          level: number
+          percentage: number | null
+          updated_at: string
+        }
+        Insert: {
+          level: number
+          percentage?: number | null
+          updated_at?: string
+        }
+        Update: {
+          level?: number
+          percentage?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ledger_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          entry_type: string
+          id: string
+          note: string | null
+          reference_id: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          entry_type: string
+          id?: string
+          note?: string | null
+          reference_id?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          entry_type?: string
+          id?: string
+          note?: string | null
+          reference_id?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
           body: string
-          category: string
           created_at: string
           id: string
-          read: boolean
+          read_at: string | null
           title: string
           user_id: string
         }
         Insert: {
-          body?: string
-          category?: string
+          body: string
           created_at?: string
           id?: string
-          read?: boolean
+          read_at?: string | null
           title: string
           user_id: string
         }
         Update: {
           body?: string
-          category?: string
           created_at?: string
           id?: string
-          read?: boolean
+          read_at?: string | null
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plans: {
         Row: {
+          active: boolean
+          activity_rules: Json
+          ad_budget_pct: number | null
+          admin_profit_pct: number
+          ads_per_day: number
+          base_ad_reward_pkr: number
           created_at: string
-          daily_task_limit: number
-          description: string
-          duration_days: number
+          daily_ads: number
+          daily_reward_limit_pkr: number
+          description: string | null
+          direct_referral_pct: number
           id: string
-          is_active: boolean
-          min_withdrawal: number
+          indirect_referral_pct: number
+          lifetime_access: boolean
+          max_ad_reward_pkr: number
+          max_lifetime_reward_pkr: number
+          max_recovery_pkr: number | null
+          min_deposit: number
           name: string
-          price: number
-          referral_eligible: boolean
-          slug: string
-          sort_order: number
+          platform_allocation_pct: number
+          price_pkr: number
+          recovery_fund_pct: number
+          recovery_per_referral_pkr: number | null
+          referral_enabled: boolean
+          referrer_commission_pct: number
+          reward_budget_pkr: number
+          status: string
+          updated_at: string
         }
         Insert: {
+          active?: boolean
+          activity_rules?: Json
+          ad_budget_pct?: number | null
+          admin_profit_pct?: number
+          ads_per_day?: number
+          base_ad_reward_pkr?: number
           created_at?: string
-          daily_task_limit?: number
-          description?: string
-          duration_days?: number
+          daily_ads?: number
+          daily_reward_limit_pkr?: number
+          description?: string | null
+          direct_referral_pct?: number
           id?: string
-          is_active?: boolean
-          min_withdrawal?: number
+          indirect_referral_pct?: number
+          lifetime_access?: boolean
+          max_ad_reward_pkr?: number
+          max_lifetime_reward_pkr?: number
+          max_recovery_pkr?: number | null
+          min_deposit?: number
           name: string
-          price?: number
-          referral_eligible?: boolean
-          slug: string
-          sort_order?: number
+          platform_allocation_pct?: number
+          price_pkr?: number
+          recovery_fund_pct?: number
+          recovery_per_referral_pkr?: number | null
+          referral_enabled?: boolean
+          referrer_commission_pct?: number
+          reward_budget_pkr?: number
+          status?: string
+          updated_at?: string
         }
         Update: {
+          active?: boolean
+          activity_rules?: Json
+          ad_budget_pct?: number | null
+          admin_profit_pct?: number
+          ads_per_day?: number
+          base_ad_reward_pkr?: number
           created_at?: string
-          daily_task_limit?: number
-          description?: string
-          duration_days?: number
+          daily_ads?: number
+          daily_reward_limit_pkr?: number
+          description?: string | null
+          direct_referral_pct?: number
           id?: string
-          is_active?: boolean
-          min_withdrawal?: number
+          indirect_referral_pct?: number
+          lifetime_access?: boolean
+          max_ad_reward_pkr?: number
+          max_lifetime_reward_pkr?: number
+          max_recovery_pkr?: number | null
+          min_deposit?: number
           name?: string
-          price?: number
-          referral_eligible?: boolean
-          slug?: string
-          sort_order?: number
+          platform_allocation_pct?: number
+          price_pkr?: number
+          recovery_fund_pct?: number
+          recovery_per_referral_pkr?: number | null
+          referral_enabled?: boolean
+          referrer_commission_pct?: number
+          reward_budget_pkr?: number
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -462,8 +795,8 @@ export type Database = {
           recovery_reserve_pkr: number
           referral_code: string | null
           referred_by: string | null
-          role: "member" | "admin" | "super_admin" | "moderator"
-          status: "active" | "restricted" | "suspended"
+          role: string
+          status: string
           username: string | null
           verified: boolean | null
         }
@@ -477,8 +810,8 @@ export type Database = {
           recovery_reserve_pkr?: number
           referral_code?: string | null
           referred_by?: string | null
-          role?: "member" | "admin" | "super_admin" | "moderator"
-          status?: "active" | "restricted" | "suspended"
+          role?: string
+          status?: string
           username?: string | null
           verified?: boolean | null
         }
@@ -492,12 +825,123 @@ export type Database = {
           recovery_reserve_pkr?: number
           referral_code?: string | null
           referred_by?: string | null
-          role?: "member" | "admin" | "super_admin" | "moderator"
-          status?: "active" | "restricted" | "suspended"
+          role?: string
+          status?: string
           username?: string | null
           verified?: boolean | null
         }
         Relationships: []
+      }
+      purchase_allocations: {
+        Row: {
+          ad_budget_amount: number
+          admin_profit_amount: number
+          created_at: string
+          currency: string
+          gross_amount: number
+          id: string
+          indirect_pool_amount_pkr: number
+          indirect_pool_distributed_pkr: number
+          plan_id: string
+          purchase_id: string
+          recovery_fund_amount: number
+          referral_commission_amount: number
+          user_id: string
+        }
+        Insert: {
+          ad_budget_amount: number
+          admin_profit_amount: number
+          created_at?: string
+          currency?: string
+          gross_amount: number
+          id?: string
+          indirect_pool_amount_pkr?: number
+          indirect_pool_distributed_pkr?: number
+          plan_id: string
+          purchase_id: string
+          recovery_fund_amount: number
+          referral_commission_amount: number
+          user_id: string
+        }
+        Update: {
+          ad_budget_amount?: number
+          admin_profit_amount?: number
+          created_at?: string
+          currency?: string
+          gross_amount?: number
+          id?: string
+          indirect_pool_amount_pkr?: number
+          indirect_pool_distributed_pkr?: number
+          plan_id?: string
+          purchase_id?: string
+          recovery_fund_amount?: number
+          referral_commission_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_allocations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_allocations_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: true
+            referencedRelation: "deposits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_allocations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recovery_fund_ledger: {
+        Row: {
+          amount_pkr: number
+          created_at: string
+          entry_type: string
+          id: string
+          note: string | null
+          plan_id: string | null
+          reference_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_pkr: number
+          created_at?: string
+          entry_type: string
+          id?: string
+          note?: string | null
+          plan_id?: string | null
+          reference_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_pkr?: number
+          created_at?: string
+          entry_type?: string
+          id?: string
+          note?: string | null
+          plan_id?: string | null
+          reference_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_fund_ledger_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_commissions: {
         Row: {
@@ -505,43 +949,87 @@ export type Database = {
           created_at: string
           id: string
           level: number
-          qualifying_activity: string
-          rate: number
-          referred_id: string
-          referrer_id: string
-          source_transaction_id: string | null
-          status: Database["public"]["Enums"]["tx_status"]
+          percentage: number
+          plan_id: string | null
+          purchase_id: string | null
+          referral_id: string | null
+          reversal_of: string | null
+          source: string
+          source_user_id: string | null
+          status: string
+          user_id: string
         }
         Insert: {
           amount: number
           created_at?: string
           id?: string
           level: number
-          qualifying_activity: string
-          rate: number
-          referred_id: string
-          referrer_id: string
-          source_transaction_id?: string | null
-          status?: Database["public"]["Enums"]["tx_status"]
+          percentage?: number
+          plan_id?: string | null
+          purchase_id?: string | null
+          referral_id?: string | null
+          reversal_of?: string | null
+          source: string
+          source_user_id?: string | null
+          status?: string
+          user_id: string
         }
         Update: {
           amount?: number
           created_at?: string
           id?: string
           level?: number
-          qualifying_activity?: string
-          rate?: number
-          referred_id?: string
-          referrer_id?: string
-          source_transaction_id?: string | null
-          status?: Database["public"]["Enums"]["tx_status"]
+          percentage?: number
+          plan_id?: string | null
+          purchase_id?: string | null
+          referral_id?: string | null
+          reversal_of?: string | null
+          source?: string
+          source_user_id?: string | null
+          status?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "referral_commissions_source_transaction_id_fkey"
-            columns: ["source_transaction_id"]
+            foreignKeyName: "referral_commissions_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "wallet_transactions"
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "deposits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_reversal_of_fkey"
+            columns: ["reversal_of"]
+            isOneToOne: false
+            referencedRelation: "referral_commissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_source_user_id_fkey"
+            columns: ["source_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -557,7 +1045,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          level: number
+          level?: number
           referred_id: string
           referrer_id: string
         }
@@ -570,129 +1058,328 @@ export type Database = {
         }
         Relationships: []
       }
-      support_tickets: {
+      reward_ranges: {
         Row: {
-          admin_reply: string | null
-          created_at: string
+          active: boolean
+          activity_level: string
           id: string
-          message: string
-          replied_at: string | null
-          replied_by: string | null
-          status: string
-          subject: string
-          user_id: string
+          maximum_pkr: number
+          minimum_pkr: number
+          plan_id: string
         }
         Insert: {
-          admin_reply?: string | null
-          created_at?: string
+          active?: boolean
+          activity_level: string
           id?: string
-          message: string
-          replied_at?: string | null
-          replied_by?: string | null
-          status?: string
-          subject: string
-          user_id: string
+          maximum_pkr: number
+          minimum_pkr: number
+          plan_id: string
         }
         Update: {
-          admin_reply?: string | null
-          created_at?: string
+          active?: boolean
+          activity_level?: string
           id?: string
-          message?: string
-          replied_at?: string | null
-          replied_by?: string | null
-          status?: string
-          subject?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      task_completions: {
-        Row: {
-          created_at: string
-          id: string
-          reward: number
-          session_id: string
-          task_id: string
-          transaction_id: string | null
-          user_id: string
-          watched_seconds: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          reward: number
-          session_id: string
-          task_id: string
-          transaction_id?: string | null
-          user_id: string
-          watched_seconds: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          reward?: number
-          session_id?: string
-          task_id?: string
-          transaction_id?: string | null
-          user_id?: string
-          watched_seconds?: number
+          maximum_pkr?: number
+          minimum_pkr?: number
+          plan_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "task_completions_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: true
-            referencedRelation: "task_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_completions_task_id_fkey"
-            columns: ["task_id"]
+            foreignKeyName: "reward_ranges_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_completions_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "wallet_transactions"
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
         ]
       }
-      task_sessions: {
+      reward_rules: {
         Row: {
+          active: boolean
+          activity_score_required: number
+          created_at: string
           id: string
-          ip_address: string | null
-          reject_reason: string | null
-          started_at: string
-          status: Database["public"]["Enums"]["session_status"]
-          submitted_at: string | null
-          task_id: string
-          user_agent: string | null
+          minimum_referrals: number
+          plan_id: string | null
+          reward_cap_pkr: number | null
+          reward_multiplier: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          activity_score_required?: number
+          created_at?: string
+          id?: string
+          minimum_referrals?: number
+          plan_id?: string | null
+          reward_cap_pkr?: number | null
+          reward_multiplier?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          activity_score_required?: number
+          created_at?: string
+          id?: string
+          minimum_referrals?: number
+          plan_id?: string | null
+          reward_cap_pkr?: number | null
+          reward_multiplier?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_rules_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_transactions: {
+        Row: {
+          ad_id: string | null
+          amount_pkr: number
+          created_at: string
+          daily_reward_after_pkr: number
+          daily_reward_before_pkr: number
+          id: string
+          idempotency_key: string | null
+          reserve_after_pkr: number
+          reserve_before_pkr: number
+          reward_type: string
+          status: string
+          user_id: string
+          user_plan_id: string | null
+        }
+        Insert: {
+          ad_id?: string | null
+          amount_pkr: number
+          created_at?: string
+          daily_reward_after_pkr?: number
+          daily_reward_before_pkr?: number
+          id?: string
+          idempotency_key?: string | null
+          reserve_after_pkr: number
+          reserve_before_pkr: number
+          reward_type: string
+          status?: string
+          user_id: string
+          user_plan_id?: string | null
+        }
+        Update: {
+          ad_id?: string | null
+          amount_pkr?: number
+          created_at?: string
+          daily_reward_after_pkr?: number
+          daily_reward_before_pkr?: number
+          id?: string
+          idempotency_key?: string | null
+          reserve_after_pkr?: number
+          reserve_before_pkr?: number
+          reward_type?: string
+          status?: string
+          user_id?: string
+          user_plan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_transactions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_transactions_user_plan_id_fkey"
+            columns: ["user_plan_id"]
+            isOneToOne: false
+            referencedRelation: "user_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_rate_limit_config: {
+        Row: {
+          backoff_base_seconds: number
+          backoff_max_seconds: number
+          endpoint_type: string
+          per_account_limit: number
+          per_ip_limit: number
+          updated_at: string
+          window_seconds: number
+        }
+        Insert: {
+          backoff_base_seconds: number
+          backoff_max_seconds: number
+          endpoint_type: string
+          per_account_limit: number
+          per_ip_limit: number
+          updated_at?: string
+          window_seconds: number
+        }
+        Update: {
+          backoff_base_seconds?: number
+          backoff_max_seconds?: number
+          endpoint_type?: string
+          per_account_limit?: number
+          per_ip_limit?: number
+          updated_at?: string
+          window_seconds?: number
+        }
+        Relationships: []
+      }
+      security_rate_limit_state: {
+        Row: {
+          attempts: number
+          blocked_until: string | null
+          key: string
+          window_started_at: string
+        }
+        Insert: {
+          attempts?: number
+          blocked_until?: string | null
+          key: string
+          window_started_at?: string
+        }
+        Update: {
+          attempts?: number
+          blocked_until?: string | null
+          key?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          sender_type: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          message: string | null
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
           user_id: string
         }
         Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
           id?: string
-          ip_address?: string | null
-          reject_reason?: string | null
-          started_at?: string
-          status?: Database["public"]["Enums"]["session_status"]
-          submitted_at?: string | null
-          task_id: string
-          user_agent?: string | null
+          message?: string | null
+          priority?: string
+          status?: string
+          subject: string
+          updated_at?: string
           user_id: string
         }
         Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
           id?: string
-          ip_address?: string | null
-          reject_reason?: string | null
+          message?: string | null
+          priority?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      task_sessions: {
+        Row: {
+          completed_at: string | null
+          id: string
+          required_seconds: number
+          security_token: string
+          started_at: string
+          status: string
+          task_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          required_seconds?: number
+          security_token?: string
           started_at?: string
-          status?: Database["public"]["Enums"]["session_status"]
-          submitted_at?: string | null
-          task_id?: string
-          user_agent?: string | null
+          status?: string
+          task_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          required_seconds?: number
+          security_token?: string
+          started_at?: string
+          status?: string
+          task_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -700,130 +1387,163 @@ export type Database = {
             foreignKeyName: "task_sessions_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
-            referencedRelation: "tasks"
+            referencedRelation: "ads"
             referencedColumns: ["id"]
           },
         ]
       }
-      tasks: {
+      transactions: {
         Row: {
-          advertiser_id: string | null
-          campaign_id: string | null
-          category: string
-          cooldown_minutes: number
+          amount: number
           created_at: string
-          daily_limit_per_user: number
-          description: string
-          ends_at: string | null
-          global_completion_limit: number | null
+          currency: string
+          description: string | null
           id: string
-          required_watch_seconds: number
-          reward: number
-          starts_at: string
-          status: Database["public"]["Enums"]["task_status"]
-          title: string
-          verification_method: string
+          kind: string
+          metadata: Json
+          parent_transaction_id: string | null
+          processed_at: string | null
+          source_id: string | null
+          source_type: string | null
+          status: string
+          transaction_no: string
+          user_id: string | null
         }
         Insert: {
-          advertiser_id?: string | null
-          campaign_id?: string | null
-          category?: string
-          cooldown_minutes?: number
+          amount?: number
           created_at?: string
-          daily_limit_per_user?: number
-          description?: string
-          ends_at?: string | null
-          global_completion_limit?: number | null
+          currency?: string
+          description?: string | null
           id?: string
-          required_watch_seconds?: number
-          reward: number
-          starts_at?: string
-          status?: Database["public"]["Enums"]["task_status"]
-          title: string
-          verification_method?: string
+          kind: string
+          metadata?: Json
+          parent_transaction_id?: string | null
+          processed_at?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          transaction_no?: string
+          user_id?: string | null
         }
         Update: {
-          advertiser_id?: string | null
-          campaign_id?: string | null
-          category?: string
-          cooldown_minutes?: number
+          amount?: number
           created_at?: string
-          daily_limit_per_user?: number
-          description?: string
-          ends_at?: string | null
-          global_completion_limit?: number | null
+          currency?: string
+          description?: string | null
           id?: string
-          required_watch_seconds?: number
-          reward?: number
-          starts_at?: string
-          status?: Database["public"]["Enums"]["task_status"]
-          title?: string
-          verification_method?: string
+          kind?: string
+          metadata?: Json
+          parent_transaction_id?: string | null
+          processed_at?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          transaction_no?: string
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "tasks_advertiser_id_fkey"
-            columns: ["advertiser_id"]
+            foreignKeyName: "transactions_parent_transaction_id_fkey"
+            columns: ["parent_transaction_id"]
             isOneToOne: false
-            referencedRelation: "advertisers"
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tasks_campaign_id_fkey"
-            columns: ["campaign_id"]
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "advertiser_campaigns"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      user_devices: {
-        Row: {
-          fingerprint: string
-          id: string
-          last_seen_at: string
-          user_id: string
-        }
-        Insert: {
-          fingerprint: string
-          id?: string
-          last_seen_at?: string
-          user_id: string
-        }
-        Update: {
-          fingerprint?: string
-          id?: string
-          last_seen_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_plans: {
         Row: {
-          activated_at: string
-          expires_at: string
+          ads_per_day: number
+          base_ad_reward_pkr: number
+          created_at: string
+          daily_reward_date: string
+          daily_reward_limit_pkr: number
+          daily_reward_used_pkr: number
+          direct_referral_allocation_pkr: number
+          earning_rating_pct: number
+          earning_rating_updated_at: string | null
+          expires_at: string | null
           id: string
-          is_active: boolean
-          plan_id: string
-          source_deposit_id: string | null
+          indirect_referral_allocation_pkr: number
+          lifetime_access: boolean
+          max_ad_reward_pkr: number
+          max_lifetime_reward_pkr: number
+          original_reward_reserve_pkr: number
+          plan_id: string | null
+          plan_name_snapshot: string
+          platform_allocation_pkr: number
+          purchase_price_pkr: number
+          purchased_at: string
+          referral_enabled: boolean
+          remaining_reward_budget_pkr: number
+          reward_budget_pkr: number
+          status: string
+          updated_at: string
           user_id: string
         }
         Insert: {
-          activated_at?: string
-          expires_at: string
+          ads_per_day?: number
+          base_ad_reward_pkr: number
+          created_at?: string
+          daily_reward_date?: string
+          daily_reward_limit_pkr: number
+          daily_reward_used_pkr?: number
+          direct_referral_allocation_pkr?: number
+          earning_rating_pct?: number
+          earning_rating_updated_at?: string | null
+          expires_at?: string | null
           id?: string
-          is_active?: boolean
-          plan_id: string
-          source_deposit_id?: string | null
+          indirect_referral_allocation_pkr?: number
+          lifetime_access?: boolean
+          max_ad_reward_pkr: number
+          max_lifetime_reward_pkr?: number
+          original_reward_reserve_pkr?: number
+          plan_id?: string | null
+          plan_name_snapshot: string
+          platform_allocation_pkr?: number
+          purchase_price_pkr: number
+          purchased_at?: string
+          referral_enabled?: boolean
+          remaining_reward_budget_pkr: number
+          reward_budget_pkr: number
+          status?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
-          activated_at?: string
-          expires_at?: string
+          ads_per_day?: number
+          base_ad_reward_pkr?: number
+          created_at?: string
+          daily_reward_date?: string
+          daily_reward_limit_pkr?: number
+          daily_reward_used_pkr?: number
+          direct_referral_allocation_pkr?: number
+          earning_rating_pct?: number
+          earning_rating_updated_at?: string | null
+          expires_at?: string | null
           id?: string
-          is_active?: boolean
-          plan_id?: string
-          source_deposit_id?: string | null
+          indirect_referral_allocation_pkr?: number
+          lifetime_access?: boolean
+          max_ad_reward_pkr?: number
+          max_lifetime_reward_pkr?: number
+          original_reward_reserve_pkr?: number
+          plan_id?: string | null
+          plan_name_snapshot?: string
+          platform_allocation_pkr?: number
+          purchase_price_pkr?: number
+          purchased_at?: string
+          referral_enabled?: boolean
+          remaining_reward_budget_pkr?: number
+          reward_budget_pkr?: number
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -839,92 +1559,120 @@ export type Database = {
       user_roles: {
         Row: {
           created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Update: {
           created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: string
           user_id?: string
         }
         Relationships: []
       }
-      user_sessions: {
+      user_withdrawal_methods: {
         Row: {
           created_at: string
+          details: Json
           id: string
-          ip_address: string | null
-          user_agent: string | null
+          method_id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          details?: Json
           id?: string
-          ip_address?: string | null
-          user_agent?: string | null
+          method_id: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          details?: Json
           id?: string
-          ip_address?: string | null
-          user_agent?: string | null
+          method_id?: string
+          updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_withdrawal_methods_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "withdrawal_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wallet_transactions: {
         Row: {
-          admin_id: string | null
           amount: number
           created_at: string
           currency: string
-          description: string
           id: string
           metadata: Json
-          processed_at: string | null
           reference_id: string | null
           reference_type: string | null
-          status: Database["public"]["Enums"]["tx_status"]
-          type: Database["public"]["Enums"]["tx_type"]
+          status: string
+          transaction_id: string | null
+          type: string
           user_id: string
         }
         Insert: {
-          admin_id?: string | null
           amount: number
           created_at?: string
           currency?: string
-          description?: string
           id?: string
           metadata?: Json
-          processed_at?: string | null
           reference_id?: string | null
           reference_type?: string | null
-          status?: Database["public"]["Enums"]["tx_status"]
-          type: Database["public"]["Enums"]["tx_type"]
+          status?: string
+          transaction_id?: string | null
+          type: string
           user_id: string
         }
         Update: {
-          admin_id?: string | null
           amount?: number
           created_at?: string
           currency?: string
-          description?: string
           id?: string
           metadata?: Json
-          processed_at?: string | null
           reference_id?: string | null
           reference_type?: string | null
-          status?: Database["public"]["Enums"]["tx_status"]
-          type?: Database["public"]["Enums"]["tx_type"]
+          status?: string
+          transaction_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          created_at: string
+          currency: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
           user_id?: string
         }
         Relationships: []
@@ -933,101 +1681,90 @@ export type Database = {
         Row: {
           destination_label: string
           id: string
+          instructions: string
           is_active: boolean
+          max_withdrawal_pkr: number | null
+          min_withdrawal_pkr: number
           name: string
           sort_order: number
+          updated_at: string
         }
         Insert: {
           destination_label?: string
           id?: string
+          instructions?: string
           is_active?: boolean
+          max_withdrawal_pkr?: number | null
+          min_withdrawal_pkr?: number
           name: string
           sort_order?: number
+          updated_at?: string
         }
         Update: {
           destination_label?: string
           id?: string
+          instructions?: string
           is_active?: boolean
+          max_withdrawal_pkr?: number | null
+          min_withdrawal_pkr?: number
           name?: string
           sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
       withdrawals: {
         Row: {
+          account: string | null
           amount: number
-          currency: string
-          destination: string
-          fee: number
-          fee_transaction_id: string | null
-          hold_transaction_id: string | null
+          created_at: string
+          fee: number | null
+          hold_amount: number
           id: string
-          method_id: string | null
-          net_amount: number
-          processed_at: string | null
-          requested_at: string
-          review_note: string | null
+          method: string | null
+          refunded_at: string | null
+          request_key: string | null
           reviewed_at: string | null
-          reviewer_id: string | null
-          status: Database["public"]["Enums"]["withdrawal_status"]
+          reviewed_by: string | null
+          status: string
           user_id: string
         }
         Insert: {
+          account?: string | null
           amount: number
-          currency?: string
-          destination: string
-          fee?: number
-          fee_transaction_id?: string | null
-          hold_transaction_id?: string | null
+          created_at?: string
+          fee?: number | null
+          hold_amount?: number
           id?: string
-          method_id?: string | null
-          net_amount?: number
-          processed_at?: string | null
-          requested_at?: string
-          review_note?: string | null
+          method?: string | null
+          refunded_at?: string | null
+          request_key?: string | null
           reviewed_at?: string | null
-          reviewer_id?: string | null
-          status?: Database["public"]["Enums"]["withdrawal_status"]
+          reviewed_by?: string | null
+          status?: string
           user_id: string
         }
         Update: {
+          account?: string | null
           amount?: number
-          currency?: string
-          destination?: string
-          fee?: number
-          fee_transaction_id?: string | null
-          hold_transaction_id?: string | null
+          created_at?: string
+          fee?: number | null
+          hold_amount?: number
           id?: string
-          method_id?: string | null
-          net_amount?: number
-          processed_at?: string | null
-          requested_at?: string
-          review_note?: string | null
+          method?: string | null
+          refunded_at?: string | null
+          request_key?: string | null
           reviewed_at?: string | null
-          reviewer_id?: string | null
-          status?: Database["public"]["Enums"]["withdrawal_status"]
+          reviewed_by?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "withdrawals_fee_transaction_id_fkey"
-            columns: ["fee_transaction_id"]
+            foreignKeyName: "withdrawals_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "wallet_transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "withdrawals_hold_transaction_id_fkey"
-            columns: ["hold_transaction_id"]
-            isOneToOne: false
-            referencedRelation: "wallet_transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "withdrawals_method_id_fkey"
-            columns: ["method_id"]
-            isOneToOne: false
-            referencedRelation: "withdrawal_methods"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1037,143 +1774,351 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      active_plan: {
-        Args: { _user: string }
+      admin_adjust_ledger: {
+        Args: { p_amount: number; p_reason: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_adjust_user_reserve: {
+        Args: { p_amount: number; p_reason: string; p_user_plan_id: string }
         Returns: {
-          daily_task_limit: number
-          expires_at: string
-          min_withdrawal: number
-          name: string
-          plan_id: string
-        }[]
-      }
-      adjust_wallet: {
-        Args: { _amount: number; _reason: string; _user: string }
-        Returns: undefined
-      }
-      admin_overview: { Args: never; Returns: Json }
-      complete_task_session: { Args: { _session_id: string }; Returns: Json }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+          ads_per_day: number
+          base_ad_reward_pkr: number
+          created_at: string
+          daily_reward_date: string
+          daily_reward_limit_pkr: number
+          daily_reward_used_pkr: number
+          direct_referral_allocation_pkr: number
+          earning_rating_pct: number
+          earning_rating_updated_at: string | null
+          expires_at: string | null
+          id: string
+          indirect_referral_allocation_pkr: number
+          lifetime_access: boolean
+          max_ad_reward_pkr: number
+          max_lifetime_reward_pkr: number
+          original_reward_reserve_pkr: number
+          plan_id: string | null
+          plan_name_snapshot: string
+          platform_allocation_pkr: number
+          purchase_price_pkr: number
+          purchased_at: string
+          referral_enabled: boolean
+          remaining_reward_budget_pkr: number
+          reward_budget_pkr: number
+          status: string
+          updated_at: string
+          user_id: string
         }
-        Returns: boolean
-      }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_staff: { Args: { _user_id: string }; Returns: boolean }
-      log_audit: {
-        Args: {
-          _action: string
-          _new: Json
-          _old: Json
-          _reason: string
-          _target_id: string
-          _target_type: string
+        SetofOptions: {
+          from: "*"
+          to: "user_plans"
+          isOneToOne: true
+          isSetofReturn: false
         }
-        Returns: undefined
       }
-      notify_user: {
-        Args: { _body: string; _cat?: string; _title: string; _user: string }
-        Returns: undefined
-      }
-      request_withdrawal: {
-        Args: { _amount: number; _destination: string; _method_id: string }
-        Returns: string
-      }
-      resolve_fraud_flag: {
-        Args: { _id: string; _note: string }
-        Returns: undefined
-      }
-      review_deposit: {
-        Args: { _approve: boolean; _deposit_id: string; _note?: string }
-        Returns: undefined
-      }
-      review_revenue: {
-        Args: { _id: string; _note?: string; _status: string }
-        Returns: undefined
-      }
-      review_withdrawal: {
-        Args: { _id: string; _note?: string; _status: string }
-        Returns: undefined
-      }
-      reward_pool_state: {
-        Args: never
+      admin_approve_deposit: {
+        Args: {
+          p_deposit_id: string
+          p_next_status: string
+          p_rejection_reason?: string
+        }
         Returns: {
-          available_funds: number
-          operations: number
-          outstanding_liability: number
-          pending_withdrawals: number
-          referral_available: number
-          referral_budget: number
-          referral_liability: number
-          reserve: number
-          reward_available: number
-          reward_budget: number
-          reward_liability: number
-          verified_revenue: number
-        }[]
+          amount: number
+          approved_at: string | null
+          created_at: string
+          id: string
+          image_hash: string | null
+          method: string | null
+          plan_id: string | null
+          proof_url: string | null
+          receipt_deleted_at: string | null
+          status: string
+          transaction_id: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deposits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      set_user_status: {
-        Args: { _reason: string; _risk: string; _status: string; _user: string }
-        Returns: undefined
-      }
-      setting_num: {
-        Args: { _default?: number; _key: string }
+      admin_broadcast_notification: {
+        Args: { p_body: string; p_title: string }
         Returns: number
       }
-      start_task_session: {
-        Args: { _ip?: string; _task_id: string; _ua?: string }
-        Returns: string
-      }
-      update_setting: {
-        Args: { _key: string; _reason?: string; _value: number }
-        Returns: undefined
-      }
-      wallet_state: {
-        Args: { _user_id: string }
+      admin_dispatch_notification: {
+        Args: { p_body: string; p_title: string; p_user_id: string }
         Returns: {
-          available: number
-          locked: number
-          pending: number
-          today_earned: number
-          total_earned: number
-          total_withdrawn: number
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_operations_overview: { Args: never; Returns: Json }
+      admin_profit_ledger_page: { Args: never; Returns: Json[] }
+      admin_profit_summary: { Args: never; Returns: Json }
+      admin_remove_user: { Args: { p_user_id: string }; Returns: Json }
+      admin_reply_support_ticket: {
+        Args: { p_reply?: string; p_status: string; p_ticket_id: string }
+        Returns: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          message: string | null
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "support_tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_reserve_summary: {
+        Args: never
+        Returns: {
+          plan_name: string
+          total_original_reserve: number
+          total_reserve_remaining: number
+          total_reserve_used: number
+          total_rewards_issued: number
+          total_users: number
         }[]
+      }
+      admin_set_user_status: {
+        Args: { p_status: string; p_user_id: string }
+        Returns: {
+          created_at: string
+          full_name: string | null
+          id: string
+          plan_activated_at: string | null
+          plan_id: string | null
+          public_uid: string
+          recovery_reserve_pkr: number
+          referral_code: string | null
+          referred_by: string | null
+          role: string
+          status: string
+          username: string | null
+          verified: boolean | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_transition_withdrawal: {
+        Args: { p_next_status: string; p_withdrawal_id: string }
+        Returns: {
+          account: string | null
+          amount: number
+          created_at: string
+          fee: number | null
+          hold_amount: number
+          id: string
+          method: string | null
+          refunded_at: string | null
+          request_key: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_use_recovery_fund: {
+        Args: {
+          p_amount: number
+          p_reason?: string
+          p_reference?: string
+          p_target_user_id?: string
+          p_usage_type: string
+        }
+        Returns: Json
+      }
+      admin_users_page: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_status?: string
+        }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          public_uid: string
+          role: string
+          status: string
+          total_count: number
+          username: string
+        }[]
+      }
+      complete_ad: {
+        Args: { p_ad_id: string }
+        Returns: {
+          ad_id: string
+          completed_at: string
+          id: string
+          reward: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ad_completions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_ad_view: {
+        Args: { p_idempotency_key: string; p_session_id: string }
+        Returns: number
+      }
+      consume_rate_limit: {
+        Args: {
+          p_backoff_base_seconds?: number
+          p_backoff_max_seconds?: number
+          p_key: string
+          p_limit: number
+          p_window_seconds: number
+        }
+        Returns: Json
+      }
+      distribute_indirect_referral_pool: {
+        Args: { p_purchase_id: string }
+        Returns: Json
+      }
+      generate_referral_code: { Args: never; Returns: string }
+      get_referral_count: { Args: { p_referral_code: string }; Returns: number }
+      is_admin: { Args: never; Returns: boolean }
+      is_staff: { Args: { uid: string }; Returns: boolean }
+      next_random_public_uid: { Args: never; Returns: string }
+      request_withdrawal: {
+        Args: {
+          p_account: string
+          p_amount: number
+          p_method: string
+          p_request_key?: string
+        }
+        Returns: {
+          account: string | null
+          amount: number
+          created_at: string
+          fee: number | null
+          hold_amount: number
+          id: string
+          method: string | null
+          refunded_at: string | null
+          request_key: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reverse_approved_purchase: {
+        Args: { p_purchase_id: string; p_reason?: string }
+        Returns: Json
+      }
+      review_withdrawal: {
+        Args: { p_id: string; p_note?: string; p_status: string }
+        Returns: {
+          account: string | null
+          amount: number
+          created_at: string
+          fee: number | null
+          hold_amount: number
+          id: string
+          method: string | null
+          refunded_at: string | null
+          request_key: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      start_ad_view: { Args: { p_ad_id: string }; Returns: string }
+      submit_deposit: {
+        Args: {
+          p_amount: number
+          p_method: string
+          p_plan_id: string
+          p_proof_url: string
+          p_transaction_id: string
+        }
+        Returns: {
+          amount: number
+          approved_at: string | null
+          created_at: string
+          id: string
+          image_hash: string | null
+          method: string | null
+          plan_id: string | null
+          proof_url: string | null
+          receipt_deleted_at: string | null
+          status: string
+          transaction_id: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deposits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      write_audit_event: {
+        Args: {
+          p_admin?: string
+          p_amount?: number
+          p_event: string
+          p_image_hash?: string
+          p_metadata?: Json
+          p_transaction: string
+          p_user: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
-      account_status:
-        | "active"
-        | "pending_verification"
-        | "restricted"
-        | "suspended"
-        | "banned"
-      app_role: "user" | "moderator" | "admin" | "super_admin"
-      deposit_status: "pending" | "approved" | "rejected"
-      revenue_status: "pending" | "verified" | "rejected"
-      risk_level: "normal" | "watchlist" | "restricted" | "suspended" | "banned"
-      session_status: "open" | "submitted" | "verified" | "rejected" | "expired"
-      task_status: "draft" | "active" | "paused" | "completed" | "expired"
-      tx_status: "pending" | "completed" | "failed" | "reversed" | "cancelled"
-      tx_type:
-        | "DEPOSIT"
-        | "PLAN_ACTIVATION"
-        | "TASK_REWARD"
-        | "REFERRAL_REWARD"
-        | "WITHDRAWAL"
-        | "WITHDRAWAL_FEE"
-        | "REFUND"
-        | "REVERSAL"
-        | "ADMIN_ADJUSTMENT"
-      withdrawal_status:
-        | "pending"
-        | "under_review"
-        | "approved"
-        | "processing"
-        | "completed"
-        | "rejected"
-        | "cancelled"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1189,12 +2134,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1218,11 +2163,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1243,11 +2188,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1268,11 +2213,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1285,11 +2230,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1300,41 +2245,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      account_status: [
-        "active",
-        "pending_verification",
-        "restricted",
-        "suspended",
-        "banned",
-      ],
-      app_role: ["user", "moderator", "admin", "super_admin"],
-      deposit_status: ["pending", "approved", "rejected"],
-      revenue_status: ["pending", "verified", "rejected"],
-      risk_level: ["normal", "watchlist", "restricted", "suspended", "banned"],
-      session_status: ["open", "submitted", "verified", "rejected", "expired"],
-      task_status: ["draft", "active", "paused", "completed", "expired"],
-      tx_status: ["pending", "completed", "failed", "reversed", "cancelled"],
-      tx_type: [
-        "DEPOSIT",
-        "PLAN_ACTIVATION",
-        "TASK_REWARD",
-        "REFERRAL_REWARD",
-        "WITHDRAWAL",
-        "WITHDRAWAL_FEE",
-        "REFUND",
-        "REVERSAL",
-        "ADMIN_ADJUSTMENT",
-      ],
-      withdrawal_status: [
-        "pending",
-        "under_review",
-        "approved",
-        "processing",
-        "completed",
-        "rejected",
-        "cancelled",
-      ],
-    },
+    Enums: {},
   },
 } as const
