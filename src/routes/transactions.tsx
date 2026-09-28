@@ -1,63 +1,89 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownLeft, ArrowUpRight, ReceiptText, X, Copy, Check } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowDownLeft, ArrowUpRight, Check, Copy, ReceiptText, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { money } from "@/lib/platform-store";
-import { transactionDisplayId, transactionSourceId } from "@/lib/transaction-display";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/transactions")({
   head: () => ({
     meta: [
-      { title: "Transaction History — AdverX" },
+      { title: "Transactions — AdverX" },
       {
         name: "description",
-        content: "Complete account history for plan purchases, rewards, referrals, withdrawals and wallet adjustments.",
+        content: "A clean, human-readable record of your deposits, plan purchases, rewards, referrals and withdrawals.",
       },
     ],
   }),
   component: TransactionsPage,
 });
 
-type Tx = {
+type TransactionRow = {
   id: string;
-  trackingId: string;
-  createdAt: number;
-  category: string;
-  title: string;
-  detail: string;
+  transaction_no: string;
+  user_id: string | null;
+  parent_transaction_id: string | null;
+  kind: string;
   amount: number;
-  direction: "credit" | "debit";
+  currency: string;
   status: string;
+  source_type: string | null;
+  source_id: string | null;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  processed_at: string | null;
+  balance_before?: number;
+  balance_after?: number;
 };
 
-const labelMap: Record<string, string> = {
+const kindLabel: Record<string, string> = {
+  PLAN_PURCHASE: "Plan Purchase",
+  DEPOSIT: "Deposit",
   AD_REWARD: "Ad Reward",
-  TASK_REWARD: "Task Reward",
-  REWARD: "Reward",
   REFERRAL_REWARD: "Referral Reward",
-  REFERRAL_COMMISSION: "Referral Commission",
   WITHDRAWAL: "Withdrawal",
   WITHDRAWAL_FEE: "Withdrawal Fee",
   REFUND: "Refund",
-  ADMIN_ADJUSTMENT: "Wallet Adjustment",
-  WITHDRAWAL_REFUND: "Withdrawal Refund",
-  PLAN_PURCHASE: "Plan Purchase",
-  DEPOSIT: "Deposit",
-  PLATFORM_ADMIN_PROFIT: "Platform Profit",
+  ADMIN_ADJUSTMENT: "Admin Adjustment",
+  PLATFORM_PROFIT: "Platform Profit",
   UNASSIGNED_REFERRAL: "Unassigned Referral",
+  ACCOUNTING_ENTRY: "Accounting Entry",
 };
 
+const kindIcon: Record<string, string> = {
+  PLAN_PURCHASE: "💳",
+  DEPOSIT: "💰",
+  AD_REWARD: "🎬",
+  REFERRAL_REWARD: "👥",
+  WITHDRAWAL: "💸",
+  WITHDRAWAL_FEE: "💸",
+  REFUND: "↩️",
+  ADMIN_ADJUSTMENT: "🛠️",
+};
+
+function labelForKind(kind: string) {
+  return kindLabel[kind] ?? kind.replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function statusLabel(status: string) {
+  return status.replaceAll("_", " ");
+}
+
 function TransactionsPage() {
-  const [items, setItems] = useState<Tx[]>([]);
+  const [items, setItems] = useState<TransactionRow[]>([]);
+  const [accountUid, setAccountUid] = useState<string | null>(null);
+  const [isStaff, setIsStaff] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Tx | null>(null);
+  const [selected, setSelected] = useState<TransactionRow | null>(null);
+  const [allocation, setAllocation] = useState<Record<string, unknown> | null>(null);
+  const [deposit, setDeposit] = useState<Record<string, unknown> | null>(null);
+  const [parent, setParent] = useState<TransactionRow | null>(null);
   const [copied, setCopied] = useState(false);
-  const [accountUid, setAccountUid] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -70,127 +96,46 @@ function TransactionsPage() {
         if (authError || !authData.user) throw new Error("Please sign in again.");
 
         const uid = authData.user.id;
-        const { data: profile, error: profileError } = await db.from("profiles").select("role, public_uid").eq("id", uid).maybeSingle();
+        const { data: profile, error: profileError } = await db
+          .from("profiles")
+          .select("role, public_uid")
+          .eq("id", uid)
+          .maybeSingle();
         if (profileError) throw new Error(profileError.message);
 
-        const isAdmin = ["admin", "super_admin", "moderator"].includes(String(profile?.role ?? ""));
-        if (mounted) setAccountUid(String(profile?.public_uid ?? "").trim() || null);
-        const [
-          { data: wallet, error: walletError },
-          { data: ledger, error: ledgerError },
-          { data: deposits, error: depositsError },
-          { data: withdrawals, error: withdrawalsError },
-        ] = await Promise.all([
-          db.from("wallet_transactions").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
-          db.from("ledger_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
-          isAdmin
-            ? db.from("deposits").select("id, user_id, plan_id, amount, status, method, transaction_id, created_at").order("created_at", { ascending: false })
-            : db.from("deposits").select("id, user_id, plan_id, amount, status, method, transaction_id, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
-          db.from("withdrawals").select("id, amount, fee, method, status, created_at").eq("user_id", uid).order("created_at", { ascending: false }),
-        ]);
-
-        if (walletError && ledgerError) throw new Error(walletError.message || ledgerError.message);
-        if (depositsError) throw new Error(depositsError.message);
-        if (withdrawalsError) throw new Error(withdrawalsError.message);
-
-        const depositRows = (deposits ?? []) as any[];
-        const depositById = new Map(depositRows.map((d) => [String(d.id), d]));
-        const buyerIds = [...new Set(depositRows.map((d) => String(d.user_id ?? "")).filter(Boolean))];
-        const { data: buyerRows, error: buyerError } = buyerIds.length
-          ? await db.from("profiles").select("id, username, full_name").in("id", buyerIds)
-          : { data: [], error: null };
-        if (buyerError) throw new Error(buyerError.message);
-        const buyerById = new Map((buyerRows ?? []).map((p: any) => [String(p.id), p]));
-        const planIds = [...new Set(depositRows.map((d) => String(d.plan_id ?? "")).filter(Boolean))];
-        const { data: planRows, error: planError } = planIds.length
-          ? await db.from("plans").select("id, name").in("id", planIds)
-          : { data: [], error: null };
-        if (planError) throw new Error(planError.message);
-        const planById = new Map((planRows ?? []).map((p: any) => [String(p.id), String(p.name ?? "")]));
-        const allowedTypes = new Set(
-          isAdmin
-            ? ["PLAN_PURCHASE", "AD_REWARD", "TASK_REWARD", "REWARD", "REFERRAL_REWARD", "REFERRAL_COMMISSION", "PLATFORM_ADMIN_PROFIT", "UNASSIGNED_REFERRAL", "WITHDRAWAL", "WITHDRAWAL_FEE", "REFUND", "ADMIN_ADJUSTMENT", "WITHDRAWAL_REFUND"]
-            : ["PLAN_PURCHASE", "AD_REWARD", "TASK_REWARD", "REWARD", "REFERRAL_REWARD", "REFERRAL_COMMISSION", "WITHDRAWAL", "WITHDRAWAL_FEE", "REFUND", "ADMIN_ADJUSTMENT", "WITHDRAWAL_REFUND"],
-        );
-
-        const rows: Tx[] = [];
-        for (const row of [...((wallet ?? []) as any[]), ...((ledger ?? []) as any[])]) {
-          const type = String(row.type ?? row.entry_type ?? "").toUpperCase();
-          if (!allowedTypes.has(type)) continue;
-
-          const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
-          const note = String(row.note ?? row.description ?? row.reason ?? "");
-          const auditText = `${String(metadata.reason ?? "")} ${note}`.toLowerCase();
-          const rawAmount = Number(row.amount ?? 0);
-          if (
-            auditText.includes("old admin test") ||
-            auditText.includes("test cleanup") ||
-            auditText.includes("test reversal") ||
-            (type === "WITHDRAWAL" && rawAmount === -100) ||
-            (type === "UNASSIGNED_REFERRAL" && auditText.includes("ahmad31 purchase"))
-          ) continue;
-          const credit = row.credit != null ? Number(row.credit) : rawAmount > 0 ? rawAmount : 0;
-          const debit = row.debit != null ? Number(row.debit) : rawAmount < 0 ? Math.abs(rawAmount) : 0;
-          const reference = String(row.reference_id ?? "");
-          const deposit = depositById.get(reference);
-          const planName = deposit ? planById.get(String(deposit.plan_id ?? "")) ?? "" : "";
-          const buyer = deposit ? buyerById.get(String(deposit.user_id ?? "")) : null;
-          const buyerName = buyer?.full_name || buyer?.username || "Member";
-          const sourceDetail = deposit
-            ? buyerName + " · " + (planName || "Plan") + " plan purchase · " + (deposit.method ?? "Payment") + " · " + (deposit.status ?? "recorded") + (deposit.transaction_id ? " · " + deposit.transaction_id : "")
-            : null;
-          let direction: "credit" | "debit" = credit > 0 && debit === 0 ? "credit" : "debit";
-          let amount = credit > 0 ? credit : debit;
-          if (type === "PLAN_PURCHASE" && rawAmount < 0) { direction = "debit"; amount = Math.abs(rawAmount); }
-          if (!amount) continue;
-
-          const sourceId = transactionSourceId(row);
-          rows.push({
-            id: `${type}-${row.id}`,
-            trackingId: transactionDisplayId(sourceId || String(row.id)),
-            createdAt: new Date(row.created_at).getTime(),
-            category: labelMap[type] ?? (type.replaceAll("_", " ").replace(/\b\w/g, (m: string) => m.toUpperCase()) || "Transaction"),
-            title: type === "PLAN_PURCHASE" ? (planName ? `${planName} Plan Purchase` : "Plan Purchase") : (labelMap[type] ?? "Account Transaction"),
-            detail: sourceDetail
-              ? (type === "UNASSIGNED_REFERRAL"
-                ? "Referral commission retained by platform — " + sourceDetail
-                : type === "PLATFORM_ADMIN_PROFIT"
-                  ? "Platform profit from " + sourceDetail
-                  : sourceDetail)
-              : note || (type === "UNASSIGNED_REFERRAL" ? "Referral allocation received by platform" : type === "PLATFORM_ADMIN_PROFIT" ? "Platform profit from approved plan purchase" : "Account transaction"),
-            amount,
-            direction,
-            status: (type === "PLATFORM_ADMIN_PROFIT" || type === "UNASSIGNED_REFERRAL")
-              ? "completed"
-              : String(row.status ?? "recorded"),
-          });
+        const staff = ["admin", "super_admin", "moderator"].includes(String(profile?.role ?? ""));
+        if (mounted) {
+          setAccountUid(String(profile?.public_uid ?? "").trim() || null);
+          setIsStaff(staff);
         }
 
-        if (!isAdmin) {
-          for (const row of (withdrawals ?? []) as any[]) {
-            rows.push({
-              id: `withdrawal-${row.id}`,
-              trackingId: transactionDisplayId(String(row.id)),
-              createdAt: new Date(row.created_at).getTime(),
-              category: "Withdrawal",
-              title: "Withdrawal Request",
-              detail: `${row.method ?? "Payout"} · ${row.status ?? "pending"}`,
-              amount: Number(row.amount ?? 0), direction: "debit", status: String(row.status ?? "pending"),
-            });
+        let query = db.from("transactions").select("*").order("created_at", { ascending: false });
+        if (!staff) query = query.eq("user_id", uid);
+        const { data, error: txError } = await query.limit(500);
+        if (txError) throw new Error(txError.message);
+
+        const rows = ((data ?? []) as TransactionRow[]).map((row) => ({
+          ...row,
+          amount: Number(row.amount ?? 0),
+          metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
+        }));
+
+        // For the user's own account we can show historical balance before/after.
+        if (!staff && rows.length) {
+          const { data: walletState } = await db.rpc("wallet_state", { _user_id: uid });
+          let running = Number(walletState?.[0]?.available ?? 0);
+          for (const row of rows) {
+            const after = running;
+            const before = running - row.amount;
+            row.balance_before = before;
+            row.balance_after = after;
+            running = before;
           }
         }
 
-        const seen = new Set<string>();
-        const unique = rows.filter((row) => row.amount > 0).sort((a, b) => b.createdAt - a.createdAt).filter((row) => {
-          const key = `${row.category}|${row.amount}|${row.createdAt}|${row.title}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-
-        if (mounted) setItems(unique);
-      } catch (e) {
-        if (mounted) setError(e instanceof Error ? e.message : "Unable to load transaction history.");
+        if (mounted) setItems(rows);
+      } catch (cause) {
+        if (mounted) setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -199,65 +144,204 @@ function TransactionsPage() {
     return () => { mounted = false; };
   }, []);
 
+  const totals = useMemo(() => {
+    const credits = items.filter((x) => x.amount > 0).reduce((s, x) => s + x.amount, 0);
+    const debits = items.filter((x) => x.amount < 0).reduce((s, x) => s + Math.abs(x.amount), 0);
+    return { credits, debits };
+  }, [items]);
+
+  useEffect(() => {
+    if (!selected) {
+      setAllocation(null);
+      setDeposit(null);
+      setParent(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const db = supabase as any;
+      const requests: Promise<any>[] = [];
+      if (selected.kind === "PLAN_PURCHASE" && selected.source_type === "deposit" && selected.source_id) {
+        requests.push(db.from("deposits").select("amount, status, method, transaction_id, created_at, approved_at, plan_id").eq("id", selected.source_id).maybeSingle());
+        requests.push(db.from("purchase_allocations").select("gross_amount, admin_profit_amount, referral_commission_amount, recovery_fund_amount, ad_budget_amount, indirect_pool_amount_pkr, indirect_pool_distributed_pkr").eq("purchase_id", selected.source_id).maybeSingle());
+      } else {
+        requests.push(Promise.resolve({ data: null }));
+        requests.push(Promise.resolve({ data: null }));
+      }
+      if (selected.parent_transaction_id) {
+        requests.push(db.from("transactions").select("*").eq("id", selected.parent_transaction_id).maybeSingle());
+      } else {
+        requests.push(Promise.resolve({ data: null }));
+      }
+      const [depositResult, allocationResult, parentResult] = await Promise.all(requests);
+      if (cancelled) return;
+      setDeposit(depositResult.data ?? null);
+      setAllocation(allocationResult.data ?? null);
+      setParent(parentResult.data ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [selected]);
+
   return (
-    <AppShell title="Transaction History" subtitle={accountUid ? `Every important account movement in one place · UID ${accountUid}` : "Every important account movement in one place"}>
-      <div className="surface p-4 sm:p-5">
+    <AppShell
+      title="Transactions"
+      subtitle={accountUid ? `Clean account activity · UID ${accountUid}` : "Clean account activity"}
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="surface p-4">
+          <p className="text-xs text-muted-foreground">Transactions</p>
+          <p className="mt-1 text-xl font-semibold">{items.length}</p>
+        </div>
+        <div className="surface p-4">
+          <p className="text-xs text-muted-foreground">Credits</p>
+          <p className="mt-1 text-xl font-semibold text-success">+{money(totals.credits)}</p>
+        </div>
+        <div className="surface p-4">
+          <p className="text-xs text-muted-foreground">Debits</p>
+          <p className="mt-1 text-xl font-semibold text-destructive">-{money(totals.debits)}</p>
+        </div>
+      </div>
+
+      <div className="surface mt-4 p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <ReceiptText className="mt-0.5 size-5 text-primary" />
           <div>
-            <p className="text-sm font-semibold">Complete account history</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Plan purchases, money received, ad rewards, referral commissions, withdrawals and adjustments are recorded here with their date and source.
+            <p className="text-sm font-semibold">Transaction Center</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Har important financial event ka apna stable Transaction ID hai. Database UUIDs aur internal ledger terminology normal view mein hidden hain.
             </p>
           </div>
         </div>
       </div>
 
       {loading ? (
-        <div className="surface mt-3 flex items-center justify-center gap-2 p-10 text-sm text-muted-foreground">
-          <LoadingIndicator size="sm" label="Loading transaction history" /> Loading transaction history…
+        <div className="surface mt-4 flex items-center justify-center gap-2 p-10 text-sm text-muted-foreground">
+          <LoadingIndicator size="sm" label="Loading transactions" /> Loading transactions…
         </div>
       ) : error ? (
-        <div className="surface mt-3 p-5 text-sm text-destructive">{error}</div>
+        <div className="surface mt-4 p-5 text-sm text-destructive">{error}</div>
       ) : items.length === 0 ? (
-        <div className="surface mt-3 p-10 text-center text-sm text-muted-foreground">No transactions recorded yet.</div>
+        <div className="surface mt-4 p-10 text-center text-sm text-muted-foreground">No transactions recorded yet.</div>
       ) : (
-        <div className="glass-panel mt-3 overflow-hidden">
-          <div className="hidden grid-cols-[1.1fr_1.2fr_1.5fr_.9fr_.8fr] gap-4 border-b border-border/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-            <span>Date</span><span>Transaction</span><span>Source / Details</span><span>Status</span><span className="text-right">Amount</span>
+        <div className="glass-panel mt-4 overflow-hidden">
+          <div className="hidden grid-cols-[1.1fr_1.25fr_1.6fr_.8fr_1fr] gap-4 border-b border-border/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
+            <span>Date</span><span>Transaction</span><span>Description</span><span>Status</span><span className="text-right">Amount</span>
           </div>
           <div className="divide-y divide-border/60">
             {items.map((item) => (
-              <button key={item.id} type="button" onClick={() => { setSelected(item); setCopied(false); }} className="grid w-full gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/30 md:grid-cols-[1.1fr_1.2fr_1.5fr_.9fr_.8fr] md:items-center md:gap-4">
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => { setSelected(item); setCopied(false); }}
+                className="grid w-full gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/30 md:grid-cols-[1.1fr_1.25fr_1.6fr_.8fr_1fr] md:items-center md:gap-4"
+              >
                 <div>
-                  <p className="text-sm font-medium">{new Date(item.createdAt).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
-                  <p className="text-[11px] text-muted-foreground">{new Date(item.createdAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" })}</p>
+                  <p className="text-sm font-medium">{new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                  <p className="text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" })}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {item.direction === "credit" ? <ArrowDownLeft className="size-4 text-success" /> : <ArrowUpRight className="size-4 text-destructive" />}
-                  <div><p className="text-sm font-medium">{item.title}</p><p className="text-[11px] font-medium text-primary">{item.trackingId}</p></div>
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="text-base">{kindIcon[item.kind] ?? "•"}</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{labelForKind(item.kind)}</p>
+                    <p className="font-mono text-[11px] font-semibold text-primary">{item.transaction_no}</p>
+                  </div>
                 </div>
-                <div className="min-w-0"><p className="text-sm font-medium truncate">{item.detail.split(" — ")[1] ?? item.detail}</p><p className="text-[11px] text-muted-foreground">{item.category} · Click for details</p></div>
-                <div><Badge variant="secondary">{item.status}</Badge></div>
-                <p className={`num text-sm font-semibold md:text-right ${item.direction === "credit" ? "text-success" : "text-destructive"}`}>
-                  {item.direction === "credit" ? "+" : "-"}{money(item.amount)}
+                <div className="min-w-0">
+                  <p className="truncate text-sm">{item.description ?? labelForKind(item.kind)}</p>
+                  <p className="text-[11px] text-muted-foreground">{isStaff && item.user_id ? "Member transaction" : "Click for details"}</p>
+                </div>
+                <div><Badge variant="secondary" className="capitalize">{statusLabel(item.status)}</Badge></div>
+                <p className={`num text-sm font-semibold md:text-right ${item.amount >= 0 ? "text-success" : "text-destructive"}`}>
+                  {item.amount >= 0 ? "+" : "-"}{money(Math.abs(item.amount))}
                 </p>
               </button>
             ))}
           </div>
         </div>
       )}
-      {selected && (
+
+      {selected ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
-          <div role="dialog" aria-modal="true" className="w-full max-w-lg rounded-2xl border border-border/60 bg-background p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4"><div><p className="text-lg font-semibold">{selected.title}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(selected.createdAt).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })} · {new Date(selected.createdAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" })}</p></div><button type="button" onClick={() => setSelected(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Close"><X className="size-4" /></button></div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-border/60 bg-muted/20 p-4"><p className="text-xs text-muted-foreground">Tracking ID</p><p className="mt-1 font-mono text-sm font-semibold text-primary">{selected.trackingId}</p></div><div className="rounded-xl border border-border/60 bg-muted/20 p-4"><p className="text-xs text-muted-foreground">Amount</p><p className={`mt-1 text-2xl font-bold ${selected.direction === "credit" ? "text-success" : "text-destructive"}`}>{selected.direction === "credit" ? "+" : "-"}{money(selected.amount)}</p></div></div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Category</p><p className="mt-1 text-sm font-medium">{selected.category}</p></div><div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Status</p><p className="mt-1"><Badge variant="secondary">{selected.status}</Badge></p></div></div>
-            <div className="mt-3 rounded-xl border border-border/50 p-4"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Full Details</p><p className="mt-2 text-sm leading-6">{selected.detail}</p></div>
-            <div className="mt-4 flex justify-end"><button type="button" onClick={() => { navigator.clipboard?.writeText(selected.detail); setCopied(true); }} className="inline-flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-xs font-medium hover:bg-muted">{copied ? <Check className="size-4" /> : <Copy className="size-4" />} {copied ? "Copied" : "Copy details"}</button></div>
+          <div role="dialog" aria-modal="true" className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border/60 bg-background p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-lg font-semibold">{selected.description ?? labelForKind(selected.kind)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{new Date(selected.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })} · {new Date(selected.created_at).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" })}</p>
+              </div>
+              <button type="button" onClick={() => setSelected(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Close"><X className="size-4" /></button>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Transaction ID</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="font-mono text-sm font-semibold text-primary">{selected.transaction_no}</p>
+                  <button type="button" className="rounded-md p-1 hover:bg-muted" onClick={() => { void navigator.clipboard?.writeText(selected.transaction_no); setCopied(true); }}>
+                    {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Amount</p>
+                <p className={`mt-1 text-2xl font-bold ${selected.amount >= 0 ? "text-success" : "text-destructive"}`}>{selected.amount >= 0 ? "+" : "-"}{money(Math.abs(selected.amount))}</p>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Type</p><p className="mt-1 text-sm font-medium">{labelForKind(selected.kind)}</p></div>
+              <div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Status</p><p className="mt-1"><Badge variant="secondary" className="capitalize">{statusLabel(selected.status)}</Badge></p></div>
+            </div>
+
+            {deposit ? (
+              <div className="mt-3 rounded-xl border border-border/50 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Payment Details</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 text-sm">
+                  <div><span className="text-muted-foreground">Paid</span><p className="font-medium">{money(Number(deposit.amount ?? 0))}</p></div>
+                  <div><span className="text-muted-foreground">Plan</span><p className="font-medium">{selected.description?.replace(" Plan Purchase","") ?? "Plan"}</p></div>
+                  <div><span className="text-muted-foreground">Method</span><p className="font-medium">{String(deposit.method ?? "—")}</p></div>
+                  <div><span className="text-muted-foreground">Payment Reference</span><p className="font-mono text-xs">{String(deposit.transaction_id ?? "—")}</p></div>
+                </div>
+              </div>
+            ) : null}
+
+            {allocation ? (
+              <div className="mt-3 rounded-xl border border-border/50 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Allocation Breakdown</p>
+                <div className="mt-3 space-y-2 text-sm">
+                  {[
+                    ["Ad Reward Budget", allocation.ad_budget_amount],
+                    ["Platform Profit", allocation.admin_profit_amount],
+                    ["Referral Allocation", allocation.referral_commission_amount],
+                    ["Recovery Fund", allocation.recovery_fund_amount],
+                    ["Indirect Pool", allocation.indirect_pool_amount_pkr],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="flex justify-between gap-4"><span>{String(label)}</span><span className="font-medium">{money(Number(value ?? 0))}</span></div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {parent ? (
+              <div className="mt-3 rounded-xl border border-border/50 p-4">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Related Purchase</p>
+                <p className="mt-1 font-mono text-sm font-semibold text-primary">{parent.transaction_no}</p>
+                <p className="mt-1 text-sm">{parent.description ?? "Plan Purchase"}</p>
+              </div>
+            ) : null}
+
+            {!isStaff && selected.balance_before !== undefined ? (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Balance Before</p><p className="mt-1 font-semibold">{money(selected.balance_before)}</p></div>
+                <div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Balance After</p><p className="mt-1 font-semibold">{money(selected.balance_after ?? 0)}</p></div>
+              </div>
+            ) : null}
+
+            <div className="mt-5 flex justify-end">
+              <button type="button" onClick={() => setSelected(null)} className="rounded-lg border border-border/60 px-4 py-2 text-sm font-medium hover:bg-muted">Close</button>
+            </div>
           </div>
         </div>
-      )}
+      ) : null}
     </AppShell>
   );
 }
