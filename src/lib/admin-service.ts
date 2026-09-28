@@ -53,7 +53,7 @@ async function invokeAdminEmail(body: Record<string, unknown>) {
   }
 
   try {
-    const response = await fetch(supabaseUrl.replace(/\\/$/, "") + "/functions/v1/admin-send-email", {
+    const response = await fetch(supabaseUrl.replace(/\/$/, "") + "/functions/v1/admin-send-email", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + accessToken,
