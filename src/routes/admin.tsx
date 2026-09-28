@@ -195,6 +195,7 @@ const menu: Array<[AdminModule, string, Icon]> = [
   ["withdrawals", "Withdrawals", WalletCards],
   ["referrals", "Referrals", Users],
   ["referral-commissions", "Referral Commissions", TrendingUp],
+  ["transactions", "Transactions", ReceiptText],
   ["ledger", "Wallet Ledger", FileText],
   ["fraud", "Fraud & Risk", Flag],
   ["reports", "Reports", BarChart3],
@@ -217,6 +218,7 @@ const tableFor: Partial<Record<AdminModule, string>> = {
   withdrawals: "withdrawals",
   referrals: "referrals",
   "referral-commissions": "referral_commissions",
+  transactions: "transactions",
   ledger: "ledger_entries",
   fraud: "fraud_flags",
   notifications: "notifications",
@@ -2215,12 +2217,15 @@ function ModuleTable({
 }) {
   const [metadataRow, setMetadataRow] = useState<AdminRow | null>(null);
   const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
+  const [transactionDetail, setTransactionDetail] = useState<AdminRow | null>(null);
+  const [transactionLedger, setTransactionLedger] = useState<AdminRow[]>([]);
+  const [transactionAllocation, setTransactionAllocation] = useState<AdminRow | null>(null);
   const [sortConfig, setSortConfig] = useState<{ column: string; direction: "asc" | "desc" } | null>(null);
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
   const [notificationProfileCount, setNotificationProfileCount] = useState(0);
   const [ledgerProfileMap, setLedgerProfileMap] = useState<Record<string, AdminRow>>({});
   useEffect(() => {
-    if (active !== "ledger") return;
+    if (active !== "ledger" && active !== "transactions") return;
     const ids = [...new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean))];
     if (!ids.length) {
       setLedgerProfileMap({});
@@ -2237,6 +2242,28 @@ function ModuleTable({
       setLedgerProfileMap(map);
     })();
   }, [active, rows]);
+  useEffect(() => {
+    if (!transactionDetail) {
+      setTransactionLedger([]);
+      setTransactionAllocation(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const txId = String(transactionDetail.id ?? "");
+      const [ledgerResult, allocationResult] = await Promise.all([
+        (supabase as any).from("ledger_entries").select("id, entry_type, amount, note, created_at").eq("transaction_id", txId).order("created_at", { ascending: true }),
+        String(transactionDetail.kind ?? "") === "PLAN_PURCHASE" && String(transactionDetail.source_type ?? "") === "deposit" && transactionDetail.source_id
+          ? (supabase as any).from("purchase_allocations").select("gross_amount, admin_profit_amount, referral_commission_amount, recovery_fund_amount, ad_budget_amount, indirect_pool_amount_pkr, indirect_pool_distributed_pkr").eq("purchase_id", String(transactionDetail.source_id)).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+      if (cancelled) return;
+      setTransactionLedger((ledgerResult.data ?? []) as AdminRow[]);
+      setTransactionAllocation((allocationResult.data ?? null) as AdminRow | null);
+    })();
+    return () => { cancelled = true; };
+  }, [transactionDetail]);
+
   useEffect(() => {
     if (active !== "notifications") return;
     const ids = [...new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean))];
@@ -2304,6 +2331,8 @@ function ModuleTable({
   const rawColumns = Array.from(new Set(displayRows.flatMap((row) => Object.keys(row))));
   const columns = active === "notifications"
   ? ["title", "body", "recipient_count", "created_at"]
+  : active === "transactions"
+  ? ["transaction_no", "user_id", "kind", "amount", "status", "description", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "ledger"
   ? ["id", "user_id", "entry_type", "amount", "reference_id", "note", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "plans"
@@ -2351,7 +2380,7 @@ function ModuleTable({
             </div>
             <div className="min-w-0">
               <CardTitle className="truncate text-base font-semibold capitalize text-slate-900">
-                {active.replaceAll("-", " ")}
+                {active === "transactions" ? "Transactions" : active.replaceAll("-", " ")}
               </CardTitle>
               <p className="mt-1 text-sm text-slate-500">
                 {active === "notifications" ? (
@@ -2499,7 +2528,7 @@ function ModuleTable({
                   <tr
                     className={`border-b border-slate-100 transition-colors hover:bg-[#fff8f2] ${index % 2 ? "bg-slate-50/35" : "bg-white/30"}`}
                     key={String(row.id ?? index)}
-                    onClick={() => active === "users" && setSelectedUser(row)}
+                    onClick={() => active === "users" ? setSelectedUser(row) : active === "transactions" ? setTransactionDetail(row) : undefined}
                   >
                     {columns.map((column) => (
                       <td
@@ -2533,6 +2562,35 @@ function ModuleTable({
                           ) : (
                             <span>{String(row[column] ?? "—")}</span>
                           )
+                        ) : active === "transactions" && column === "transaction_no" ? (
+                          <span className="font-mono text-xs font-semibold text-primary">{String(row.transaction_no ?? "—")}</span>
+                        ) : active === "transactions" && column === "user_id" ? (
+                          <div className="min-w-[130px]">
+                            <div className="truncate font-medium text-slate-900">{String(ledgerProfileMap[String(row.user_id ?? "")]?.full_name ?? ledgerProfileMap[String(row.user_id ?? "")]?.username ?? "Platform")}</div>
+                            <div className="text-[11px] text-slate-500">{row.user_id ? `UID ${String(ledgerProfileMap[String(row.user_id ?? "")]?.public_uid ?? "—")}` : "Platform transaction"}</div>
+                          </div>
+                        ) : active === "transactions" && column === "kind" ? (
+                          <Badge variant="outline" className="whitespace-nowrap border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700">
+                            {({
+                              PLAN_PURCHASE: "Plan Purchase",
+                              DEPOSIT: "Deposit",
+                              AD_REWARD: "Ad Reward",
+                              REFERRAL_REWARD: "Referral Reward",
+                              WITHDRAWAL: "Withdrawal",
+                              ADMIN_ADJUSTMENT: "Admin Adjustment",
+                              PLATFORM_PROFIT: "Platform Profit",
+                              UNASSIGNED_REFERRAL: "Unassigned Referral",
+                              ACCOUNTING_ENTRY: "Accounting Entry",
+                            } as Record<string, string>)[String(row.kind ?? "")] ?? String(row.kind ?? "Transaction")}
+                          </Badge>
+                        ) : active === "transactions" && column === "amount" ? (
+                          <span className={`whitespace-nowrap font-semibold tabular-nums ${Number(row.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                            {Number(row.amount ?? 0) < 0 ? "−" : "+"}PKR {Math.abs(Number(row.amount ?? 0)).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : active === "transactions" && column === "status" ? (
+                          <Badge variant="secondary" className="capitalize">{String(row.status ?? "—").replaceAll("_", " ")}</Badge>
+                        ) : active === "transactions" && column === "description" ? (
+                          <span className="block min-w-[180px] max-w-[360px] truncate text-sm text-slate-700">{String(row.description ?? "—")}</span>
                         ) : active === "ledger" && column === "id" ? (
                           <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">{transactionDisplayId(String(row.id ?? ""))}</span>
                         ) : active === "ledger" && column === "user_id" ? (
@@ -2743,6 +2801,44 @@ function ModuleTable({
             </CardContent>
           </Card>
         ) : null}
+        <Dialog open={Boolean(transactionDetail)} onOpenChange={(open) => !open && setTransactionDetail(null)}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{String(transactionDetail?.description ?? "Transaction")}</DialogTitle>
+              <DialogDescription>Human-readable transaction record. Internal UUIDs remain hidden from normal admin view.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Transaction ID</p><p className="mt-1 font-mono text-sm font-semibold text-primary">{String(transactionDetail?.transaction_no ?? "—")}</p></div>
+              <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Amount</p><p className={`mt-1 text-xl font-bold ${Number(transactionDetail?.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700"}`}>{Number(transactionDetail?.amount ?? 0) < 0 ? "−" : "+"}PKR {Math.abs(Number(transactionDetail?.amount ?? 0)).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border p-3"><p className="text-xs text-muted-foreground">Type</p><p className="mt-1 text-sm font-medium">{String(transactionDetail?.kind ?? "Transaction").replaceAll("_"," ")}</p></div>
+              <div className="rounded-xl border p-3"><p className="text-xs text-muted-foreground">Status</p><p className="mt-1"><Badge variant="secondary">{String(transactionDetail?.status ?? "—")}</Badge></p></div>
+            </div>
+            <div className="rounded-xl border p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accounting breakdown</p>
+              {transactionAllocation ? (
+                <div className="mt-3 grid gap-2 text-sm">
+                  <div className="flex justify-between"><span>Customer payment</span><span className="font-medium">{Number(transactionAllocation.gross_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Ad Reward Budget</span><span>{Number(transactionAllocation.ad_budget_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Platform Profit</span><span>{Number(transactionAllocation.admin_profit_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Referral Allocation</span><span>{Number(transactionAllocation.referral_commission_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Recovery Fund</span><span>{Number(transactionAllocation.recovery_fund_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Indirect Pool</span><span>{Number(transactionAllocation.indirect_pool_amount_pkr ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                </div>
+              ) : <p className="mt-2 text-sm text-muted-foreground">No allocation breakdown attached to this transaction.</p>}
+            </div>
+            <div className="rounded-xl border p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ledger entries</p>
+              {transactionLedger.length ? (
+                <div className="mt-3 divide-y">
+                  {transactionLedger.map((entry) => <div key={String(entry.id)} className="flex items-center justify-between gap-4 py-2 text-sm"><span>{String(entry.entry_type ?? "Accounting").replaceAll("_"," ")}</span><span className="font-semibold tabular-nums">{Number(entry.amount ?? 0) >= 0 ? "+" : "−"}{Math.abs(Number(entry.amount ?? 0)).toLocaleString("en-PK",{minimumFractionDigits:2,maximumFractionDigits:2})} PKR</span></div>)}
+                </div>
+              ) : <p className="mt-2 text-sm text-muted-foreground">No ledger entries linked.</p>}
+            </div>
+            <div className="flex justify-end"><Button variant="outline" onClick={() => setTransactionDetail(null)}>Close</Button></div>
+          </DialogContent>
+        </Dialog>
         <Dialog open={Boolean(notificationDetail)} onOpenChange={(open) => !open && setNotificationDetail(null)}>
           <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
