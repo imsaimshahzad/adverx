@@ -62,7 +62,7 @@ import "@/admin-design.css";
 import "@/morphic-system.css";
 import { isImpersonating, supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
 import { checkRouteAccess } from "@/lib/auth-guard.functions";
-import { transactionDisplayId } from "@/lib/transaction-display";
+import { formatDate, formatMoney, plainDescription, shortId, shortUserId, statusBadge, typeLabel } from "@/lib/display";
 import {
   AdminModule,
   type AdminRow,
@@ -2220,7 +2220,7 @@ function ModuleTable({
   const [notificationDetail, setNotificationDetail] = useState<AdminRow[] | null>(null);
   const [transactionDetail, setTransactionDetail] = useState<AdminRow | null>(null);
   const [transactionLedger, setTransactionLedger] = useState<AdminRow[]>([]);
-  const [transactionAllocation, setTransactionAllocation] = useState<AdminRow | null>(null);
+  const [transactionAllocation, setTransactionAllocation] = useState<AdminRow | null>(null);\n  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ column: string; direction: "asc" | "desc" } | null>(null);
   const [notificationRecipientMap, setNotificationRecipientMap] = useState<Record<string, AdminRow>>({});
   const [notificationProfileCount, setNotificationProfileCount] = useState(0);
@@ -2363,9 +2363,13 @@ function ModuleTable({
   const columns = active === "notifications"
   ? ["title", "body", "recipient_count", "created_at"]
   : active === "transactions"
-  ? ["transaction_no", "user_id", "kind", "amount", "status", "description", "created_at"].filter((column) => rawColumns.includes(column))
+  ? ["transaction_no", "user_id", "kind", "amount", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "ledger"
-  ? ["id", "user_id", "entry_type", "amount", "reference_id", "note", "created_at"].filter((column) => rawColumns.includes(column))
+  ? ["user_id", "entry_type", "amount", "created_at"].filter((column) => rawColumns.includes(column))
+  : active === "deposits"
+  ? ["user_id", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
+  : active === "withdrawals"
+  ? ["user_id", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "plans"
   ? [
   ...[
