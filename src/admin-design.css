@@ -65,3 +65,36 @@
 .dark .admin-shell tbody tr:hover { background:#1e293b; }
 .dark .admin-shell h2,.dark .admin-shell h3,.dark .admin-shell .admin-section-heading,.dark .admin-shell .admin-stat-card strong { color:#f8fafc; }
 .dark .admin-shell input,.dark .admin-shell textarea,.dark .admin-shell select { background:#0f172a; color:#f8fafc; border-color:#475569; }
+
+/* Admin theme readability overrides */
+.admin-shell { color:#0f172a; }
+.admin-shell .text-slate-900 { color:#0f172a !important; }
+.admin-shell .text-slate-800 { color:#1e293b !important; }
+.admin-shell .text-slate-700 { color:#334155 !important; }
+.admin-shell .text-slate-600 { color:#475569 !important; }
+.admin-shell .text-slate-500 { color:#64748b !important; }
+.admin-shell .text-slate-400 { color:#94a3b8 !important; }
+.admin-shell .text-muted-foreground { color:#64748b !important; }
+.admin-shell input::placeholder,.admin-shell textarea::placeholder { color:#94a3b8; opacity:1; }
+.dark .admin-shell { color:#f8fafc; }
+.dark .admin-shell .text-slate-900,.dark .admin-shell .text-slate-800 { color:#f8fafc !important; }
+.dark .admin-shell .text-slate-700 { color:#e2e8f0 !important; }
+.dark .admin-shell .text-slate-600 { color:#cbd5e1 !important; }
+.dark .admin-shell .text-slate-500 { color:#94a3b8 !important; }
+.dark .admin-shell .text-slate-400 { color:#64748b !important; }
+.dark .admin-shell .text-muted-foreground { color:#94a3b8 !important; }
+.dark .admin-shell .bg-white { background:#111827 !important; }
+.dark .admin-shell .bg-slate-50,.dark .admin-shell .bg-slate-50\/70 { background:#1e293b !important; }
+.dark .admin-shell .bg-slate-50\/95 { background:rgba(30,41,59,.95) !important; }
+.dark .admin-shell .border-slate-100 { border-color:#1e293b !important; }
+.dark .admin-shell .border-slate-200,.dark .admin-shell .border-slate-300 { border-color:#334155 !important; }
+.dark .admin-shell .hover\\:bg-slate-50:hover { background:#1e293b !important; }
+.dark .admin-shell .hover\\:bg-slate-100:hover { background:#334155 !important; }
+.dark .admin-shell .text-blue-700 { color:#93c5fd !important; }
+.dark .admin-shell .bg-blue-50 { background:#172554 !important; }
+.dark .admin-shell .ring-blue-100 { --tw-ring-color:#1e40af !important; }
+.dark .admin-shell .text-indigo-700 { color:#a5b4fc !important; }
+.dark .admin-shell .bg-indigo-50 { background:#312e81 !important; }
+.dark .admin-shell .text-rose-600 { color:#fda4af !important; }
+.dark .admin-shell .text-emerald-600 { color:#6ee7b7 !important; }
+.dark .admin-shell select { color-scheme:dark; }
