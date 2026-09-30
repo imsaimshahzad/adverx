@@ -284,6 +284,7 @@ export function AdminRoute() {
   const [referrerRecoveryReserve, setReferrerRecoveryReserve] = useState(0);
   const [revenuePlans, setRevenuePlans] = useState<AdminRow[]>([]);
   const loadVersion = useRef(0);
+  const lastLiveRefreshRef = useRef(0);
   const adminIdentity = useRef<{ id: string; name: string } | null>(null);
   const [userPageRows, setUserPageRows] = useState<AdminRow[]>([]);
   const [userTotal, setUserTotal] = useState(0);
@@ -518,6 +519,7 @@ export function AdminRoute() {
   useEffect(() => {
     if (location.pathname === "/admin/login") return;
     void load();
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || !session?.user) {
         adminIdentity.current = null;
@@ -528,52 +530,28 @@ export function AdminRoute() {
         void load();
       }
     });
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel("admin-live-queues")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "deposits" },
-          () => void load(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "withdrawals" },
-          () => void load(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "fraud_flags" },
-          () => void load(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "support_tickets" },
-          () => void load(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "plans" },
-          () => void load(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "ads" },
-          () => void load(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "profiles" },
-          () => void load(),
-        )
-        .subscribe();
-    } catch {
-      channel = null;
-    }
+
+    const refreshIfDue = () => {
+      const now = Date.now();
+      if (now - lastLiveRefreshRef.current < 10_000) return;
+      lastLiveRefreshRef.current = now;
+      void load();
+    };
+    const onFocus = () => refreshIfDue();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshIfDue();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === "visible") refreshIfDue();
+    }, 20_000);
+
     return () => {
       authListener.subscription.unsubscribe();
-      if (channel) void supabase.removeChannel(channel);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(poll);
     };
   }, [load, location.pathname, navigate]);
   const currentTable = tableFor[active];
@@ -622,8 +600,12 @@ export function AdminRoute() {
       .sort((a, b) => {
         const aTime = Date.parse(String(a.created_at ?? ""));
         const bTime = Date.parse(String(b.created_at ?? ""));
-        return (Number.isFinite(aTime) ? aTime : Number.MAX_SAFE_INTEGER) -
-          (Number.isFinite(bTime) ? bTime : Number.MAX_SAFE_INTEGER);
+        const safeA = Number.isFinite(aTime) ? aTime : 0;
+        const safeB = Number.isFinite(bTime) ? bTime : 0;
+        if (active === "deposits" || active === "withdrawals") {
+          return statusPartition === "pending" ? safeA - safeB : safeB - safeA;
+        }
+        return safeB - safeA;
       });
   }, [active, adsFilter, currentRows, query, statusPartition, userPartition]);
   const metrics = useMemo(
