@@ -1061,6 +1061,16 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     if (!data) throw new Error("The ad session could not be started.");
     return String(data);
   }, []);
+  const cancelAd = useCallback(async (sessionId: string) => {
+    if (!sessionIdSchema.safeParse(sessionId).success) throw new Error("Invalid ad session identifier.");
+    const { data, error } = await db.rpc("cancel_ad_view", { p_session_id: sessionId });
+    if (error) {
+      console.error("[AdverX] ad cancellation failed", error);
+      throw new Error(adTaskErrorMessage(error.message, "Unable to close the ad task."));
+    }
+    return Boolean(data);
+  }, []);
+
   const completeAd = useCallback(async (sessionId: string) => {
     if (!sessionIdSchema.safeParse(sessionId).success) throw new Error("Invalid ad session identifier.");
     const { data, error } = await db.rpc("complete_ad_view", {
@@ -1118,6 +1128,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         submitDeposit,
         startAd,
         completeAd,
+        cancelAd,
         requestWithdrawal,
         markNotificationsRead,
       }}
