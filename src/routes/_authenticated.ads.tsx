@@ -53,7 +53,47 @@ function AdsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const [startingAdId, setStartingAdId] = useState<string | null>(null);
+  const [preloadedAdIds, setPreloadedAdIds] = useState<Set<string>>(new Set());
   const [completedAdIds, setCompletedAdIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!catalogReady) return;
+    const watchAds = ADS.filter((ad) => ad.status === "active" && ad.taskType === "watch_ad" && ad.adCode);
+    const cleanups: (() => void)[] = [];
+
+    watchAds.forEach((ad) => {
+      const host = document.createElement("div");
+      host.setAttribute("aria-hidden", "true");
+      host.style.position = "fixed";
+      host.style.width = "1px";
+      host.style.height = "1px";
+      host.style.left = "-9999px";
+      host.style.top = "-9999px";
+      host.style.overflow = "hidden";
+      host.style.pointerEvents = "none";
+      host.style.opacity = "0";
+
+      const frame = document.createElement("iframe");
+      frame.title = ad.title;
+      frame.width = String(ad.adWidth ?? 1);
+      frame.height = String(ad.adHeight ?? 1);
+      frame.style.border = "0";
+      frame.setAttribute("scrolling", "no");
+      frame.setAttribute(
+        "sandbox",
+        "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms",
+      );
+      frame.srcdoc = ad.adCode!;
+      frame.addEventListener("load", () => {
+        setPreloadedAdIds((current) => new Set(current).add(ad.id));
+      }, { once: true });
+
+      host.appendChild(frame);
+      document.body.appendChild(host);
+      cleanups.push(() => host.remove());
+    });
+
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [catalogReady]);
   const persistedWatchedIds = new Set(
     state.adViews
       .filter((v) => pakistanDate(v.completedAt) === pakistanDate(new Date()))
