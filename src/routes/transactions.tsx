@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Copy, Check, ReceiptText, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { TransactionRow } from "@/components/TransactionRow";
@@ -45,9 +45,10 @@ function TransactionsPage() {
   const [selected, setSelected] = useState<TransactionRowData | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
+  const lastLiveRefreshRef = useRef(0);
+
+  const load = useCallback(async () => {
     let mounted = true;
-    const load = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -90,9 +91,31 @@ function TransactionsPage() {
         if (mounted) setLoading(false);
       }
     };
-    void load();
-    return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    void load();
+    const refreshIfDue = () => {
+      const now = Date.now();
+      if (now - lastLiveRefreshRef.current < 10_000) return;
+      lastLiveRefreshRef.current = now;
+      void load();
+    };
+    const onFocus = () => refreshIfDue();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshIfDue();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === "visible") refreshIfDue();
+    }, 30_000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(poll);
+    };
+  }, [load]);
 
   const selectedStatus = selected ? statusBadge(selected.status) : null;
   const selectedType = selected ? typeLabel(selected.kind) : null;
