@@ -317,6 +317,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     networkEligible: true,
     highlight: p.highlight ?? false,
   })));
+  if (requestVersion !== catalogRequestVersion) return;
   ADS.splice(0, ADS.length, ...((ads ?? []) as any[]).map((a) => ({
     id: a.id,
     title: a.title,
