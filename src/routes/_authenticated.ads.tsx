@@ -213,17 +213,15 @@ function AdsPage() {
                   key={ad.id}
                   className={`surface p-4 transition-transform duration-200 sm:p-5 ${disabled ? "opacity-60" : "hover:-translate-y-0.5"}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold">{ad.title}</p>
-                      <p className="text-xs text-muted-foreground">{ad.advertiser}</p>
-                    </div>
-                    <Badge variant="secondary">{ad.category}</Badge>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{ad.title}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                      {ad.description || "Complete this task to earn your reward."}
+                    </p>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">{ad.description}</p>
                   <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-xs text-muted-foreground">
-                      {ad.watchSeconds}s engagement
+                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                      {ad.watchSeconds}s
                     </span>
                     <div className="flex items-center gap-3">
                       {disabledReason && (
@@ -256,7 +254,7 @@ function AdsPage() {
                         {startingAdId === ad.id
                           ? "Starting…"
                           : done
-                            ? "✓ Ad Watched"
+                            ? "✓ Watched"
                             : disabledReason ?? (ad.taskType === "watch_ad" ? "Watch Ad" : "Start Task")}
                         {!disabled && <Play className="size-4" />}
                       </Button>
