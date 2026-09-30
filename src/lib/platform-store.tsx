@@ -718,6 +718,7 @@ type Ctx = {
   dataError: string | null;
   catalogReady: boolean;
   catalogError: string | null;
+  catalogRevision: number;
   state: State;
   plan: Plan | null;
   availableBalance: number;
@@ -764,6 +765,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const [dataError, setDataError] = useState<string | null>(null);
   const [catalogReady, setCatalogReady] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogRevision, setCatalogRevision] = useState(0);
   const [displayCurrency, setDisplayCurrency] = useState<"PKR" | "USD">(() => {
     if (typeof window === "undefined") return "PKR";
     return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
@@ -816,6 +818,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const user = data.user;
     if (!user) return;
     await Promise.all([refresh(user), loadCatalog()]);
+    setCatalogRevision((value) => value + 1);
     setCatalogReady(true);
   }, [refresh]);
   useEffect(() => {
@@ -1160,6 +1163,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         dataError,
         catalogReady,
         catalogError,
+        catalogRevision,
         state,
         plan,
         ...derived,
