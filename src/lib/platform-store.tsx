@@ -266,7 +266,16 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     description: a.description ?? "Complete this verified task.",
     category: a.category ?? "General",
       watchSeconds: num(a.duration_seconds),
-    reward: num(a.reward),
+      reward: num(a.reward),
+      taskType: ["watch_ad", "join_whatsapp", "subscribe_youtube", "visit_website", "custom"].includes(String(a.task_type)) ? a.task_type : "watch_ad",
+      provider: a.provider ?? undefined,
+      adCode: a.ad_code ?? undefined,
+      adWidth: a.ad_width == null ? undefined : num(a.ad_width),
+      adHeight: a.ad_height == null ? undefined : num(a.ad_height),
+      destinationUrl: a.destination_url ?? undefined,
+      imageUrl: a.image_url ?? undefined,
+      videoUrl: a.video_url ?? undefined,
+      htmlCode: a.html_code ?? undefined,
   })));
 
   if (adsError) { console.error("[AdverX] active ads query failed", adsError); throw new Error("Unable to load available ads."); }
@@ -311,6 +320,15 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     category: a.category ?? "General",
     watchSeconds: a.duration_seconds ?? 15,
     reward: num(a.reward),
+    taskType: ["watch_ad", "join_whatsapp", "subscribe_youtube", "visit_website", "custom"].includes(String(a.task_type)) ? a.task_type : "watch_ad",
+    provider: a.provider ?? undefined,
+    adCode: a.ad_code ?? undefined,
+    adWidth: a.ad_width == null ? undefined : num(a.ad_width),
+    adHeight: a.ad_height == null ? undefined : num(a.ad_height),
+    destinationUrl: a.destination_url ?? undefined,
+    imageUrl: a.image_url ?? undefined,
+    videoUrl: a.video_url ?? undefined,
+    htmlCode: a.html_code ?? undefined,
   })));
 }
 
