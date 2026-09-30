@@ -90,7 +90,6 @@ function TransactionsPage() {
       } finally {
         if (mounted) setLoading(false);
       }
-    };
   }, []);
 
   useEffect(() => {
