@@ -324,6 +324,7 @@ function AdPlayer({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mediaKey, setMediaKey] = useState(0);
   const [htmlHeight, setHtmlHeight] = useState<number | null>(null);
+  const [htmlRenderKey, setHtmlRenderKey] = useState(0);
   const [iframeScale, setIframeScale] = useState(1);
   const [iframeStage, setIframeStage] = useState({ width: 0, height: 0 });
   const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
@@ -360,6 +361,7 @@ function AdPlayer({
     setAdLoaded(false);
     setLoadError(null);
     setHtmlHeight(null);
+    setHtmlRenderKey(0);
     setIframeScale(1);
     setIframeStage({ width: 0, height: 0 });
     setVideoAspectRatio(16 / 9);
@@ -551,7 +553,7 @@ function AdPlayer({
     }
 
     if (type === "html") {
-      const srcdoc = `${src}
+      const measurementScript = `
 <script>
 (() => {
   const id = ${JSON.stringify(htmlMessageId)};
@@ -559,12 +561,7 @@ function AdPlayer({
   const sendHeight = () => {
     const root = document.documentElement;
     const body = document.body;
-    const height = Math.max(
-      root ? root.scrollHeight : 0,
-      root ? root.offsetHeight : 0,
-      body ? body.scrollHeight : 0,
-      body ? body.offsetHeight : 0
-    );
+    const height = Math.max(root ? root.scrollHeight : 0, root ? root.offsetHeight : 0, body ? body.scrollHeight : 0, body ? body.offsetHeight : 0);
     if (height > 0 && height !== lastHeight) {
       lastHeight = height;
       parent.postMessage({ type: "adHeight", id, height }, "*");
@@ -581,11 +578,23 @@ function AdPlayer({
   setTimeout(sendHeight, 250);
 })();
 </script>`;
-
+      const resetStyle = `
+<style>
+html, body { margin: 0; padding: 0; width: 100%; max-width: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
+body { overflow-x: hidden; }
+img, video, canvas, iframe { max-width: 100%; }
+</style>`;
+      const lowerSrc = src.toLowerCase();
+      const headClose = lowerSrc.indexOf("</head>");
+      let srcdoc = headClose >= 0 ? src.slice(0, headClose) + resetStyle + src.slice(headClose) : resetStyle + src;
+      const bodyClose = srcdoc.toLowerCase().lastIndexOf("</body>");
+      srcdoc = bodyClose >= 0 ? srcdoc.slice(0, bodyClose) + measurementScript + srcdoc.slice(bodyClose) : srcdoc + measurementScript;
       return (
         <div className="task-content-html">
           <iframe
             ref={htmlIframeRef}
+            key={htmlRenderKey}
             title={ad.title}
             srcDoc={srcdoc}
             onLoad={() => void handleLoaded()}
