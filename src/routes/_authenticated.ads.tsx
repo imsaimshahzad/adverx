@@ -620,6 +620,9 @@ img, video, canvas, iframe { max-width: 100%; }
       );
     }
 
+    return null;
+  };
+
   const actionSteps = (ad.description ?? "")
     .split(/\r?\n/)
     .map((line) => line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, "").trim())
