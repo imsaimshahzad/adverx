@@ -605,9 +605,9 @@ function AdPlayer({
 
         <div
           ref={adFrameRef}
-          className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted/20"
+          className="relative flex min-h-0 max-h-[calc(90vh-220px)] w-full flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted/20"
         >
-          <div className="flex max-h-[calc(90vh-220px)] min-h-[180px] w-full items-center justify-center overflow-y-auto overscroll-contain">
+          <div className="flex h-full max-h-full min-h-[180px] w-full items-center justify-center overflow-y-auto overscroll-contain">
             {sessionId && (
               <div className="w-full">
                 {mountAd({
