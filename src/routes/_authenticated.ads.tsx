@@ -327,6 +327,7 @@ function AdPlayer({
   const [iframeScale, setIframeScale] = useState(1);
   const [iframeStage, setIframeStage] = useState({ width: 0, height: 0 });
   const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
+  const [imageWidth, setImageWidth] = useState(520);
   const adFrameRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const htmlIframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -362,6 +363,7 @@ function AdPlayer({
     setIframeScale(1);
     setIframeStage({ width: 0, height: 0 });
     setVideoAspectRatio(16 / 9);
+    setImageWidth(520);
     videoLastTimeRef.current = 0;
     playingTimeRef.current = 0;
   }, [ad, sessionId]);
@@ -602,7 +604,10 @@ function AdPlayer({
           <img
             src={src}
             alt={ad.title}
-            onLoad={() => void handleLoaded()}
+            onLoad={(event) => {
+              setImageWidth(event.currentTarget.naturalWidth || 520);
+              void handleLoaded();
+            }}
             onError={() => {
               setAdLoaded(false);
               setLoadError("Ad failed to load");
@@ -665,7 +670,7 @@ function AdPlayer({
         ? "360px"
         : "640px"
       : format === "image"
-        ? "520px"
+        ? `${Math.max(320, Math.min(520, imageWidth))}px`
         : format === "adsterra"
           ? `${Math.max(340, iframeWidth + 48)}px`
           : format === "html"
@@ -678,7 +683,9 @@ function AdPlayer({
 
   const actionIcon =
     format === "join_whatsapp" ? <MessageCircle className="size-7" /> :
-    format === "subscribe_youtube" ? <Youtube className="size-7" /> :
+    format === "subscribe_youtube" ? (
+      ad.imageUrl ? <img src={ad.imageUrl} alt="" className="size-16 rounded-full object-cover" /> : <Youtube className="size-7" />
+    ) :
     format === "visit_website" ? <Globe2 className="size-7" /> :
     <ListChecks className="size-7" />;
 
@@ -694,9 +701,22 @@ function AdPlayer({
     format === "visit_website" ? "Open website" :
     "";
 
+  const websiteHost = (() => {
+    if (!ad.destinationUrl) return "Open the advertiser website";
+    try {
+      return new URL(ad.destinationUrl, window.location.href).hostname;
+    } catch {
+      return "Open the advertiser website";
+    }
+  })();
+
   const openAction = () => {
     if (!ad.destinationUrl) return;
-    window.open(ad.destinationUrl, "_blank", "noopener,noreferrer");
+    try {
+      window.open(ad.destinationUrl, "_blank", "noopener,noreferrer");
+    } catch {
+      // Keep this UI-only action non-blocking if the browser rejects the new window.
+    }
   };
 
   return (
@@ -721,7 +741,7 @@ function AdPlayer({
             {sessionId && (
               <div className="task-content-width">
                 {isActionTask || format === "custom" ? (
-                  <div className="task-content-action">
+                  <div className={format === "custom" ? "task-content-custom" : "task-content-action"}>
                     <div className="task-action-icon" aria-hidden="true">{actionIcon}</div>
                     <h3 className="task-action-title">{actionTitle}</h3>
                     {format === "custom" ? (
@@ -742,7 +762,7 @@ function AdPlayer({
                       <>
                         <p className="task-action-description">
                           {format === "visit_website"
-                            ? ad.destinationUrl ? new URL(ad.destinationUrl, window.location.href).hostname : "Open the advertiser website"
+                            ? websiteHost
                             : ad.description || "Complete the required action to continue."}
                         </p>
                         <Button className="task-action-button" onClick={openAction} disabled={!ad.destinationUrl}>
