@@ -279,15 +279,23 @@ function AdPlayer({
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
         {ad.taskType === "watch_ad" && ad.adCode ? (
-          <div className="flex min-h-[270px] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
-            <iframe
-              title={ad.title}
-              srcDoc={ad.adCode}
-              width={ad.adWidth ?? undefined}
-              height={ad.adHeight ?? undefined}
-              className="max-w-full border-0"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
-            />
+          <div className="flex w-full items-center justify-center overflow-hidden rounded-xl bg-muted/20 p-1 sm:p-2">
+            <div
+              className="relative flex max-w-full items-center justify-center overflow-hidden"
+              style={{
+                width: ad.adWidth ? `min(100%, ${ad.adWidth}px)` : "100%",
+                aspectRatio: ad.adWidth && ad.adHeight ? `${ad.adWidth} / ${ad.adHeight}` : undefined,
+              }}
+            >
+              <iframe
+                title={ad.title}
+                srcDoc={ad.adCode}
+                width={ad.adWidth ?? undefined}
+                height={ad.adHeight ?? undefined}
+                className="absolute inset-0 h-full w-full border-0"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
+              />
+            </div>
           </div>
         ) : ad.videoUrl ? (
           <video src={ad.videoUrl} controls playsInline className="mx-auto max-h-72 max-w-full rounded-lg" />
