@@ -747,6 +747,7 @@ type Ctx = {
   startAd: (adId: string) => Promise<string>;
   markAdLoaded: (sessionId: string) => Promise<void>;
   completeAd: (sessionId: string) => Promise<number>;
+  refreshLiveData: () => Promise<void>;
   requestWithdrawal: (input: {
     amount: number;
     method: string;
@@ -768,6 +769,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
   });
   const refreshVersion = useRef(0);
+  const lastLiveRefreshRef = useRef(0);
 
   useEffect(() => {
     const onCurrencyChange = (event: Event) => {
@@ -809,6 +811,13 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   },
     [],
   );
+  const refreshNow = useCallback(async () => {
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+    if (!user) return;
+    await Promise.all([refresh(user), loadCatalog()]);
+    setCatalogReady(true);
+  }, [refresh]);
   useEffect(() => {
     let mounted = true;
   const boot = async () => {
@@ -862,33 +871,30 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   }, [state.user?.id]);
   useEffect(() => {
     if (!state.user) return;
-    const tables = [
-      "profiles",
-      "deposits",
-      "ledger_entries",
-      "wallet_transactions",
-      "withdrawals",
-      "ad_view_sessions",
-      "notifications",
-      "referrals",
-      "plans",
-      "ads",
-    ];
-    const channel = supabase.channel(`user-sync-${state.user.id}`);
-    tables.forEach((table) =>
-      channel.on(
-        "postgres_changes",
-        { event: "*", schema: "public", table },
-        () => {
-          void supabase.auth.getSession().then(({ data }) => refresh(data.session?.user ?? null));
-        },
-      ),
-    );
-    channel.subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
+    let mounted = true;
+    const refreshIfDue = () => {
+      const now = Date.now();
+      if (now - lastLiveRefreshRef.current < 10_000) return;
+      lastLiveRefreshRef.current = now;
+      void refreshNow();
     };
-  }, [state.user, refresh]);
+    const onFocus = () => refreshIfDue();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshIfDue();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === "visible") refreshIfDue();
+    }, 30_000);
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(poll);
+      void mounted;
+    };
+  }, [state.user?.id, refreshNow]);
   const plan = useMemo(
     () => PLANS.find((p) => p.id === state.user?.planId) ?? null,
     [state.user?.planId],
@@ -1168,6 +1174,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         startAd,
         markAdLoaded,
         completeAd,
+        refreshLiveData: refreshNow,
         cancelAd,
         requestWithdrawal,
         markNotificationsRead,
