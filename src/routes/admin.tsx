@@ -1593,6 +1593,9 @@ function CreateRecordButton({
     adWidth: "300",
     adHeight: "250",
     destinationUrl: "",
+    imageUrl: "",
+    videoUrl: "",
+    htmlCode: "",
   });
   const table = tableFor[active];
   const supported = Boolean(
@@ -1631,6 +1634,9 @@ function CreateRecordButton({
       adWidth: "300",
       adHeight: "250",
       destinationUrl: "",
+      imageUrl: "",
+      videoUrl: "",
+      htmlCode: "",
     });
   async function create() {
     const name = form.name.trim();
@@ -1687,6 +1693,9 @@ function CreateRecordButton({
           ad_width: Number.isFinite(adWidth) ? adWidth : null,
           ad_height: Number.isFinite(adHeight) ? adHeight : null,
           destination_url: form.destinationUrl.trim() || null,
+          image_url: form.imageUrl.trim() || null,
+          video_url: form.videoUrl.trim() || null,
+          html_code: form.htmlCode.trim() || null,
         }, "admin_create_tasks");
       } else if (active === "deposit-methods") {
         if (!name || !form.advertiser.trim() || !form.amount.trim()) throw new Error("Method name, account title, and account number are required.");
@@ -1803,7 +1812,7 @@ function CreateRecordButton({
                   <Input value={form.destinationUrl} onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })} placeholder="https://..." />
                 </label>
                 {form.taskType === "watch_ad" && <>
-                  <label className="grid gap-2 text-sm font-medium">Provider<Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" /></label>
+                  <label className="grid gap-2 text-sm font-medium">Image URL<Input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." /></label>\n                  <label className="grid gap-2 text-sm font-medium">Video URL<Input value={form.videoUrl} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })} placeholder="https://..." /></label>\n                  <label className="grid gap-2 text-sm font-medium">HTML code<textarea className="min-h-28 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Paste custom HTML here" /></label>\n                  <label className="grid gap-2 text-sm font-medium">Provider<Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" /></label>
                   <label className="grid gap-2 text-sm font-medium">Ad code<textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.adCode} onChange={(e) => setForm({ ...form, adCode: e.target.value })} placeholder="Paste provider code here" /></label>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-2 text-sm font-medium">Width<Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} /></label>
@@ -1992,7 +2001,7 @@ function ManagementEditDialog({
   const fields = table === "plans"
     ? ["name", "description", "price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "ads_per_day", "active"]
     : table === "ads"
-      ? ["title", "description", "destination_url", "duration_seconds", "reward", "reward_enabled", "display_order", "status", "task_type", "provider", "ad_code", "ad_width", "ad_height"]
+      ? ["title", "description", "destination_url", "duration_seconds", "reward", "reward_enabled", "display_order", "status", "task_type", "provider", "ad_code", "ad_width", "ad_height", "image_url", "video_url", "html_code"]
       : table === "deposit_methods"
         ? ["name", "account_title", "account_number", "instructions", "min_deposit_pkr", "max_deposit_pkr", "sort_order", "is_active"]
         : table === "withdrawal_methods"
