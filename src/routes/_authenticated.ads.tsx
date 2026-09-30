@@ -710,10 +710,13 @@ img, video, canvas, iframe { max-width: 100%; }
             srcDoc={src}
             width={iframeWidth}
             height={iframeHeight}
-            onLoad={() => void handleLoaded()}
+            onLoad={() => {
+              // Adsterra's invoke.js expects a normal document and can render
+              // asynchronously after the iframe's initial load event.
+              window.setTimeout(() => void handleLoaded(), 1200);
+            }}
             className="task-adsterra-frame"
             scrolling="no"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
             allow="autoplay; fullscreen; encrypted-media"
             referrerPolicy="no-referrer-when-downgrade"
           />
