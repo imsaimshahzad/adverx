@@ -279,20 +279,19 @@ function AdPlayer({
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
         {ad.taskType === "watch_ad" && ad.adCode ? (
-          <div className="flex w-full items-center justify-center overflow-hidden rounded-xl bg-muted/20 p-1 sm:p-2">
-            <div
-              className="relative flex max-w-full items-center justify-center overflow-hidden"
-              style={{
-                width: ad.adWidth ? `min(100%, ${ad.adWidth}px)` : "100%",
-                aspectRatio: ad.adWidth && ad.adHeight ? `${ad.adWidth} / ${ad.adHeight}` : undefined,
-              }}
-            >
+          <div className="w-full overflow-hidden rounded-xl bg-muted/20">
+            <div className="flex w-full justify-center overflow-hidden">
               <iframe
                 title={ad.title}
                 srcDoc={ad.adCode}
-                width={ad.adWidth ?? undefined}
-                height={ad.adHeight ?? undefined}
-                className="absolute inset-0 h-full w-full border-0"
+                className="block w-full max-w-full border-0"
+                style={{
+                  height: "auto",
+                  minHeight: "0",
+                  overflow: "hidden",
+                  scrollbarWidth: "none",
+                }}
+                scrolling="no"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
               />
             </div>
