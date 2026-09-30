@@ -367,7 +367,7 @@ async function loadState(user: {
       .maybeSingle(),
     db
       .from("ads")
-      .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at")
+      .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at, task_type, image_url, video_url, html_code")
       .eq("status", "active")
       .eq("reward_enabled", true)
       .order("display_order", { ascending: true, nullsFirst: false })
