@@ -1857,12 +1857,12 @@ function CreateRecordButton({
                           <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Paste HTML ad code here" />
                         </label>
                         <div className="rounded-lg border bg-background/60 p-3 text-xs font-normal leading-5 text-muted-foreground">
-                          <span className="font-semibold text-foreground">Automatic sizing:</span> The ad will adjust to its content and available space. For the best result, make sure your HTML is responsive and can resize naturally without relying on fixed dimensions.
+                          <span className="font-semibold text-foreground">Automatic sizing:</span> The ad will adjust to its content and available space.
                         </div>
                       </>
                     ) : form.adType === "video" ? (
                       <MediaUploadField label="Video ad" kind="video" value={form.videoUrl} onChange={(value) => setForm({ ...form, videoUrl: value })} />
-                    ) : form.adType === "image" ? (
+                    ) : (
                       <MediaUploadField label="Image ad" kind="image" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
                     )}
                   </div>
