@@ -349,6 +349,7 @@ function AdsPage() {
             }
             setSelectedAd(null);
             setSessionId(null);
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
             await refreshLiveData();
             toast.success(isPrivilegedAccount ? "Test ad completed — no reward credited." : `Reward credited: ${money(reward)}`);
           } catch (error) {
