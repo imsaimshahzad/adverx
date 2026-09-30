@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Globe, ListChecks, Lock, MessageCircle, Play, ShieldCheck, Youtube } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -49,13 +49,17 @@ function AdsPage() {
     completeAd,
     cancelAd,
     markAdLoaded,
+    refreshLiveData,
   } = usePlatform();
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const [startingAdId, setStartingAdId] = useState<string | null>(null);
   const openRequestRef = useRef(0);
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+  const previousCardRectsRef = useRef(new Map<string, DOMRect>());
   const [completedAdIds, setCompletedAdIds] = useState<Set<string>>(new Set());
+  const [displayAdIds, setDisplayAdIds] = useState<string[]>([]);
   const persistedWatchedIds = new Set(
     state.adViews
       .filter((v) => pakistanDate(v.completedAt) === pakistanDate(new Date()))
@@ -90,6 +94,46 @@ function AdsPage() {
       return next;
     });
   }, [state.user?.id, state.adViews.length]);
+  useEffect(() => {
+    if (!catalogReady || selectedAd) return;
+    const serverIds = ADS.map((ad) => ad.id);
+    const completed = new Set([...persistedWatchedIds, ...completedAdIds]);
+    setDisplayAdIds([
+      ...serverIds.filter((id) => !completed.has(id)),
+      ...serverIds.filter((id) => completed.has(id)),
+    ]);
+  }, [catalogReady, selectedAd, state.adViews.length, state.user?.id, completedAdIds]);
+
+  useLayoutEffect(() => {
+    if (!displayAdIds.length) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const nextRects = new Map<string, DOMRect>();
+    displayAdIds.forEach((id) => {
+      const node = cardRefs.current.get(id);
+      if (node) nextRects.set(id, node.getBoundingClientRect());
+    });
+    if (!reduced) {
+      nextRects.forEach((nextRect, id) => {
+        const node = cardRefs.current.get(id);
+        const previousRect = previousCardRectsRef.current.get(id);
+        if (!node || !previousRect) return;
+        const dx = previousRect.left - nextRect.left;
+        const dy = previousRect.top - nextRect.top;
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+        node.style.transition = "none";
+        node.style.transform = "translate3d(" + dx + "px, " + dy + "px, 0)";
+        requestAnimationFrame(() => {
+          node.style.transition = "transform 260ms ease";
+          node.style.transform = "translate3d(0, 0, 0)";
+        });
+        window.setTimeout(() => {
+          node.style.transition = "";
+          node.style.transform = "";
+        }, 280);
+      });
+    }
+    previousCardRectsRef.current = nextRects;
+  }, [displayAdIds]);
 
   useEffect(() => {
     // Warm the provider connection only; request/render the ad when the user opens the visible task.
@@ -210,7 +254,7 @@ function AdsPage() {
           )}
 
           <div className="mt-3 space-y-3">
-            {ADS.map((ad) => {
+            {displayAdIds.map((adId) => ADS.find((item) => item.id === adId)).filter((ad): ad is Ad => Boolean(ad)).map((ad) => {
               const done = watchedIds.has(ad.id);
               const disabledReason = !plan
                 ? "Activate a plan to unlock ad tasks"
@@ -224,6 +268,10 @@ function AdsPage() {
               return (
                 <div
                   key={ad.id}
+                  ref={(node) => {
+                    if (node) cardRefs.current.set(ad.id, node);
+                    else cardRefs.current.delete(ad.id);
+                  }}
                   className={`surface p-3 transition-transform duration-200 ${disabled ? "opacity-60" : "hover:-translate-y-0.5"}`}
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
@@ -293,12 +341,14 @@ function AdsPage() {
           if (!sessionId || completing) return;
           setCompleting(true);
           try {
+            const claimedAdId = selectedAd?.id ?? null;
             const reward = await completeAd(sessionId);
-            if (selectedAd) {
-              setCompletedAdIds((current) => new Set(current).add(selectedAd.id));
+            if (claimedAdId) {
+              setCompletedAdIds((current) => new Set(current).add(claimedAdId));
             }
             setSelectedAd(null);
             setSessionId(null);
+            await refreshLiveData();
             toast.success(isPrivilegedAccount ? "Test ad completed — no reward credited." : `Reward credited: ${money(reward)}`);
           } catch (error) {
             const message = error instanceof Error ? error.message : "Reward could not be credited";
@@ -306,8 +356,10 @@ function AdsPage() {
               setCompletedAdIds((current) => new Set(current).add(selectedAd.id));
               setSelectedAd(null);
               setSessionId(null);
+              await refreshLiveData().catch(() => undefined);
               return;
             }
+            await refreshLiveData().catch(() => undefined);
             toast.error(message);
           } finally {
             setCompleting(false);
