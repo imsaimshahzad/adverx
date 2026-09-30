@@ -149,11 +149,7 @@ function AdsPage() {
               return (
                 <div
                   key={ad.id}
-                  className={`surface p-4 transition-transform duration-200 sm:p-5 ${
-                    disabled
-                      ? "opacity-60"
-                      : "hover:-translate-y-0.5"
-                  }`}
+                  className={`surface p-4 transition-transform duration-200 sm:p-5 ${disabled ? "opacity-60" : "hover:-translate-y-0.5"}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -271,19 +267,34 @@ function AdPlayer({
           <DialogTitle>{ad.title}</DialogTitle>
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
-{ad.taskType === "watch_ad" && ad.adCode ? (
+        {ad.taskType === "watch_ad" && ad.adCode ? (
           <div className="flex min-h-[270px] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
-            <iframe title={ad.title} srcDoc={ad.adCode} width={ad.adWidth ?? undefined} height={ad.adHeight ?? undefined} className="max-w-full border-0" sandbox="allow-scripts allow-popups allow-forms" />
+            <iframe
+              title={ad.title}
+              srcDoc={ad.adCode}
+              width={ad.adWidth ?? undefined}
+              height={ad.adHeight ?? undefined}
+              className="max-w-full border-0"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
+            />
           </div>
         ) : ad.videoUrl ? (
           <video src={ad.videoUrl} controls playsInline className="mx-auto max-h-72 max-w-full rounded-lg" />
         ) : ad.imageUrl ? (
           <img src={ad.imageUrl} alt={ad.title} className="mx-auto max-h-72 max-w-full rounded-lg object-contain" />
         ) : ad.htmlCode ? (
-          <iframe title={ad.title} srcDoc={ad.htmlCode} className="min-h-60 w-full rounded-lg border-0" sandbox="allow-scripts allow-popups allow-forms" />
+          <iframe
+            title={ad.title}
+            srcDoc={ad.htmlCode}
+            className="min-h-60 w-full rounded-lg border-0"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
+          />
         ) : (
           <div className="brand-panel flex min-h-40 items-center justify-center p-4 text-center text-sm">
-            <div><p>{ad.description}</p>{ad.destinationUrl ? <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4">Open task</a> : null}</div>
+            <div>
+              <p>{ad.description}</p>
+              {ad.destinationUrl ? <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4">Open task</a> : null}
+            </div>
           </div>
         )}
         <Progress value={(elapsed / ad.watchSeconds) * 100} />
