@@ -47,6 +47,7 @@ function AdsPage() {
     catalogError,
     startAd,
     completeAd,
+    cancelAd,
   } = usePlatform();
   const [openAd, setOpenAd] = useState<Ad | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -206,7 +207,17 @@ function AdsPage() {
       </>
       <AdPlayer
         ad={openAd}
-        onClose={() => setOpenAd(null)}
+        onClose={async () => {
+          if (sessionId && !completing) {
+            try {
+              await cancelAd(sessionId);
+            } catch (error) {
+              console.error("[AdverX] failed to close ad session", error);
+            }
+          }
+          setOpenAd(null);
+          setSessionId(null);
+        }}
         completing={completing}
         onComplete={async () => {
           if (!sessionId || completing) return;
