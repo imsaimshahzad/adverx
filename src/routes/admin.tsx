@@ -1587,6 +1587,12 @@ function CreateRecordButton({
     referralCommission: "",
     recoveryFund: "",
     indirectReferral: "",
+    taskType: "watch_ad",
+    provider: "",
+    adCode: "",
+    adWidth: "300",
+    adHeight: "250",
+    destinationUrl: "",
   });
   const table = tableFor[active];
   const supported = Boolean(
@@ -1619,6 +1625,12 @@ function CreateRecordButton({
       referralCommission: "",
       recoveryFund: "",
       indirectReferral: "",
+      taskType: "watch_ad",
+      provider: "",
+      adCode: "",
+      adWidth: "300",
+      adHeight: "250",
+      destinationUrl: "",
     });
   async function create() {
     const name = form.name.trim();
@@ -1651,30 +1663,31 @@ function CreateRecordButton({
           toast.success(`Notification sent to ${targetIds.length} user${targetIds.length === 1 ? "" : "s"}.`);
         }
       } else if (active === "tasks") {
-        const reward = Number(form.reward);
+        const reward = Number(form.reward || 0);
         const duration = Number(form.duration);
-        if (
-          !name ||
-          !form.advertiser.trim() ||
-          !Number.isFinite(reward) ||
-          reward <= 0 ||
-          !Number.isInteger(duration) ||
-          duration <= 0
-        )
-          throw new Error(
-            "Enter a valid title, advertiser, reward, and duration.",
-          );
-        await insertRow(
-          table!,
-          {
-            title: name,
-            advertiser: form.advertiser.trim(),
-            reward,
-            duration_seconds: duration,
-            status: "active",
-          },
-          "admin_create_tasks",
-        );
+        const adWidth = Number(form.adWidth || 300);
+        const adHeight = Number(form.adHeight || 250);
+        const taskType = form.taskType || "watch_ad";
+        if (!name || !form.advertiser.trim() || !Number.isFinite(reward) || reward < 0 || !Number.isInteger(duration) || duration <= 0) {
+          throw new Error("Enter a valid title, advertiser, reward, and duration.");
+        }
+        if (taskType === "watch_ad" && (!form.provider.trim() || !form.adCode.trim() || !Number.isInteger(adWidth) || !Number.isInteger(adHeight) || adWidth <= 0 || adHeight <= 0)) {
+          throw new Error("Watch Ad tasks require a provider, ad code, and valid ad dimensions.");
+        }
+        await insertRow(table!, {
+          title: name,
+          advertiser: form.advertiser.trim(),
+          reward,
+          duration_seconds: duration,
+          status: "active",
+          reward_enabled: true,
+          task_type: taskType,
+          provider: form.provider.trim() || null,
+          ad_code: form.adCode.trim() || null,
+          ad_width: Number.isFinite(adWidth) ? adWidth : null,
+          ad_height: Number.isFinite(adHeight) ? adHeight : null,
+          destination_url: form.destinationUrl.trim() || null,
+        }, "admin_create_tasks");
       } else if (active === "deposit-methods") {
         if (!name || !form.advertiser.trim() || !form.amount.trim()) throw new Error("Method name, account title, and account number are required.");
         await insertRow(table!, { name, account_title: form.advertiser.trim(), account_number: form.amount.trim(), instructions: form.body.trim(), is_active: true, sort_order: 0 }, "admin_create_deposit_method");
@@ -1775,6 +1788,28 @@ function CreateRecordButton({
                     }
                   />
                 </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Task type
+                  <select className="h-9 rounded-md border bg-background px-2" value={form.taskType} onChange={(e) => setForm({ ...form, taskType: e.target.value })}>
+                    <option value="watch_ad">Watch Ad</option>
+                    <option value="join_whatsapp">Join WhatsApp</option>
+                    <option value="subscribe_youtube">Subscribe YouTube</option>
+                    <option value="visit_website">Visit Website</option>
+                    <option value="custom">Custom Task</option>
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Destination URL
+                  <Input value={form.destinationUrl} onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })} placeholder="https://..." />
+                </label>
+                {form.taskType === "watch_ad" && <>
+                  <label className="grid gap-2 text-sm font-medium">Provider<Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" /></label>
+                  <label className="grid gap-2 text-sm font-medium">Ad code<textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.adCode} onChange={(e) => setForm({ ...form, adCode: e.target.value })} placeholder="Paste provider code here" /></label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="grid gap-2 text-sm font-medium">Width<Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} /></label>
+                    <label className="grid gap-2 text-sm font-medium">Height<Input type="number" min="1" value={form.adHeight} onChange={(e) => setForm({ ...form, adHeight: e.target.value })} /></label>
+                  </div>
+                </>}
                 <label className="grid gap-2 text-sm font-medium">
                   Duration seconds
                   <Input
@@ -1957,7 +1992,7 @@ function ManagementEditDialog({
   const fields = table === "plans"
     ? ["name", "description", "price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "ads_per_day", "active"]
     : table === "ads"
-      ? ["title", "description", "destination_url", "duration_seconds", "reward", "reward_enabled", "display_order", "status"]
+      ? ["title", "description", "destination_url", "duration_seconds", "reward", "reward_enabled", "display_order", "status", "task_type", "provider", "ad_code", "ad_width", "ad_height"]
       : table === "deposit_methods"
         ? ["name", "account_title", "account_number", "instructions", "min_deposit_pkr", "max_deposit_pkr", "sort_order", "is_active"]
         : table === "withdrawal_methods"
@@ -1971,7 +2006,7 @@ function ManagementEditDialog({
           {fields.map((field) => {
             const value = form[field];
             const booleanField = typeof value === "boolean" || ["active", "is_active", "reward_enabled", "referral_enabled"].includes(field);
-            return <label key={field} className="grid gap-1 text-sm font-medium">{table === "plans" && field === "ads_per_day" ? "Daily Ads Limit" : field.replaceAll("_", " ")}{booleanField ? <select className="h-9 rounded-md border bg-background px-2" value={String(Boolean(value))} onChange={(e) => setForm({ ...form, [field]: e.target.value === "true" })}><option value="true">Active / enabled</option><option value="false">Inactive / disabled</option></select> : <Input type={["price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "base_ad_reward_pkr", "max_ad_reward_pkr", "daily_reward_limit_pkr", "ads_per_day", "duration_seconds", "reward", "display_order", "sort_order", "min_deposit_pkr", "max_deposit_pkr", "min_withdrawal_pkr", "max_withdrawal_pkr"].includes(field) ? "number" : "text"} value={String(value ?? "")} onChange={(e) => setForm({ ...form, [field]: e.target.type === "number" ? Number(e.target.value) : e.target.value })} />}</label>;
+            return <label key={field} className="grid gap-1 text-sm font-medium">{table === "plans" && field === "ads_per_day" ? "Daily Ads Limit" : field.replaceAll("_", " ")}{booleanField ? <select className="h-9 rounded-md border bg-background px-2" value={String(Boolean(value))} onChange={(e) => setForm({ ...form, [field]: e.target.value === "true" })}><option value="true">Active / enabled</option><option value="false">Inactive / disabled</option></select> : <Input type={["price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "base_ad_reward_pkr", "max_ad_reward_pkr", "daily_reward_limit_pkr", "ads_per_day", "duration_seconds", "reward", "display_order", "sort_order", "min_deposit_pkr", "max_deposit_pkr", "min_withdrawal_pkr", "max_withdrawal_pkr", "ad_width", "ad_height"].includes(field) ? "number" : "text"} value={String(value ?? "")} onChange={(e) => setForm({ ...form, [field]: e.target.type === "number" ? Number(e.target.value) : e.target.value })} />}</label>;
           })}
         </div>
         {table === "plans" && (
