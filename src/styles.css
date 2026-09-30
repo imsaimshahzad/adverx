@@ -783,3 +783,165 @@ input:not([type="checkbox"]):not([type="radio"]):disabled, textarea:disabled, se
 .task-content-width {
   max-width: 100%;
 }
+
+
+/* Ad task list cards: compact, dashboard-matched layout. */
+.ad-task-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ad-task-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease, border-color 160ms ease;
+}
+
+.ad-task-card:hover { transform: translateY(-1px); }
+.ad-task-card:active { transform: translateY(1px) scale(.995); }
+.ad-task-card:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+.ad-task-card-disabled { cursor: default; }
+.ad-task-card-disabled:hover,
+.ad-task-card-disabled:active { transform: none; }
+
+.ad-task-icon {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  color: var(--primary);
+}
+
+.ad-task-main { min-width: 0; }
+.ad-task-title {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.ad-task-description {
+  margin: 4px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  font-size: .75rem;
+  line-height: 1.4;
+}
+.ad-task-meta {
+  display: flex;
+  min-width: 0;
+  margin-top: 8px;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: .6875rem;
+  line-height: 1.2;
+}
+.ad-task-type,
+.ad-task-availability {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ad-task-type {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-weight: 600;
+}
+.ad-task-availability { color: var(--muted-foreground); }
+
+.ad-task-action {
+  display: flex;
+  min-width: 72px;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+}
+.ad-task-reward {
+  color: var(--primary);
+  font-size: .875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.ad-task-action [data-slot="button"],
+.ad-task-action .button {
+  min-height: 40px;
+  padding-inline: 14px;
+}
+.ad-task-card-disabled .ad-task-reward { color: var(--muted-foreground); }
+
+.ad-task-skeleton {
+  display: block;
+  border-radius: 8px;
+  background: var(--muted);
+  animation: ad-task-skeleton-pulse 1.4s ease-in-out infinite;
+}
+.ad-task-skeleton-icon { width: 40px; height: 40px; border-radius: 10px; }
+.ad-task-skeleton-title { width: min(70%, 220px); height: 14px; }
+.ad-task-skeleton-description { width: min(90%, 280px); height: 10px; margin-top: 7px; }
+.ad-task-skeleton-meta { width: 110px; height: 10px; margin-top: 9px; }
+.ad-task-skeleton-reward { width: 52px; height: 12px; }
+.ad-task-skeleton-button { width: 64px; height: 40px; border-radius: 8px; }
+@keyframes ad-task-skeleton-pulse {
+  50% { opacity: .48; }
+}
+
+@media (min-width: 1024px) {
+  .ad-task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 359px) {
+  .ad-task-card {
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+  }
+  .ad-task-action {
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ad-task-action [data-slot="button"],
+  .ad-task-action .button {
+    flex: 1;
+    min-height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-task-card { transition: none; }
+  .ad-task-skeleton { animation: none; }
+}
+
+.dark .ad-task-icon {
+  background: color-mix(in srgb, var(--primary) 14%, var(--card));
+}
+.dark .ad-task-type {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+.dark .ad-task-skeleton { background: #1e293b; }
