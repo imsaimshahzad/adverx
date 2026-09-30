@@ -330,3 +330,6 @@ input:not([type="checkbox"]):not([type="radio"]):disabled, textarea:disabled, se
 .dark .dashboard-nav-item[data-status="active"],
 .dark .admin-nav-item[data-active="true"] { color: #c7d2fe !important; background: #312e81 !important; border-color: #4f46e5 !important; }
 .dark .top-notification { background: #111827; color: #f8fafc; border-color: #334155; }
+
+
+.ad-loader[hidden] { display: none; }
