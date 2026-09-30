@@ -880,30 +880,33 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   }, [state.user?.id]);
   useEffect(() => {
     if (!state.user) return;
-    let mounted = true;
-    const refreshIfDue = () => {
+    const refreshIfDue = (includeCatalog: boolean) => {
       const now = Date.now();
       if (now - lastLiveRefreshRef.current < 10_000) return;
       lastLiveRefreshRef.current = now;
-      void refreshNow();
+      if (includeCatalog) {
+        void refreshNow();
+      } else {
+        void supabase.auth.getUser().then(({ data }) => {
+          if (data.user) return refresh(data.user);
+        });
+      }
     };
-    const onFocus = () => refreshIfDue();
+    const onFocus = () => refreshIfDue(true);
     const onVisibility = () => {
-      if (document.visibilityState === "visible") refreshIfDue();
+      if (document.visibilityState === "visible") refreshIfDue(true);
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
     const poll = window.setInterval(() => {
-      if (document.visibilityState === "visible") refreshIfDue();
+      if (document.visibilityState === "visible") refreshIfDue(false);
     }, 30_000);
     return () => {
-      mounted = false;
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
       window.clearInterval(poll);
-      void mounted;
     };
-  }, [state.user?.id, refreshNow]);
+  }, [state.user?.id, refresh, refreshNow]);
   const plan = useMemo(
     () => PLANS.find((p) => p.id === state.user?.planId) ?? null,
     [state.user?.planId],
