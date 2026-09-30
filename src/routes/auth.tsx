@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search) => ({
@@ -83,16 +84,19 @@ export function AuthPage() {
   }, []);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-xs flex-col justify-center px-4 py-8">
+    <main className="auth-page flex min-h-screen w-full flex-col items-center justify-center bg-background px-4 py-8 sm:px-5">
+      <style>{`.auth-page .auth-card{box-shadow:0 8px 30px rgba(20,23,54,.08)}.auth-page .auth-control{min-height:52px;border-radius:10px}.auth-page .auth-tabs [data-state=active]{background:var(--primary);color:var(--primary-foreground)}.auth-page h1{line-height:1.2}.auth-page label{font-size:13px}.auth-page .auth-card button:focus-visible{outline-offset:2px}`}</style>
+      <BrandLogo className="mb-5 w-full max-w-[11.5rem] rounded bg-white p-2 sm:max-w-[15.75rem]" />
+      <div className="mx-auto flex w-full max-w-[440px] flex-col justify-center">
       {!ready ? <p className="mb-3 text-center text-sm text-muted-foreground">Checking your session…</p> : null}
       {ready && dataError && !state.user ? <p role="alert" className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">Authentication succeeded, but your profile could not be loaded: {dataError}</p> : null}
-      <Tabs defaultValue={pathMode} className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm">
-        <TabsList className="mb-4 grid h-9 w-full min-w-0 grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-          <TabsTrigger value="register" className="min-w-0 truncate px-2 text-xs sm:text-sm">Create account</TabsTrigger>
-          <TabsTrigger value="login" className="min-w-0 truncate px-2 text-xs sm:text-sm">Sign in</TabsTrigger>
+      <Tabs defaultValue={pathMode} className="auth-card min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-[22px]">
+        <TabsList className="auth-tabs mb-5 grid h-12 w-full min-w-0 grid-cols-2 gap-1 rounded-xl border border-border bg-secondary/50 p-1">
+          <TabsTrigger value="register" className="min-w-0 truncate rounded-lg px-2 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Create account</TabsTrigger>
+          <TabsTrigger value="login" className="min-w-0 truncate rounded-lg px-2 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Sign in</TabsTrigger>
         </TabsList>
-        <TabsContent value="register" className="mt-0 space-y-3">
-          <h1 className="mb-6 text-xl font-semibold tracking-tight text-foreground">Create your AdverX account</h1>
+        <TabsContent value="register" className="mt-0 space-y-3.5">
+          <h1 className="mb-5 text-[22px] font-extrabold tracking-tight text-foreground">Create your AdverX account</h1>
           <Field label="Full name">
             <Input
               value={form.fullName}
@@ -116,7 +120,7 @@ export function AuthPage() {
           </Field>
           <Field label="Password">
             <Input
-              className="w-full rounded-md border border-input bg-secondary/50 px-3 py-2.5 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
+              className="auth-control w-full rounded-[10px] border-[1.5px] border-input bg-secondary/50 px-3 py-3 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -210,8 +214,8 @@ export function AuthPage() {
           </Button>
         </TabsContent>
 
-        <TabsContent value="login" className="mt-0 space-y-4">
-          <h1 className="mb-6 text-xl font-semibold tracking-tight text-foreground">Sign in to AdverX</h1>
+        <TabsContent value="login" className="mt-0 space-y-3.5">
+          <h1 className="mb-5 text-[22px] font-extrabold tracking-tight text-foreground">Welcome back</h1>
           {state.user ? (
             <div className="glass-input flex flex-col gap-4 p-4 text-center">
               <div>
@@ -353,7 +357,8 @@ export function AuthPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </main>
   );
 }
 
