@@ -333,3 +333,26 @@ input:not([type="checkbox"]):not([type="radio"]):disabled, textarea:disabled, se
 
 
 .ad-loader[hidden] { display: none; }
+
+
+/* Task popup layout: shared shell with type-specific content sizing. */
+.task-modal-content {
+  min-width: 0;
+}
+.task-modal-content[data-task-type="html"] {
+  min-width: 320px;
+  max-width: 560px;
+}
+.task-modal-content[data-task-type="video"] video {
+  max-height: 65vh;
+}
+.task-modal-content[data-task-type="image"] img {
+  max-width: 520px;
+  max-height: 60vh;
+  object-fit: contain;
+}
+@media (max-width: 640px) {
+  .task-modal-content {
+    max-width: calc(100vw - 32px) !important;
+  }
+}
