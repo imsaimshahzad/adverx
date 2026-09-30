@@ -195,7 +195,7 @@ function AdsPage() {
                           ? "Starting…"
                           : done
                             ? "✓ Ad Watched"
-                            : disabledReason ?? "Watch"}
+                            : disabledReason ?? (ad.taskType === "watch_ad" ? "Watch Ad" : "Start Task")}
                         {!disabled && <Play className="size-4" />}
                       </Button>
                     </div>
@@ -271,14 +271,40 @@ function AdPlayer({
           <DialogTitle>{ad.title}</DialogTitle>
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
-        <div className="brand-panel flex h-40 items-center justify-center p-4 text-center text-sm">
-          {ad.description}
-        </div>
+{ad.taskType === "watch_ad" && ad.adCode ? (
+          <div className="flex min-h-[270px] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
+            <iframe
+              title={ad.title}
+              srcDoc={ad.adCode}
+              width={ad.adWidth ?? 300}
+              height={ad.adHeight ?? 250}
+              className="max-w-full border-0"
+              sandbox="allow-scripts allow-popups allow-forms"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        ) : (
+          <div className="brand-panel flex min-h-40 items-center justify-center p-4 text-center text-sm">
+            <div>
+              <p>{ad.description}</p>
+              {ad.destinationUrl ? (
+                <a
+                  href={ad.destinationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4"
+                >
+                  Open task
+                </a>
+              ) : null}
+            </div>
+          </div>
+        )}
         <Progress value={(elapsed / ad.watchSeconds) * 100} />
         <p className="text-center text-xs text-muted-foreground">
           {remaining > 0
-            ? `Keep watching — ${remaining}s remaining`
-            : "Engagement complete, claim your reward"}
+            ? `Keep the task open — ${remaining}s remaining`
+            : "Task complete, claim your reward"}
         </p>
         <Button disabled={remaining > 0 || completing} onClick={() => void onComplete()}>
           {completing ? "Verifying…" : "Claim reward"}
