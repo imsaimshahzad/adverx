@@ -54,6 +54,7 @@ function AdsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const [startingAdId, setStartingAdId] = useState<string | null>(null);
+  const openRequestRef = useRef(0);
   const [completedAdIds, setCompletedAdIds] = useState<Set<string>>(new Set());
   const persistedWatchedIds = new Set(
     state.adViews
@@ -63,12 +64,14 @@ function AdsPage() {
   const watchedIds = new Set([...persistedWatchedIds, ...completedAdIds]);
 
   const openAd = (ad: Ad) => {
+    openRequestRef.current += 1;
     setSelectedAd(ad);
     setSessionId(null);
   };
 
   const closeAd = async () => {
     if (completing) return;
+    openRequestRef.current += 1;
     if (sessionId) {
       try {
         await cancelAd(sessionId);
@@ -236,8 +239,10 @@ function AdsPage() {
                           if (startingAdId) return;
                           setStartingAdId(ad.id);
                           openAd(ad);
+                          const requestId = openRequestRef.current;
                           try {
                             const id = await startAd(ad.id);
+                            if (requestId !== openRequestRef.current) return;
                             setSessionId(id);
                           } catch (error) {
                             setSelectedAd(null);
