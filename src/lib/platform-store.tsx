@@ -745,6 +745,7 @@ type Ctx = {
   imageHash?: string;
   }) => void;
   startAd: (adId: string) => Promise<string>;
+  markAdLoaded: (sessionId: string) => Promise<void>;
   completeAd: (sessionId: string) => Promise<number>;
   requestWithdrawal: (input: {
     amount: number;
@@ -1069,40 +1070,60 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     if (hashError) { console.error("[AdverX] receipt hash update failed", hashError); throw new Error("Unable to finish saving the payment receipt."); }
   }
   }, [refresh]);
+  const adApi = useCallback(async (path: string, body: Record<string, unknown>) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) throw new Error("Your session expired. Please sign in again.");
+
+    const response = await fetch(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | Record<string, unknown>
+      | null;
+
+    if (!response.ok) {
+      throw new Error(String(payload?.error ?? "Unable to process the ad request."));
+    }
+
+    return payload ?? {};
+  }, []);
+
   const startAd = useCallback(async (adId: string) => {
     if (!adIdSchema.safeParse(adId).success) throw new Error("Invalid ad identifier.");
-    const { data, error } = await db.rpc("start_ad_view", { p_ad_id: adId });
-    if (error) {
-      console.error("[AdverX] ad operation failed", error);
-      throw new Error(adTaskErrorMessage(error.message, "Unable to start the ad task."));
-    }
-    if (!data) throw new Error("The ad session could not be started.");
-    return String(data);
-  }, []);
+    const payload = await adApi("/api/ads/start", { adId });
+    const sessionId = String(payload.sessionId ?? "");
+    if (!sessionId) throw new Error("The ad session could not be started.");
+    return sessionId;
+  }, [adApi]);
+
+  const markAdLoaded = useCallback(async (sessionId: string) => {
+    if (!sessionIdSchema.safeParse(sessionId).success) throw new Error("Invalid ad session identifier.");
+    await adApi("/api/ads/loaded", { sessionId });
+  }, [adApi]);
+
   const cancelAd = useCallback(async (sessionId: string) => {
     if (!sessionIdSchema.safeParse(sessionId).success) throw new Error("Invalid ad session identifier.");
-    const { data, error } = await db.rpc("cancel_ad_view", { p_session_id: sessionId });
-    if (error) {
-      console.error("[AdverX] ad cancellation failed", error);
-      throw new Error(adTaskErrorMessage(error.message, "Unable to close the ad task."));
-    }
-    return Boolean(data);
-  }, []);
+    const payload = await adApi("/api/ads/cancel", { sessionId });
+    return Boolean(payload.cancelled);
+  }, [adApi]);
 
   const completeAd = useCallback(async (sessionId: string) => {
     if (!sessionIdSchema.safeParse(sessionId).success) throw new Error("Invalid ad session identifier.");
-    const { data, error } = await db.rpc("complete_ad_view", {
-      p_session_id: sessionId,
-      p_idempotency_key: crypto.randomUUID(),
+    const payload = await adApi("/api/ads/claim", {
+      sessionId,
+      idempotencyKey: crypto.randomUUID(),
     });
-    if (error) {
-      console.error("[AdverX] ad completion failed", error);
-      throw new Error(adTaskErrorMessage(error.message, "Unable to complete the ad task."));
-    }
     const { data: authData } = await supabase.auth.getUser();
     if (authData.user) await refresh(authData.user);
-    return num(data);
-  }, [refresh]);
+    return num(payload.reward);
+  }, [adApi, refresh]);
   const requestWithdrawal = useCallback(async (input: any) => {
     const parsedInput = withdrawalSchema.safeParse(input);
     if (!parsedInput.success) throw new Error(parsedInput.error.issues[0]?.message ?? "Invalid withdrawal details.");
@@ -1145,6 +1166,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         logout,
         submitDeposit,
         startAd,
+        markAdLoaded,
         completeAd,
         cancelAd,
         requestWithdrawal,
