@@ -182,8 +182,21 @@ function AdsPage() {
           )}
 
           {!catalogReady && !catalogError && (
-            <div className="mt-3 surface p-6 text-center text-sm text-muted-foreground">
-              Loading active ads…
+            <div className="ad-task-grid mt-3" aria-label="Loading ad tasks" aria-busy="true">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="ad-task-card surface" aria-hidden="true">
+                  <div className="ad-task-skeleton ad-task-skeleton-icon" />
+                  <div className="ad-task-main">
+                    <div className="ad-task-skeleton ad-task-skeleton-title" />
+                    <div className="ad-task-skeleton ad-task-skeleton-description" />
+                    <div className="ad-task-skeleton ad-task-skeleton-meta" />
+                  </div>
+                  <div className="ad-task-action">
+                    <div className="ad-task-skeleton ad-task-skeleton-reward" />
+                    <div className="ad-task-skeleton ad-task-skeleton-button" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -695,7 +708,7 @@ img, video, canvas, iframe { max-width: 100%; }
     format === "subscribe_youtube" ? (
       ad.imageUrl ? <img src={ad.imageUrl} alt="" className="size-16 rounded-full object-cover" /> : <Youtube className="size-7" />
     ) :
-    format === "visit_website" ? <Globe2 className="size-7" /> :
+    format === "visit_website" ? <Globe className="size-7" /> :
     <ListChecks className="size-7" />;
 
   const actionTitle =
