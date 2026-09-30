@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Globe, ListChecks, Lock, MessageCircle, Play, ShieldCheck, Youtube } from "lucide-react";
+import { ExternalLink, Globe, ListChecks, Lock, MessageCircle, Play, ShieldCheck, Youtube } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -406,15 +406,17 @@ function AdPlayer({
   const isActionTask = taskType === "join_whatsapp" || taskType === "subscribe_youtube" || taskType === "visit_website";
   const format =
     taskType === "watch_ad"
-      ? ad?.htmlCode
-        ? "html"
-        : ad?.videoUrl
-          ? "video"
-          : ad?.imageUrl
-            ? "image"
-            : ad?.adCode
-              ? "adsterra"
-              : "none"
+      ? String(ad?.provider ?? "").toLowerCase() === "adsterra" && ad?.adCode
+        ? "adsterra"
+        : ad?.htmlCode
+          ? "html"
+          : ad?.videoUrl
+            ? "video"
+            : ad?.imageUrl
+              ? "image"
+              : ad?.adCode
+                ? "adsterra"
+                : "none"
       : taskType;
   const htmlMessageId = ad && sessionId ? `ad-${ad.id}-${sessionId}` : "pending";
   const videoDuration = Math.max(1, ad?.watchSeconds ?? 1);
@@ -711,7 +713,9 @@ img, video, canvas, iframe { max-width: 100%; }
             onLoad={() => void handleLoaded()}
             className="task-adsterra-frame"
             scrolling="no"
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            allow="autoplay; fullscreen; encrypted-media"
+            referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
       </div>
