@@ -2574,7 +2574,7 @@ function ModuleTable({
   ),
   ].slice(0, 6)
   : active === "tasks"
-  ? ["title", "advertiser", "task_type", "provider", "duration_seconds", "status"].filter((column) => rawColumns.includes(column))
+  ? ["title", "task_type", "duration_seconds", "status"].filter((column) => rawColumns.includes(column))
   : active === "users"
   ? ["user", "plan", "payment", "status", "role"]
   : rawColumns.slice(0, 6);
