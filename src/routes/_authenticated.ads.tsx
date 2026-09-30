@@ -75,7 +75,7 @@ function AdsPage() {
     const scriptUrls = new Set<string>();
     for (const item of ADS) {
       if (item.taskType !== "watch_ad" || !item.adCode) continue;
-      const matches = item.adCode.matchAll(/<script\\b[^>]*\\bsrc=["']([^"']+)["']/gi);
+      const matches = item.adCode.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi);
       for (const match of matches) {
         try {
           scriptUrls.add(new URL(match[1], window.location.href).href);
