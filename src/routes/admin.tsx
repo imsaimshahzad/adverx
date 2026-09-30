@@ -1620,6 +1620,7 @@ function CreateRecordButton({
     recoveryFund: "",
     indirectReferral: "",
     taskType: "watch_ad",
+    adType: "html",
     provider: "",
     adCode: "",
     adWidth: "",
@@ -1661,6 +1662,7 @@ function CreateRecordButton({
       recoveryFund: "",
       indirectReferral: "",
       taskType: "watch_ad",
+      adType: "html",
       provider: "",
       adCode: "",
       adWidth: "",
@@ -1709,8 +1711,28 @@ function CreateRecordButton({
         if (!name || !form.advertiser.trim() || !Number.isFinite(reward) || reward < 0 || !Number.isInteger(duration) || duration <= 0) {
           throw new Error("Enter a valid title, advertiser, reward, and duration.");
         }
-        if (taskType === "watch_ad" && (!form.provider.trim() || !form.adCode.trim() || !Number.isInteger(adWidth) || !Number.isInteger(adHeight) || adWidth <= 0 || adHeight <= 0)) {
-          throw new Error("Watch Ad tasks require a provider, ad code, and valid ad dimensions.");
+        if (taskType === "watch_ad") {
+          const adType = form.adType || "html";
+          if (adType === "html" && !form.htmlCode.trim()) {
+            throw new Error("HTML Ad requires HTML ad code.");
+          }
+          if (adType === "video" && !form.videoUrl.trim()) {
+            throw new Error("Video Ad requires a video.");
+          }
+          if (adType === "image" && !form.imageUrl.trim()) {
+            throw new Error("Image Ad requires an image.");
+          }
+          if (
+            adType === "adsterra" &&
+            (!form.provider.trim() ||
+              !form.adCode.trim() ||
+              !Number.isInteger(adWidth) ||
+              !Number.isInteger(adHeight) ||
+              adWidth <= 0 ||
+              adHeight <= 0)
+          ) {
+            throw new Error("Adsterra requires a provider, ad code, and valid ad dimensions.");
+          }
         }
         if (["join_whatsapp", "subscribe_youtube", "visit_website"].includes(taskType) && !form.destinationUrl.trim()) {
           throw new Error("This task type requires a destination URL.");
@@ -1726,14 +1748,14 @@ function CreateRecordButton({
           status: "active",
           reward_enabled: true,
           task_type: taskType,
-          provider: form.provider.trim() || null,
-          ad_code: form.adCode.trim() || null,
-          ad_width: Number.isFinite(adWidth) ? adWidth : null,
-          ad_height: Number.isFinite(adHeight) ? adHeight : null,
+          provider: taskType === "watch_ad" && form.adType === "adsterra" ? form.provider.trim() || null : null,
+          ad_code: taskType === "watch_ad" && form.adType === "adsterra" ? form.adCode.trim() || null : null,
+          ad_width: taskType === "watch_ad" && form.adType === "adsterra" && Number.isFinite(adWidth) ? adWidth : null,
+          ad_height: taskType === "watch_ad" && form.adType === "adsterra" && Number.isFinite(adHeight) ? adHeight : null,
           destination_url: form.destinationUrl.trim() || null,
-          image_url: form.imageUrl.trim() || null,
-          video_url: form.videoUrl.trim() || null,
-          html_code: form.htmlCode.trim() || null,
+          image_url: taskType === "watch_ad" && form.adType === "image" ? form.imageUrl.trim() || null : null,
+          video_url: taskType === "watch_ad" && form.adType === "video" ? form.videoUrl.trim() || null : null,
+          html_code: taskType === "watch_ad" && form.adType === "html" ? form.htmlCode.trim() || null : null,
         }, "admin_create_tasks");
       } else if (active === "deposit-methods") {
         if (!name || !form.advertiser.trim() || !form.amount.trim()) throw new Error("Method name, account title, and account number are required.");
