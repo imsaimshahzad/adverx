@@ -213,14 +213,14 @@ function AdsPage() {
                   key={ad.id}
                   className={`surface p-3 transition-transform duration-200 ${disabled ? "opacity-60" : "hover:-translate-y-0.5"}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{ad.title}</p>
                       <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                         {ad.description || "Complete this task to earn your reward."}
                       </p>
                     </div>
-                    <span className="shrink-0 pt-0.5 text-xs font-medium text-muted-foreground">
+                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
                       {ad.watchSeconds}s
                     </span>
                   </div>
