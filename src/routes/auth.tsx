@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { loginSchema, signupSchema, resetRequestSchema } from "@/lib/input-validation";
 
 import { usePlatform } from "@/lib/platform-store";
-import { BrandLogo } from "@/components/BrandLogo";
 import {
   captureReferralFromLocation,
   clearReferralAttribution,
