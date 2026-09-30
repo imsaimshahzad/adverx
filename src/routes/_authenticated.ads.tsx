@@ -273,7 +273,7 @@ function AdPlayer({
         </DialogHeader>
 {ad.taskType === "watch_ad" && ad.adCode ? (
           <div className="flex min-h-[270px] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
-            <iframe title={ad.title} srcDoc={ad.adCode} width={ad.adWidth ?? 300} height={ad.adHeight ?? 250} className="max-w-full border-0" sandbox="allow-scripts allow-popups allow-forms" />
+            <iframe title={ad.title} srcDoc={ad.adCode} width={ad.adWidth ?? undefined} height={ad.adHeight ?? undefined} className="max-w-full border-0" sandbox="allow-scripts allow-popups allow-forms" />
           </div>
         ) : ad.videoUrl ? (
           <video src={ad.videoUrl} controls playsInline className="mx-auto max-h-72 max-w-full rounded-lg" />
