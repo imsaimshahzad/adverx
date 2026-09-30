@@ -54,9 +54,6 @@ function AdsPage() {
   const [completing, setCompleting] = useState(false);
   const [startingAdId, setStartingAdId] = useState<string | null>(null);
   const [completedAdIds, setCompletedAdIds] = useState<Set<string>>(new Set());
-  const preloadHostRef = useRef<HTMLDivElement | null>(null);
-  const preloadedFramesRef = useRef<Map<string, HTMLIFrameElement>>(new Map());
-
   const persistedWatchedIds = new Set(
     state.adViews
       .filter((v) => pakistanDate(v.completedAt) === pakistanDate(new Date()))
@@ -71,28 +68,6 @@ function AdsPage() {
       return next;
     });
   }, [state.user?.id, state.adViews.length]);
-  useEffect(() => {
-    if (!catalogReady || !preloadHostRef.current) return;
-    const watchAds = ADS.filter((ad) => ad.status === "active" && ad.taskType === "watch_ad" && ad.adCode);
-    for (const ad of watchAds) {
-      if (preloadedFramesRef.current.has(ad.id)) continue;
-      const frame = document.createElement("iframe");
-      frame.title = ad.title;
-      frame.width = String(ad.adWidth ?? 0);
-      frame.height = String(ad.adHeight ?? 0);
-      frame.className = "block border-0";
-      frame.setAttribute("scrolling", "no");
-      frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms");
-      frame.srcdoc = ad.adCode;
-      frame.style.position = "absolute";
-      frame.style.left = "-10000px";
-      frame.style.top = "0";
-      frame.style.visibility = "hidden";
-      preloadHostRef.current.appendChild(frame);
-      preloadedFramesRef.current.set(ad.id, frame);
-    }
-  }, [catalogReady, state.user?.id]);
-
 
   const isPrivilegedAccount = ["admin", "super_admin", "moderator"].includes(
     String(state.user?.role ?? "").toLowerCase(),
@@ -230,10 +205,8 @@ function AdsPage() {
       ) : null}
 
       </>
-      <div ref={preloadHostRef} aria-hidden="true" className="pointer-events-none fixed -left-[10000px] top-0 h-px w-px overflow-hidden" />
       <AdPlayer
         ad={openAd}
-        preloadedFrame={openAd ? preloadedFramesRef.current.get(openAd.id) ?? null : null}
         onClose={async () => {
           if (sessionId && !completing) {
             try {
@@ -277,45 +250,31 @@ function AdsPage() {
 
 function AdPlayer({
   ad,
-  preloadedFrame,
   onClose,
   completing,
   onComplete,
 }: {
   ad: Ad | null;
-  preloadedFrame: HTMLIFrameElement | null;
   onClose: () => void;
   completing: boolean;
   onComplete: () => void | Promise<void>;
 }) {
   const [elapsed, setElapsed] = useState(0);
+  const [adLoaded, setAdLoaded] = useState(false);
   const [adScale, setAdScale] = useState(1);
-  const adSlotRef = useRef<HTMLDivElement | null>(null);
   const adFrameRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!ad || !preloadedFrame || !adSlotRef.current) return;
-    const frame = preloadedFrame;
-    adSlotRef.current.appendChild(frame);
-    frame.style.position = "static";
-    frame.style.left = "";
-    frame.style.top = "";
-    frame.style.visibility = "visible";
-    return () => {
-      frame.style.position = "absolute";
-      frame.style.left = "-10000px";
-      frame.style.top = "0";
-      frame.style.visibility = "hidden";
-      preloadHostRef.current?.appendChild(frame);
-    };
-  }, [ad, preloadedFrame]);
 
   useEffect(() => {
     if (!ad) return;
     setElapsed(0);
+    setAdLoaded(false);
+  }, [ad]);
+
+  useEffect(() => {
+    if (!ad || !adLoaded) return;
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(t);
-  }, [ad]);
+  }, [ad, adLoaded]);
 
   useEffect(() => {
     if (!ad || !ad.adWidth || !ad.adHeight || !adFrameRef.current) {
@@ -346,8 +305,28 @@ function AdPlayer({
           <div
             ref={adFrameRef}
             className="w-full overflow-hidden rounded-xl bg-muted/20"
+            style={{ height: `${frameHeight}px` }}
           >
-            <div ref={adSlotRef} className="flex min-h-[250px] w-full items-center justify-center overflow-hidden" />
+            <div
+              className="mx-auto origin-top"
+              style={{
+                width: `${frameWidth}px`,
+                height: `${frameHeight}px`,
+                transform: `scale(${adScale} )`,
+                transformOrigin: "top center",
+              }}
+            >
+              <iframe
+                title={ad.title}
+                onLoad={() => setAdLoaded(true)}
+                srcDoc={ad.adCode}
+                width={frameWidth}
+                height={frameHeight}
+                className="block border-0"
+                scrolling="no"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
+              />
+            </div>
           </div>        ) : (
           <div className="brand-panel flex min-h-40 items-center justify-center p-4 text-center text-sm">
             <div>
@@ -358,11 +337,13 @@ function AdPlayer({
         )}
         <Progress value={(elapsed / ad.watchSeconds) * 100} />
         <p className="text-center text-xs text-muted-foreground">
-          {remaining > 0
-            ? `Keep the task open — ${remaining}s remaining`
-            : "Task complete, claim your reward"}
+          {!adLoaded
+            ? "Loading ad… timer starts when the ad frame loads"
+            : remaining > 0
+              ? `Keep the task open — ${remaining}s remaining`
+              : "Task complete, claim your reward"}
         </p>
-        <Button disabled={remaining > 0 || completing} onClick={() => void onComplete()}>
+        <Button disabled={!adLoaded || remaining > 0 || completing} onClick={() => void onComplete()}>
           {completing ? "Verifying…" : "Claim reward"}
         </Button>
       </DialogContent>
