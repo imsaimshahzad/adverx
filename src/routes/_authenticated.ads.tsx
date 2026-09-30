@@ -69,6 +69,51 @@ function AdsPage() {
     });
   }, [state.user?.id, state.adViews.length]);
 
+  useEffect(() => {
+    // Warm the ad provider's network connection and invoke script before a user opens the task.
+    // Do not render a hidden ad iframe: hidden/moved third-party ad frames previously broke playback.
+    const scriptUrls = new Set<string>();
+    for (const item of ADS) {
+      if (item.taskType !== "watch_ad" || !item.adCode) continue;
+      const matches = item.adCode.matchAll(/<script\\b[^>]*\\bsrc=["']([^"']+)["']/gi);
+      for (const match of matches) {
+        try {
+          scriptUrls.add(new URL(match[1], window.location.href).href);
+        } catch {
+          // Ignore invalid URLs in an admin-configured ad code.
+        }
+      }
+    }
+
+    const connectedOrigins = new Set<string>();
+    for (const scriptUrl of scriptUrls) {
+      try {
+        const url = new URL(scriptUrl);
+        if (!connectedOrigins.has(url.origin)) {
+          connectedOrigins.add(url.origin);
+          const preconnect = document.createElement("link");
+          preconnect.rel = "preconnect";
+          preconnect.href = url.origin;
+          document.head.appendChild(preconnect);
+
+          const dnsPrefetch = document.createElement("link");
+          dnsPrefetch.rel = "dns-prefetch";
+          dnsPrefetch.href = url.origin;
+          document.head.appendChild(dnsPrefetch);
+        }
+
+        // Fetch the provider's script early; it will still execute only inside the visible ad frame.
+        const preload = document.createElement("link");
+        preload.rel = "preload";
+        preload.as = "script";
+        preload.href = scriptUrl;
+        document.head.appendChild(preload);
+      } catch {
+        // Keep ad tasks usable if a browser rejects a preload hint.
+      }
+    }
+  }, [catalogReady]);
+
   const isPrivilegedAccount = ["admin", "super_admin", "moderator"].includes(
     String(state.user?.role ?? "").toLowerCase(),
   );
