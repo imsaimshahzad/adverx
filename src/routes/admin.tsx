@@ -1687,8 +1687,6 @@ function CreateRecordButton({
       } else if (active === "tasks") {
         const reward = Number(form.reward || 0);
         const duration = Number(form.duration);
-        const adWidth = Number(form.adWidth);
-        const adHeight = Number(form.adHeight);
         const taskType = form.taskType || "watch_ad";
         if (!name || !form.advertiser.trim() || !Number.isFinite(reward) || reward < 0 || !Number.isInteger(duration) || duration <= 0) {
           throw new Error("Enter a valid title, advertiser, reward, and duration.");
