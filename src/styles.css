@@ -729,3 +729,32 @@ input:not([type="checkbox"]):not([type="radio"]):disabled, textarea:disabled, se
   background: var(--secondary);
   color: var(--secondary-foreground);
 }
+
+
+.task-content-custom {
+  width: 100%;
+  max-height: calc(90vh - 220px);
+  padding: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.task-modal-youtube .task-action-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.task-modal-youtube .task-action-icon img {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .task-content-custom {
+    max-height: calc(90vh - 236px);
+    padding: 24px;
+  }
+}
