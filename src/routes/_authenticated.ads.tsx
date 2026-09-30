@@ -304,7 +304,13 @@ function AdsPage() {
                           const requestId = openRequestRef.current;
                           try {
                             const id = await startAd(ad.id);
-                            if (requestId !== openRequestRef.current) return;
+                            if (requestId !== openRequestRef.current) {
+                              // The user closed the dialog while the secure session
+                              // was still being created. Immediately cancel the
+                              // server session so it cannot block the next ad.
+                              await cancelAd(id).catch(() => undefined);
+                              return;
+                            }
                             setSessionId(id);
                           } catch (error) {
                             setSelectedAd(null);
