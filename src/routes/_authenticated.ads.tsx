@@ -326,34 +326,27 @@ function AdPlayer({
   const [htmlHeight, setHtmlHeight] = useState(180);
   const [iframeScale, setIframeScale] = useState(1);
   const [iframeStage, setIframeStage] = useState({ width: 0, height: 0 });
+  const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
   const adFrameRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const htmlIframeRef = useRef<HTMLIFrameElement | null>(null);
   const videoLastTimeRef = useRef(0);
   const playingTimeRef = useRef(0);
 
-  const format = ad?.htmlCode
-    ? "html"
-    : ad?.videoUrl
-      ? "video"
-      : ad?.imageUrl
-        ? "image"
-        : ad?.adCode
-          ? "iframe"
-          : "action";
-  const modalType = ad?.taskType === "watch_ad" ? format : ad?.taskType ?? "custom";
-  const modalConfig = {
-    html: { width: "min(560px, calc(100vw - 32px))", minWidth: "320px", padding: "16px" },
-    video: { width: "min(640px, calc(100vw - 32px))", minWidth: "0px", padding: "0px" },
-    image: { width: "min(520px, calc(100vw - 32px))", minWidth: "0px", padding: "0px" },
-    iframe: { width: "max(340px, min(calc(100vw - 32px), calc(var(--ad-width, 300px) + 48px)))", minWidth: "340px", padding: "24px" },
-    whatsapp_join: { width: "min(400px, calc(100vw - 32px))", minWidth: "0px", padding: "28px" },
-    subscribe_youtube: { width: "min(420px, calc(100vw - 32px))", minWidth: "0px", padding: "28px" },
-    visit_website: { width: "min(420px, calc(100vw - 32px))", minWidth: "0px", padding: "28px" },
-    custom: { width: "min(480px, calc(100vw - 32px))", minWidth: "0px", padding: "24px" },
-    action: { width: "min(420px, calc(100vw - 32px))", minWidth: "0px", padding: "28px" },
-  } as const;
-  const layout = modalConfig[modalType as keyof typeof modalConfig] ?? modalConfig.custom;
+  const taskType = ad?.taskType ?? "watch_ad";
+  const isActionTask = taskType === "join_whatsapp" || taskType === "subscribe_youtube" || taskType === "visit_website";
+  const format =
+    taskType === "watch_ad"
+      ? ad?.htmlCode
+        ? "html"
+        : ad?.videoUrl
+          ? "video"
+          : ad?.imageUrl
+            ? "image"
+            : ad?.adCode
+              ? "adsterra"
+              : "none"
+      : taskType;
   const htmlMessageId = ad && sessionId ? `ad-${ad.id}-${sessionId}` : "pending";
   const videoDuration = Math.max(1, ad?.watchSeconds ?? 1);
   const remaining = Math.max(0, videoDuration - elapsed);
@@ -368,6 +361,7 @@ function AdPlayer({
     setHtmlHeight(180);
     setIframeScale(1);
     setIframeStage({ width: 0, height: 0 });
+    setVideoAspectRatio(16 / 9);
     videoLastTimeRef.current = 0;
     playingTimeRef.current = 0;
   }, [ad, sessionId]);
@@ -402,6 +396,13 @@ function AdPlayer({
   }, [ad, sessionId, adLoaded, format, videoDuration]);
 
   useEffect(() => {
+    if (!ad || !sessionId || !isActionTask) return;
+    void onAdLoaded(sessionId)
+      .then(() => setAdLoaded(true))
+      .catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to verify task load"));
+  }, [ad, sessionId, isActionTask, onAdLoaded]);
+
+  useEffect(() => {
     if (!ad || format !== "html" || !sessionId) return;
     const iframe = htmlIframeRef.current;
     if (!iframe) return;
@@ -420,7 +421,7 @@ function AdPlayer({
   }, [ad, format, sessionId, htmlMessageId]);
 
   useEffect(() => {
-    if (!ad || format !== "iframe") return;
+    if (!ad || format !== "adsterra") return;
     const element = adFrameRef.current;
     if (!element) return;
 
@@ -464,6 +465,14 @@ function AdPlayer({
     }
   };
 
+  const handleVideoLoaded = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      setVideoAspectRatio(video.videoWidth / video.videoHeight);
+    }
+    void handleLoaded();
+  };
+
   const handleVideoTimeUpdate = (event: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = event.currentTarget;
     video.playbackRate = 1;
@@ -497,7 +506,7 @@ function AdPlayer({
     w,
     h,
   }: {
-    type: "video" | "html" | "image" | "iframe" | "action";
+    type: "video" | "html" | "image" | "adsterra";
     src: string;
     w?: number;
     h?: number;
@@ -505,8 +514,12 @@ function AdPlayer({
     if (!sessionId) return null;
 
     if (type === "video") {
+      const isVertical = videoAspectRatio < 1;
       return (
-        <div className="flex min-h-[180px] w-full items-center justify-center bg-black/10">
+        <div
+          className="task-content-video"
+          style={{ aspectRatio: `${videoAspectRatio}` }}
+        >
           <video
             key={mediaKey}
             ref={videoRef}
@@ -516,8 +529,8 @@ function AdPlayer({
             playsInline
             preload="auto"
             controls={false}
-            onLoadedData={() => void handleLoaded()}
-            onCanPlay={() => void handleLoaded()}
+            onLoadedData={handleVideoLoaded}
+            onCanPlay={handleVideoLoaded}
             onError={() => {
               setAdLoaded(false);
               setLoadError("Ad failed to load");
@@ -529,22 +542,7 @@ function AdPlayer({
                 video.currentTime = videoLastTimeRef.current;
               }
             }}
-            className="block max-h-[65vh] max-w-full rounded-xl object-contain"
-            style={{ aspectRatio: videoRef.current?.videoWidth && videoRef.current?.videoHeight ? `${videoRef.current.videoWidth} / ${videoRef.current.videoHeight}` : "16 / 9" }}
-          />
-        </div>
-      );
-    }
-
-    if (type === "image") {
-      return (
-        <div className="flex min-h-[180px] w-full items-center justify-center">
-          <img
-            src={src}
-            alt={ad.title}
-            onLoad={() => void handleLoaded()}
-            onError={() => setLoadError("Ad failed to load")}
-            className="block max-h-[60vh] max-w-[520px] w-auto h-auto object-contain"
+            className={isVertical ? "task-video task-video-vertical" : "task-video"}
           />
         </div>
       );
@@ -583,13 +581,13 @@ function AdPlayer({
 </script>`;
 
       return (
-        <div className="min-h-[320px] w-full">
+        <div className="task-content-html">
           <iframe
             ref={htmlIframeRef}
             title={ad.title}
             srcDoc={srcdoc}
             onLoad={() => void handleLoaded()}
-            className="block w-full border-0"
+            className="task-html-frame"
             style={{ height: `${htmlHeight}px` }}
             sandbox="allow-scripts"
             scrolling="no"
@@ -598,109 +596,108 @@ function AdPlayer({
       );
     }
 
-    if (type === "iframe") {
+    if (type === "image") {
       return (
-        <div
-          className="mx-auto flex items-center justify-center"
-          style={{
-            width: iframeStage.width || Math.min(w ?? 300, 300),
-            height: iframeStage.height || Math.min(h ?? 250, 250),
-          }}
-        >
-          <div
-            style={{
-              width: `${w ?? iframeWidth}px`,
-              height: `${h ?? iframeHeight}px`,
-              transform: `scale(${iframeScale})`,
-              transformOrigin: "top center",
+        <div className="task-content-image">
+          <img
+            src={src}
+            alt={ad.title}
+            onLoad={() => void handleLoaded()}
+            onError={() => {
+              setAdLoaded(false);
+              setLoadError("Ad failed to load");
             }}
-          >
-            <iframe
-              title={ad.title}
-              srcDoc={src}
-              width={w ?? iframeWidth}
-              height={h ?? iframeHeight}
-              onLoad={() => void handleLoaded()}
-              className="block border-0"
-              scrolling="no"
-              sandbox="allow-scripts"
-            />
-          </div>
+            className="task-image"
+          />
         </div>
       );
     }
 
-    const actionMeta = {
-      whatsapp_join: {
-        icon: MessageCircle,
-        label: "Join WhatsApp",
-        text: "Join the required WhatsApp community to complete this task.",
-        button: "Open WhatsApp",
-      },
-      subscribe_youtube: {
-        icon: Youtube,
-        label: "Subscribe on YouTube",
-        text: "Subscribe to the required YouTube channel to complete this task.",
-        button: "Open YouTube",
-      },
-      visit_website: {
-        icon: Globe,
-        label: "Visit Website",
-        text: "Open the required website and complete the requested visit.",
-        button: "Open website",
-      },
-      custom: {
-        icon: ListChecks,
-        label: ad.title,
-        text: ad.description,
-        button: "Complete task",
-      },
-    } as const;
-    const meta = actionMeta[ad.taskType as keyof typeof actionMeta] ?? actionMeta.custom;
-    const Icon = meta.icon;
-    const destination = ad.destinationUrl ?? "";
     return (
-      <div className={ad.taskType === "custom" ? "max-h-[calc(90vh-220px)] overflow-y-auto" : ""}>
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary sm:size-16">
-            <Icon className="size-7 sm:size-8" />
-          </div>
-          <h3 className="text-base font-semibold">{meta.label}</h3>
-          <p className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
-            {meta.text}
-          </p>
-          {ad.taskType === "custom" && (
-            <ol className="mt-6 w-full space-y-3 text-left text-sm">
-              <li className="rounded-lg bg-muted/50 p-3">1. Review the task instructions above.</li>
-              <li className="rounded-lg bg-muted/50 p-3">2. Complete the requested action.</li>
-              <li className="rounded-lg bg-muted/50 p-3">3. Return here to claim when the task is complete.</li>
-            </ol>
-          )}
-          {destination && (
-            <Button asChild className="mt-6 min-h-12 w-full">
-              <a href={destination} target="_blank" rel="noreferrer">
-                {meta.button}
-              </a>
-            </Button>
-          )}
-          {!destination && (
-            <Button type="button" className="mt-6 min-h-12 w-full" onClick={() => void handleLoaded()}>
-              {meta.button}
-            </Button>
-          )}
+      <div className="task-content-adsterra" ref={adFrameRef}>
+        <div
+          className="task-adsterra-stage"
+          style={{
+            width: iframeStage.width || iframeWidth,
+            height: iframeStage.height || iframeHeight,
+          }}
+        >
+          <iframe
+            title={ad.title}
+            srcDoc={src}
+            width={iframeWidth}
+            height={iframeHeight}
+            onLoad={() => void handleLoaded()}
+            className="task-adsterra-frame"
+            scrolling="no"
+            sandbox="allow-scripts"
+          />
         </div>
       </div>
     );
   };
 
-  const adSrc =
-    format === "video"
-      ? ad.videoUrl ?? ""
-      : format === "html"
-        ? ad.htmlCode ?? ""
+  const actionSteps = (ad.description ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, "").trim())
+    .filter(Boolean);
+
+  const modalClass =
+    format === "html"
+      ? "task-modal task-modal-html"
+      : format === "video"
+        ? "task-modal task-modal-video"
         : format === "image"
-          ? ad.imageUrl ?? ""
-          : ad.adCode ?? "";
+          ? "task-modal task-modal-image"
+          : format === "adsterra"
+            ? "task-modal task-modal-adsterra"
+            : format === "join_whatsapp"
+              ? "task-modal task-modal-whatsapp"
+              : format === "subscribe_youtube"
+                ? "task-modal task-modal-youtube"
+                : format === "visit_website"
+                  ? "task-modal task-modal-website"
+                  : "task-modal task-modal-custom";
+
+  const modalWidth =
+    format === "video"
+      ? videoAspectRatio < 1
+        ? "360px"
+        : "640px"
+      : format === "image"
+        ? "520px"
+        : format === "adsterra"
+          ? `${Math.max(340, iframeWidth + 48)}px`
+          : format === "html"
+            ? "fit-content"
+            : format === "join_whatsapp"
+              ? "400px"
+              : format === "subscribe_youtube" || format === "visit_website"
+                ? "420px"
+                : "480px";
+
+  const actionIcon =
+    format === "join_whatsapp" ? <MessageCircle className="size-7" /> :
+    format === "subscribe_youtube" ? <Youtube className="size-7" /> :
+    format === "visit_website" ? <Globe2 className="size-7" /> :
+    <ListChecks className="size-7" />;
+
+  const actionTitle =
+    format === "join_whatsapp" ? "Join WhatsApp" :
+    format === "subscribe_youtube" ? "Subscribe on YouTube" :
+    format === "visit_website" ? "Visit Website" :
+    "Complete Task";
+
+  const actionLabel =
+    format === "join_whatsapp" ? "Open WhatsApp" :
+    format === "subscribe_youtube" ? "Open YouTube" :
+    format === "visit_website" ? "Open website" :
+    "";
+
+  const openAction = () => {
+    if (!ad.destinationUrl) return;
+    window.open(ad.destinationUrl, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <Dialog open onOpenChange={(open) => !open && void onClose()}>
@@ -708,63 +705,81 @@ function AdPlayer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ad-modal-title"
-        className="max-h-[90vh] gap-0 overflow-hidden p-0"
-        style={{ width: layout.width, minWidth: layout.minWidth, maxWidth: "calc(100vw - 32px)" }}
+        className={`${modalClass} max-w-[calc(100vw-32px)]`}
+        style={{ width: modalWidth }}
       >
-        <DialogHeader className="shrink-0 space-y-1 px-6 py-5 pr-12">
+        <DialogHeader className="task-modal-header">
           <DialogTitle id="ad-modal-title">{ad.title}</DialogTitle>
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
 
-        <div
-          ref={adFrameRef}
-          className="relative min-h-[180px] min-w-0 w-full flex-1 overflow-hidden"
-          style={{ padding: layout.padding, maxHeight: "calc(90vh - 220px)" }}
-        >
+        <div className="task-modal-content-wrap">
           <div
-            className={
-              modalType === "html" || modalType === "custom"
-                ? "h-full max-h-full w-full overflow-y-auto overflow-x-hidden overscroll-contain"
-                : "flex min-h-full w-full items-center justify-center overflow-hidden"
-            }
+            ref={adFrameRef}
+            className="task-modal-content"
           >
             {sessionId && (
-              <div className="w-full">
-                {mountAd({
-                  type:
-                    format === "video"
-                      ? "video"
-                      : format === "html"
-                        ? "html"
-                        : format === "image"
-                          ? "image"
-                          : format === "iframe"
-                            ? "iframe"
-                            : "action",
-                  src: adSrc,
-                  w: iframeWidth,
-                  h: iframeHeight,
-                })}
+              <div className="task-content-width">
+                {isActionTask || format === "custom" ? (
+                  <div className="task-content-action">
+                    <div className="task-action-icon" aria-hidden="true">{actionIcon}</div>
+                    <h3 className="task-action-title">{actionTitle}</h3>
+                    {format === "custom" ? (
+                      <>
+                        <p className="task-custom-description">
+                          {ad.description || "Complete the task using the steps below."}
+                        </p>
+                        <ol className="task-custom-steps">
+                          {(actionSteps.length ? actionSteps : ["Complete the required task."]).map((step, index) => (
+                            <li key={`${index}-${step}`}>
+                              <span>{index + 1}</span>
+                              <p>{step}</p>
+                            </li>
+                          ))}
+                        </ol>
+                      </>
+                    ) : (
+                      <>
+                        <p className="task-action-description">
+                          {format === "visit_website"
+                            ? ad.destinationUrl ? new URL(ad.destinationUrl, window.location.href).hostname : "Open the advertiser website"
+                            : ad.description || "Complete the required action to continue."}
+                        </p>
+                        <Button className="task-action-button" onClick={openAction} disabled={!ad.destinationUrl}>
+                          {actionLabel}
+                          <ExternalLink className="size-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  mountAd({
+                    type: format === "video" ? "video" : format === "html" ? "html" : format === "image" ? "image" : "adsterra",
+                    src: format === "video" ? ad.videoUrl ?? "" : format === "html" ? ad.htmlCode ?? "" : format === "image" ? ad.imageUrl ?? "" : ad.adCode ?? "",
+                    w: iframeWidth,
+                    h: iframeHeight,
+                  })
+                )}
               </div>
             )}
 
             {!sessionId ? (
-              <div className="ad-loader absolute inset-0 flex min-h-[180px] items-center justify-center text-sm text-muted-foreground" aria-live="polite">
+              <div className="ad-loader task-loader" aria-live="polite">
                 Starting secure ad session…
               </div>
             ) : (
               <div
-                className="ad-loader pointer-events-none absolute inset-0 flex min-h-[180px] items-center justify-center bg-background/60 text-sm text-muted-foreground backdrop-blur-[1px]"
+                className="ad-loader task-loader"
                 hidden={adLoaded || Boolean(loadError)}
                 aria-live="polite"
               >
-                Loading ad…
+                Loading task…
               </div>
             )}
 
             {loadError && (
-              <div className="absolute inset-0 flex min-h-[180px] flex-col items-center justify-center gap-3 bg-background/90 p-6 text-center">
-                <p className="text-sm font-medium text-destructive">{loadError}</p>
+              <div className="task-load-error" role="alert">
+                <p>{loadError}</p>
                 {format === "video" && (
                   <Button size="sm" onClick={retryVideo}>
                     Retry
@@ -775,20 +790,24 @@ function AdPlayer({
           </div>
         </div>
 
-        <div className="shrink-0 px-6 py-4">
-          <Progress value={adLoaded ? Math.min(100, (elapsed / videoDuration) * 100) : 0} className="h-1.5 w-full" />
-          <p className="mt-2 text-center text-xs leading-4 text-muted-foreground">
+        <div className="task-modal-footer">
+          <Progress value={adLoaded ? Math.min(100, (elapsed / videoDuration) * 100) : 0} className="task-progress" />
+          <p className="task-timer">
             {!sessionId
               ? "Opening secure session…"
               : loadError
-                ? "The ad could not be loaded."
+                ? "The task could not be loaded."
                 : !adLoaded
-                  ? "Loading ad… timer starts after the server records the visible ad."
+                  ? "Loading task… timer starts after the server records the visible task."
                   : remaining > 0
-                    ? `Keep the ad open — ${remaining}s remaining`
+                    ? `Keep the task open — ${remaining}s remaining`
                     : "Task complete, claim your reward"}
           </p>
-          <Button disabled={!adLoaded || remaining > 0 || completing} onClick={() => void onComplete()} className="mt-3 min-h-12 w-full">
+          <Button
+            disabled={!adLoaded || remaining > 0 || completing}
+            onClick={() => void onComplete()}
+            className="task-claim"
+          >
             {completing ? "Verifying…" : "Claim reward"}
           </Button>
         </div>
@@ -796,3 +815,4 @@ function AdPlayer({
     </Dialog>
   );
 }
+
