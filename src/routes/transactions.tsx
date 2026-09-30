@@ -66,7 +66,9 @@ function TransactionsPage() {
         if (profileError) throw new Error(profileError.message);
 
         const staff = ["admin", "super_admin", "moderator"].includes(String(profile?.role ?? ""));
-        if (requestVersion !== loadVersionRef.current) return;\n        setAccountUid(String(profile?.public_uid ?? "").trim() || null);\n        setIsStaff(staff);
+        if (requestVersion !== loadVersionRef.current) return;
+        setAccountUid(String(profile?.public_uid ?? "").trim() || null);
+        setIsStaff(staff);
 
         let query = db.from("transactions").select("*").order("created_at", { ascending: false });
         if (!staff) query = query.eq("user_id", uid);
