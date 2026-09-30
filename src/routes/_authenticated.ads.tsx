@@ -713,7 +713,7 @@ img, video, canvas, iframe { max-width: 100%; }
             onLoad={() => void handleLoaded()}
             className="task-adsterra-frame"
             scrolling="no"
-            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
             allow="autoplay; fullscreen; encrypted-media"
             referrerPolicy="no-referrer-when-downgrade"
           />
