@@ -1704,17 +1704,6 @@ function CreateRecordButton({
           if (adType === "image" && !form.imageUrl.trim()) {
             throw new Error("Image Ad requires an image.");
           }
-          if (
-            adType === "adsterra" &&
-            (!form.provider.trim() ||
-              !form.adCode.trim() ||
-              !Number.isInteger(adWidth) ||
-              !Number.isInteger(adHeight) ||
-              adWidth <= 0 ||
-              adHeight <= 0)
-          ) {
-            throw new Error("Adsterra requires a provider, ad code, and valid ad dimensions.");
-          }
         }
         if (["join_whatsapp", "subscribe_youtube", "visit_website"].includes(taskType) && !form.destinationUrl.trim()) {
           throw new Error("This task type requires a destination URL.");
@@ -1730,10 +1719,10 @@ function CreateRecordButton({
           status: "active",
           reward_enabled: true,
           task_type: taskType,
-          provider: taskType === "watch_ad" && form.adType === "adsterra" ? form.provider.trim() || null : null,
-          ad_code: taskType === "watch_ad" && form.adType === "adsterra" ? form.adCode.trim() || null : null,
-          ad_width: taskType === "watch_ad" && form.adType === "adsterra" && Number.isFinite(adWidth) ? adWidth : null,
-          ad_height: taskType === "watch_ad" && form.adType === "adsterra" && Number.isFinite(adHeight) ? adHeight : null,
+          provider: null,
+          ad_code: null,
+          ad_width: null,
+          ad_height: null,
           destination_url: form.destinationUrl.trim() || null,
           image_url: taskType === "watch_ad" && form.adType === "image" ? form.imageUrl.trim() || null : null,
           video_url: taskType === "watch_ad" && form.adType === "video" ? form.videoUrl.trim() || null : null,
@@ -1861,7 +1850,6 @@ function CreateRecordButton({
                         <option value="html">HTML Ad</option>
                         <option value="video">Video Ad</option>
                         <option value="image">Image Ad</option>
-                        <option value="adsterra">Adsterra</option>
                       </select>
                     </label>
                     {form.adType === "html" ? (
@@ -1878,27 +1866,6 @@ function CreateRecordButton({
                       <MediaUploadField label="Video ad" kind="video" value={form.videoUrl} onChange={(value) => setForm({ ...form, videoUrl: value })} />
                     ) : form.adType === "image" ? (
                       <MediaUploadField label="Image ad" kind="image" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
-                    ) : (
-                      <>
-                        <label className="grid gap-2 text-sm font-medium">
-                          Provider
-                          <Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" />
-                        </label>
-                        <label className="grid gap-2 text-sm font-medium">
-                          Ad code
-                          <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.adCode} onChange={(e) => setForm({ ...form, adCode: e.target.value })} placeholder="Paste Adsterra code here" />
-                        </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <label className="grid gap-2 text-sm font-medium">
-                            Width
-                            <Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} placeholder="300" />
-                          </label>
-                          <label className="grid gap-2 text-sm font-medium">
-                            Height
-                            <Input type="number" min="1" value={form.adHeight} onChange={(e) => setForm({ ...form, adHeight: e.target.value })} placeholder="250" />
-                          </label>
-                        </div>
-                      </>
                     )}
                   </div>
                 ) : form.taskType === "join_whatsapp" ? (
@@ -2112,15 +2079,13 @@ function ManagementEditDialog({
   const taskType = String(form.task_type ?? "watch_ad");
   const isWatchAd = taskType === "watch_ad";
   const adTemplate = isWatchAd
-    ? String(form.provider ?? "").toLowerCase() === "adsterra"
-      ? "adsterra"
-      : form.html_code
-        ? "html"
-        : form.video_url
-          ? "video"
-          : form.image_url
-            ? "image"
-            : "html"
+    ? form.html_code
+      ? "html"
+      : form.video_url
+        ? "video"
+        : form.image_url
+          ? "image"
+          : "html"
     : taskType;
 
   const setAdTemplate = (template: string) => {
@@ -2135,10 +2100,7 @@ function ManagementEditDialog({
       html_code: null,
       destination_url: null,
     };
-    if (template === "adsterra") {
-      next.task_type = "watch_ad";
-      next.provider = "adsterra";
-    } else if (["html", "video", "image"].includes(template)) {
+    if (["html", "video", "image"].includes(template)) {
       next.task_type = "watch_ad";
     } else {
       next.task_type = template;
@@ -2177,12 +2139,6 @@ function ManagementEditDialog({
       if (adTemplate === "html") changes.html_code = String(form.html_code ?? "").trim() || null;
       if (adTemplate === "video") changes.video_url = String(form.video_url ?? "").trim() || null;
       if (adTemplate === "image") changes.image_url = String(form.image_url ?? "").trim() || null;
-      if (adTemplate === "adsterra") {
-        changes.provider = "adsterra";
-        changes.ad_code = String(form.ad_code ?? "").trim() || null;
-        changes.ad_width = Number(form.ad_width ?? 0) || null;
-        changes.ad_height = Number(form.ad_height ?? 0) || null;
-      }
     } else if (["join_whatsapp", "subscribe_youtube", "visit_website"].includes(taskType)) {
       changes.destination_url = String(form.destination_url ?? "").trim() || null;
       changes.image_url = null;
@@ -2275,29 +2231,10 @@ function ManagementEditDialog({
                     <option value="html">HTML Ad</option>
                     <option value="video">Video Ad</option>
                     <option value="image">Image Ad</option>
-                    <option value="adsterra">Adsterra</option>
                   </select>
                 </label>
 
-                {adTemplate === "adsterra" ? (
-                  <div className="grid gap-3 rounded-xl border bg-muted/20 p-3">
-                    <p className="text-xs text-muted-foreground">
-                      Adsterra configuration — paste the provider code and set the exact creative dimensions.
-                    </p>
-                    <label className="grid gap-1 text-sm font-medium">
-                      Provider
-                      <Input value={String(form.provider ?? "adsterra")} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" />
-                    </label>
-                    <label className="grid gap-1 text-sm font-medium">
-                      Ad code
-                      <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={String(form.ad_code ?? "")} onChange={(e) => setForm({ ...form, ad_code: e.target.value })} placeholder="Paste Adsterra code here" />
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {renderField("ad_width")}
-                      {renderField("ad_height")}
-                    </div>
-                  </div>
-                ) : adTemplate === "html" ? (
+                {adTemplate === "html" ? (
                   <label className="grid gap-1 text-sm font-medium">
                     HTML code
                     <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={String(form.html_code ?? "")} onChange={(e) => setForm({ ...form, html_code: e.target.value })} placeholder="Paste HTML ad code here" />
