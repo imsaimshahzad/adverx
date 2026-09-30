@@ -1712,6 +1712,12 @@ function CreateRecordButton({
         if (taskType === "watch_ad" && (!form.provider.trim() || !form.adCode.trim() || !Number.isInteger(adWidth) || !Number.isInteger(adHeight) || adWidth <= 0 || adHeight <= 0)) {
           throw new Error("Watch Ad tasks require a provider, ad code, and valid ad dimensions.");
         }
+        if (["join_whatsapp", "subscribe_youtube", "visit_website"].includes(taskType) && !form.destinationUrl.trim()) {
+          throw new Error("This task type requires a destination URL.");
+        }
+        if (taskType === "custom" && !form.body.trim() && !form.destinationUrl.trim()) {
+          throw new Error("Custom tasks require instructions or a destination URL.");
+        }
         await insertRow(table!, {
           title: name,
           advertiser: form.advertiser.trim(),
@@ -1839,21 +1845,64 @@ function CreateRecordButton({
                     <option value="custom">Custom Task</option>
                   </select>
                 </label>
-                <label className="grid gap-2 text-sm font-medium">
-                  Destination URL
-                  <Input value={form.destinationUrl} onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })} placeholder="https://..." />
-                </label>
-                {form.taskType === "watch_ad" && <>
-                  <MediaUploadField label="Image" kind="image" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
-                  <MediaUploadField label="Video" kind="video" value={form.videoUrl} onChange={(value) => setForm({ ...form, videoUrl: value })} />
-                  <label className="grid gap-2 text-sm font-medium">HTML code<textarea className="min-h-28 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Paste custom HTML here" /></label>
-                  <label className="grid gap-2 text-sm font-medium">Provider<Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" /></label>
-                  <label className="grid gap-2 text-sm font-medium">Ad code<textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.adCode} onChange={(e) => setForm({ ...form, adCode: e.target.value })} placeholder="Paste provider code here" /></label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="grid gap-2 text-sm font-medium">Width<Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} /></label>
-                    <label className="grid gap-2 text-sm font-medium">Height<Input type="number" min="1" value={form.adHeight} onChange={(e) => setForm({ ...form, adHeight: e.target.value })} /></label>
+                {form.taskType === "watch_ad" ? (
+                  <div className="grid gap-3 rounded-xl border bg-muted/20 p-3">
+                    <div>
+                      <p className="text-sm font-semibold">Watch Ad settings</p>
+                      <p className="text-xs font-normal text-muted-foreground">Provider ads need the provider code and exact creative dimensions.</p>
+                    </div>
+                    <label className="grid gap-2 text-sm font-medium">
+                      Provider
+                      <Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="e.g. adsterra" />
+                    </label>
+                    <label className="grid gap-2 text-sm font-medium">
+                      Ad code
+                      <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.adCode} onChange={(e) => setForm({ ...form, adCode: e.target.value })} placeholder="Paste provider ad code here" />
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="grid gap-2 text-sm font-medium">
+                        Width
+                        <Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} placeholder="300" />
+                      </label>
+                      <label className="grid gap-2 text-sm font-medium">
+                        Height
+                        <Input type="number" min="1" value={form.adHeight} onChange={(e) => setForm({ ...form, adHeight: e.target.value })} placeholder="250" />
+                      </label>
+                    </div>
+                    <MediaUploadField label="Fallback Image (optional)" kind="image" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
+                    <MediaUploadField label="Fallback Video (optional)" kind="video" value={form.videoUrl} onChange={(value) => setForm({ ...form, videoUrl: value })} />
+                    <label className="grid gap-2 text-sm font-medium">
+                      Custom HTML (optional)
+                      <textarea className="min-h-24 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Optional custom HTML fallback" />
+                    </label>
                   </div>
-                </>}
+                ) : form.taskType === "join_whatsapp" ? (
+                  <label className="grid gap-2 text-sm font-medium">
+                    WhatsApp Group / Channel URL
+                    <Input value={form.destinationUrl} onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })} placeholder="https://chat.whatsapp.com/..." />
+                  </label>
+                ) : form.taskType === "subscribe_youtube" ? (
+                  <label className="grid gap-2 text-sm font-medium">
+                    YouTube Channel URL
+                    <Input value={form.destinationUrl} onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })} placeholder="https://youtube.com/@..." />
+                  </label>
+                ) : form.taskType === "visit_website" ? (
+                  <label className="grid gap-2 text-sm font-medium">
+                    Website URL
+                    <Input value={form.destinationUrl} onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })} placeholder="https://example.com" />
+                  </label>
+                ) : (
+                  <div className="grid gap-3 rounded-xl border bg-muted/20 p-3">
+                    <label className="grid gap-2 text-sm font-medium">
+                      Task instructions
+                      <textarea className="min-h-24 rounded-md border bg-background px-3 py-2 text-sm" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Tell users exactly what to do..." />
+                    </label>
+                    <label className="grid gap-2 text-sm font-medium">
+                      Destination URL (optional)
+                      <Input value={form.destinationUrl} onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })} placeholder="https://..." />
+                    </label>
+                  </div>
+                )}
                 <label className="grid gap-2 text-sm font-medium">
                   Duration seconds
                   <Input
