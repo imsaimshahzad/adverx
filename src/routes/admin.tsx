@@ -1559,6 +1559,38 @@ function Overview({
     </>
   );
 }
+function MediaUploadField({ label, kind, value, onChange }: { label: string; kind: "image" | "video"; value: string; onChange: (value: string) => void; }) {
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  async function upload(file: File) {
+    const max = kind === "image" ? 10 * 1024 * 1024 : 50 * 1024 * 1024;
+    const allowed = kind === "image" ? ["image/png", "image/jpeg", "image/webp", "image/gif"] : ["video/mp4", "video/webm", "video/quicktime"];
+    if (!allowed.includes(file.type)) { toast.error(kind === "image" ? "Use PNG, JPG, WEBP or GIF." : "Use MP4, WEBM or MOV."); return; }
+    if (file.size > max) { toast.error(kind === "image" ? "Image must be 10 MB or smaller." : "Video must be 50 MB or smaller."); return; }
+    setBusy(true);
+    try {
+      const ext = (file.name.split(".").pop() || (kind === "image" ? "png" : "mp4")).toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `ads/${crypto.randomUUID()}.${ext}`;
+      const { data, error } = await db.storage.from("ad-media").upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+      if (error) throw error;
+      const { data: urlData } = db.storage.from("ad-media").getPublicUrl(data.path);
+      if (!urlData?.publicUrl) throw new Error("Upload succeeded but the public URL could not be created.");
+      onChange(urlData.publicUrl);
+      toast.success(`${label} uploaded.`);
+    } catch (cause) { toast.error(cause instanceof Error ? cause.message : `${label} upload failed`); }
+    finally { setBusy(false); }
+  }
+  return <div className="grid gap-2 text-sm font-medium">
+    <span>{label}</span>
+    <div className="flex flex-wrap items-center gap-2">
+      <input ref={inputRef} type="file" accept={kind === "image" ? "image/png,image/jpeg,image/webp,image/gif" : "video/mp4,video/webm,video/quicktime"} className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); e.currentTarget.value=""; }} />
+      <Button type="button" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? "Uploading…" : `Choose ${kind === "image" ? "Image" : "Video"}`}</Button>
+      {value ? <Button type="button" variant="ghost" className="text-rose-600" onClick={() => onChange("")}>Remove</Button> : null}
+    </div>
+    <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Or paste a public URL" />
+    {value ? <div className="rounded-lg border bg-muted/20 p-2">{kind === "image" ? <img src={value} alt="Preview" className="max-h-40 w-full rounded object-contain" /> : <video src={value} controls className="max-h-48 w-full rounded" />}</div> : null}
+  </div>;
+}
 function CreateRecordButton({
   active,
   open,
@@ -1590,8 +1622,8 @@ function CreateRecordButton({
     taskType: "watch_ad",
     provider: "",
     adCode: "",
-    adWidth: "300",
-    adHeight: "250",
+    adWidth: "",
+    adHeight: "",
     destinationUrl: "",
     imageUrl: "",
     videoUrl: "",
@@ -1631,8 +1663,8 @@ function CreateRecordButton({
       taskType: "watch_ad",
       provider: "",
       adCode: "",
-      adWidth: "300",
-      adHeight: "250",
+      adWidth: "",
+      adHeight: "",
       destinationUrl: "",
       imageUrl: "",
       videoUrl: "",
@@ -1671,8 +1703,8 @@ function CreateRecordButton({
       } else if (active === "tasks") {
         const reward = Number(form.reward || 0);
         const duration = Number(form.duration);
-        const adWidth = Number(form.adWidth || 300);
-        const adHeight = Number(form.adHeight || 250);
+        const adWidth = Number(form.adWidth);
+        const adHeight = Number(form.adHeight);
         const taskType = form.taskType || "watch_ad";
         if (!name || !form.advertiser.trim() || !Number.isFinite(reward) || reward < 0 || !Number.isInteger(duration) || duration <= 0) {
           throw new Error("Enter a valid title, advertiser, reward, and duration.");
@@ -2013,7 +2045,7 @@ function ManagementEditDialog({
         <DialogHeader><DialogTitle>Edit {table.replaceAll("_", " ")}</DialogTitle><DialogDescription>Changes are saved to Supabase and audit logged.</DialogDescription></DialogHeader>
         <div className="grid gap-3">
           {fields.map((field) => {
-            const value = form[field];
+            const value = form[field];\n            if (table === "ads" && field === "task_type") return <label key={field} className="grid gap-1 text-sm font-medium">Task type<select className="h-9 rounded-md border bg-background px-2" value={String(value ?? "watch_ad")} onChange={(e) => setForm({ ...form, [field]: e.target.value })}><option value="watch_ad">Watch Ad</option><option value="join_whatsapp">Join WhatsApp</option><option value="subscribe_youtube">Subscribe YouTube</option><option value="visit_website">Visit Website</option><option value="custom">Custom Task</option></select></label>;\n            if (table === "ads" && field === "image_url") return <MediaUploadField key={field} label="Image" kind="image" value={String(value ?? "")} onChange={(next) => setForm({ ...form, image_url: next })} />;\n            if (table === "ads" && field === "video_url") return <MediaUploadField key={field} label="Video" kind="video" value={String(value ?? "")} onChange={(next) => setForm({ ...form, video_url: next })} />;\n            if (table === "ads" && field === "html_code") return <label key={field} className="grid gap-1 text-sm font-medium">HTML code<textarea className="min-h-28 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={String(value ?? "")} onChange={(e) => setForm({ ...form, html_code: e.target.value })} /></label>;
             const booleanField = typeof value === "boolean" || ["active", "is_active", "reward_enabled", "referral_enabled"].includes(field);
             return <label key={field} className="grid gap-1 text-sm font-medium">{table === "plans" && field === "ads_per_day" ? "Daily Ads Limit" : field.replaceAll("_", " ")}{booleanField ? <select className="h-9 rounded-md border bg-background px-2" value={String(Boolean(value))} onChange={(e) => setForm({ ...form, [field]: e.target.value === "true" })}><option value="true">Active / enabled</option><option value="false">Inactive / disabled</option></select> : <Input type={["price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "base_ad_reward_pkr", "max_ad_reward_pkr", "daily_reward_limit_pkr", "ads_per_day", "duration_seconds", "reward", "display_order", "sort_order", "min_deposit_pkr", "max_deposit_pkr", "min_withdrawal_pkr", "max_withdrawal_pkr", "ad_width", "ad_height"].includes(field) ? "number" : "text"} value={String(value ?? "")} onChange={(e) => setForm({ ...form, [field]: e.target.type === "number" ? Number(e.target.value) : e.target.value })} />}</label>;
           })}
