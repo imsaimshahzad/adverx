@@ -1849,32 +1849,48 @@ function CreateRecordButton({
                   <div className="grid gap-3 rounded-xl border bg-muted/20 p-3">
                     <div>
                       <p className="text-sm font-semibold">Watch Ad settings</p>
-                      <p className="text-xs font-normal text-muted-foreground">Provider ads need the provider code and exact creative dimensions.</p>
+                      <p className="text-xs font-normal text-muted-foreground">Choose one ad format. Only its fields will appear.</p>
                     </div>
                     <label className="grid gap-2 text-sm font-medium">
-                      Provider
-                      <Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="e.g. adsterra" />
+                      Ad type
+                      <select className="h-9 rounded-md border bg-background px-2" value={form.adType || "html"} onChange={(e) => setForm({ ...form, adType: e.target.value })}>
+                        <option value="html">HTML Ad</option>
+                        <option value="video">Video Ad</option>
+                        <option value="image">Image Ad</option>
+                        <option value="adsterra">Adsterra</option>
+                      </select>
                     </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Ad code
-                      <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.adCode} onChange={(e) => setForm({ ...form, adCode: e.target.value })} placeholder="Paste provider ad code here" />
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
+                    {form.adType === "html" ? (
                       <label className="grid gap-2 text-sm font-medium">
-                        Width
-                        <Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} placeholder="300" />
+                        HTML ad code
+                        <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Paste HTML ad code here" />
                       </label>
-                      <label className="grid gap-2 text-sm font-medium">
-                        Height
-                        <Input type="number" min="1" value={form.adHeight} onChange={(e) => setForm({ ...form, adHeight: e.target.value })} placeholder="250" />
-                      </label>
-                    </div>
-                    <MediaUploadField label="Fallback Image (optional)" kind="image" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
-                    <MediaUploadField label="Fallback Video (optional)" kind="video" value={form.videoUrl} onChange={(value) => setForm({ ...form, videoUrl: value })} />
-                    <label className="grid gap-2 text-sm font-medium">
-                      Custom HTML (optional)
-                      <textarea className="min-h-24 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Optional custom HTML fallback" />
-                    </label>
+                    ) : form.adType === "video" ? (
+                      <MediaUploadField label="Video ad" kind="video" value={form.videoUrl} onChange={(value) => setForm({ ...form, videoUrl: value })} />
+                    ) : form.adType === "image" ? (
+                      <MediaUploadField label="Image ad" kind="image" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
+                    ) : (
+                      <>
+                        <label className="grid gap-2 text-sm font-medium">
+                          Provider
+                          <Input value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" />
+                        </label>
+                        <label className="grid gap-2 text-sm font-medium">
+                          Ad code
+                          <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.adCode} onChange={(e) => setForm({ ...form, adCode: e.target.value })} placeholder="Paste Adsterra code here" />
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <label className="grid gap-2 text-sm font-medium">
+                            Width
+                            <Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} placeholder="300" />
+                          </label>
+                          <label className="grid gap-2 text-sm font-medium">
+                            Height
+                            <Input type="number" min="1" value={form.adHeight} onChange={(e) => setForm({ ...form, adHeight: e.target.value })} placeholder="250" />
+                          </label>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : form.taskType === "join_whatsapp" ? (
                   <label className="grid gap-2 text-sm font-medium">
