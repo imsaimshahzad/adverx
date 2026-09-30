@@ -260,6 +260,8 @@ function AdPlayer({
   onComplete: () => void | Promise<void>;
 }) {
   const [elapsed, setElapsed] = useState(0);
+  const [adScale, setAdScale] = useState(1);
+  const adFrameRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!ad) return;
@@ -268,8 +270,23 @@ function AdPlayer({
     return () => clearInterval(t);
   }, [ad]);
 
+  useEffect(() => {
+    if (!ad || !ad.adWidth || !ad.adHeight || !adFrameRef.current) {
+      setAdScale(1);
+      return;
+    }
+    const element = adFrameRef.current;
+    const updateScale = () => setAdScale(Math.min(1, element.clientWidth / ad.adWidth!));
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ad]);
+
   if (!ad) return null;
   const remaining = Math.max(0, ad.watchSeconds - elapsed);
+  const frameWidth = ad.adWidth;
+  const frameHeight = ad.adHeight;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -278,36 +295,32 @@ function AdPlayer({
           <DialogTitle>{ad.title}</DialogTitle>
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
-        {ad.taskType === "watch_ad" && ad.adCode ? (
-          <div className="w-full overflow-hidden rounded-xl bg-muted/20">
-            <div className="flex w-full justify-center overflow-hidden">
+        {ad.taskType === "watch_ad" && ad.adCode && frameWidth && frameHeight ? (
+          <div
+            ref={adFrameRef}
+            className="w-full overflow-hidden rounded-xl bg-muted/20"
+            style={{ height: `${frameHeight}px` }}
+          >
+            <div
+              className="mx-auto origin-top"
+              style={{
+                width: `${frameWidth}px`,
+                height: `${frameHeight}px`,
+                transform: `scale(${adScale} )`,
+                transformOrigin: "top center",
+              }}
+            >
               <iframe
                 title={ad.title}
                 srcDoc={ad.adCode}
-                className="block w-full max-w-full border-0"
-                style={{
-                  height: "auto",
-                  minHeight: "0",
-                  overflow: "hidden",
-                  scrollbarWidth: "none",
-                }}
+                width={frameWidth}
+                height={frameHeight}
+                className="block border-0"
                 scrolling="no"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
               />
             </div>
-          </div>
-        ) : ad.videoUrl ? (
-          <video src={ad.videoUrl} controls playsInline className="mx-auto max-h-72 max-w-full rounded-lg" />
-        ) : ad.imageUrl ? (
-          <img src={ad.imageUrl} alt={ad.title} className="mx-auto max-h-72 max-w-full rounded-lg object-contain" />
-        ) : ad.htmlCode ? (
-          <iframe
-            title={ad.title}
-            srcDoc={ad.htmlCode}
-            className="min-h-60 w-full rounded-lg border-0"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
-          />
-        ) : (
+          </div>        ) : (
           <div className="brand-panel flex min-h-40 items-center justify-center p-4 text-center text-sm">
             <div>
               <p>{ad.description}</p>
