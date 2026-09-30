@@ -273,31 +273,17 @@ function AdPlayer({
         </DialogHeader>
 {ad.taskType === "watch_ad" && ad.adCode ? (
           <div className="flex min-h-[270px] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
-            <iframe
-              title={ad.title}
-              srcDoc={ad.adCode}
-              width={ad.adWidth ?? 300}
-              height={ad.adHeight ?? 250}
-              className="max-w-full border-0"
-              sandbox="allow-scripts allow-popups allow-forms"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+            <iframe title={ad.title} srcDoc={ad.adCode} width={ad.adWidth ?? 300} height={ad.adHeight ?? 250} className="max-w-full border-0" sandbox="allow-scripts allow-popups allow-forms" />
           </div>
+        ) : ad.videoUrl ? (
+          <video src={ad.videoUrl} controls playsInline className="mx-auto max-h-72 max-w-full rounded-lg" />
+        ) : ad.imageUrl ? (
+          <img src={ad.imageUrl} alt={ad.title} className="mx-auto max-h-72 max-w-full rounded-lg object-contain" />
+        ) : ad.htmlCode ? (
+          <iframe title={ad.title} srcDoc={ad.htmlCode} className="min-h-60 w-full rounded-lg border-0" sandbox="allow-scripts allow-popups allow-forms" />
         ) : (
           <div className="brand-panel flex min-h-40 items-center justify-center p-4 text-center text-sm">
-            <div>
-              <p>{ad.description}</p>
-              {ad.destinationUrl ? (
-                <a
-                  href={ad.destinationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4"
-                >
-                  Open task
-                </a>
-              ) : null}
-            </div>
+            <div><p>{ad.description}</p>{ad.destinationUrl ? <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4">Open task</a> : null}</div>
           </div>
         )}
         <Progress value={(elapsed / ad.watchSeconds) * 100} />
