@@ -211,19 +211,21 @@ function AdsPage() {
               return (
                 <div
                   key={ad.id}
-                  className={`surface p-4 transition-transform duration-200 sm:p-5 ${disabled ? "opacity-60" : "hover:-translate-y-0.5"}`}
+                  className={`surface p-3 transition-transform duration-200 ${disabled ? "opacity-60" : "hover:-translate-y-0.5"}`}
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{ad.title}</p>
-                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                      {ad.description || "Complete this task to earn your reward."}
-                    </p>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{ad.title}</p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {ad.description || "Complete this task to earn your reward."}
+                      </p>
+                    </div>
+                    <span className="shrink-0 pt-0.5 text-xs font-medium text-muted-foreground">
                       {ad.watchSeconds}s
                     </span>
-                    <div className="flex items-center gap-3">
+                  </div>
+                  <div className="mt-2 flex items-center justify-end">
+                    <div className="flex items-center gap-2">
                       {disabledReason && (
                         <span className="text-right text-xs text-muted-foreground">
                           {disabledReason}
