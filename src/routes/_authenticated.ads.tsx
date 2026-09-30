@@ -70,8 +70,8 @@ function AdsPage() {
   }, [state.user?.id, state.adViews.length]);
 
   useEffect(() => {
-    // Warm the ad provider's network connection and invoke script before a user opens the task.
-    // Do not render a hidden ad iframe: hidden/moved third-party ad frames previously broke playback.
+    // Warm the provider connection only; request/render the ad when the user opens the visible task.
+    // Do not preload or render hidden ad creatives, which may create invalid impressions.
     const scriptUrls = new Set<string>();
     for (const item of ADS) {
       if (item.taskType !== "watch_ad" || !item.adCode) continue;
@@ -102,12 +102,6 @@ function AdsPage() {
           document.head.appendChild(dnsPrefetch);
         }
 
-        // Fetch the provider's script early; it will still execute only inside the visible ad frame.
-        const preload = document.createElement("link");
-        preload.rel = "preload";
-        preload.as = "script";
-        preload.href = scriptUrl;
-        document.head.appendChild(preload);
       } catch {
         // Keep ad tasks usable if a browser rejects a preload hint.
       }
