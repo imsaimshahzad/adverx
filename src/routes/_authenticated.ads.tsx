@@ -302,89 +302,61 @@ function AdPlayer({
   const [adLoaded, setAdLoaded] = useState(false);
   const [adScale, setAdScale] = useState(1);
   const adFrameRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     if (!ad) return;
     setElapsed(0);
     setAdLoaded(false);
   }, [ad]);
-
   useEffect(() => {
     if (!ad || !adLoaded) return;
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(t);
   }, [ad, adLoaded]);
-
   useEffect(() => {
-    if (!ad || !ad.adWidth || !ad.adHeight || !adFrameRef.current) {
-      setAdScale(1);
-      return;
-    }
+    if (!ad || !adFrameRef.current) { setAdScale(1); return; }
     const element = adFrameRef.current;
-    const updateScale = () => setAdScale(Math.min(1, element.clientWidth / ad.adWidth!));
+    const width = ad.adWidth || 300;
+    const updateScale = () => setAdScale(Math.min(1, element.clientWidth / width));
     updateScale();
     const observer = new ResizeObserver(updateScale);
     observer.observe(element);
     return () => observer.disconnect();
   }, [ad]);
-
   if (!ad) return null;
+  const format = ad.htmlCode ? "html" : ad.videoUrl ? "video" : ad.imageUrl ? "image" : ad.adCode ? "adsterra" : "none";
   const remaining = Math.max(0, ad.watchSeconds - elapsed);
-  const frameWidth = ad.adWidth;
-  const frameHeight = ad.adHeight;
-
+  const frameWidth = ad.adWidth || 300;
+  const frameHeight = ad.adHeight || 250;
+  const markLoaded = () => setAdLoaded(true);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-[360px] gap-3 p-3 sm:p-4">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-[420px] gap-3 p-3 sm:p-4">
         <DialogHeader className="space-y-1">
           <DialogTitle>{ad.title}</DialogTitle>
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
-        {ad.taskType === "watch_ad" && ad.adCode && frameWidth && frameHeight ? (
-          <div
-            ref={adFrameRef}
-            className="mx-auto w-full overflow-hidden rounded-lg bg-muted/20"
-            style={{ height: `${frameHeight}px` }}
-          >
-            <div
-              className="mx-auto origin-top"
-              style={{
-                width: `${frameWidth}px`,
-                height: `${frameHeight}px`,
-                transform: `scale(${adScale} )`,
-                transformOrigin: "top center",
-              }}
-            >
-              <iframe
-                title={ad.title}
-                onLoad={() => setAdLoaded(true)}
-                srcDoc={ad.adCode}
-                width={frameWidth}
-                height={frameHeight}
-                className="block border-0"
-                scrolling="no"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
-              />
-            </div>
-          </div>        ) : (
-          <div className="brand-panel flex min-h-40 items-center justify-center p-4 text-center text-sm">
-            <div>
-              <p>{ad.description}</p>
-              {ad.destinationUrl ? <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4">Open task</a> : null}
-            </div>
+        {ad.taskType === "watch_ad" && format !== "none" ? (
+          <div ref={adFrameRef} className="mx-auto w-full overflow-hidden rounded-lg bg-muted/20">
+            {format === "html" ? (
+              <div className="mx-auto origin-top" style={{ width: `${frameWidth}px`, height: `${frameHeight}px`, transform: `scale(${adScale})`, transformOrigin: "top center" }}>
+                <iframe title={ad.title} onLoad={markLoaded} srcDoc={ad.htmlCode} width={frameWidth} height={frameHeight} className="block border-0" scrolling="no" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms" />
+              </div>
+            ) : format === "adsterra" ? (
+              <div className="mx-auto origin-top" style={{ width: `${frameWidth}px`, height: `${frameHeight}px`, transform: `scale(${adScale})`, transformOrigin: "top center" }}>
+                <iframe title={ad.title} onLoad={markLoaded} srcDoc={ad.adCode} width={frameWidth} height={frameHeight} className="block border-0" scrolling="no" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms" />
+              </div>
+            ) : format === "video" ? (
+              <video src={ad.videoUrl} controls playsInline preload="metadata" onLoadedData={markLoaded} onCanPlay={markLoaded} className="mx-auto block max-h-[55vh] w-full rounded-lg object-contain" />
+            ) : (
+              <img src={ad.imageUrl} alt={ad.title} onLoad={markLoaded} className="mx-auto block max-h-[55vh] w-full rounded-lg object-contain" />
+            )}
           </div>
+        ) : (
+          <div className="brand-panel flex min-h-40 items-center justify-center p-4 text-center text-sm"><div><p>{ad.description}</p>{ad.destinationUrl ? <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4">Open task</a> : null}</div></div>
         )}
-        <Progress value={(elapsed / ad.watchSeconds) * 100} className="h-1.5" />
-        <p className="text-center text-xs leading-4 text-muted-foreground">
-          {!adLoaded
-            ? "Loading ad… timer starts when the ad frame loads"
-            : remaining > 0
-              ? `Keep the task open — ${remaining}s remaining`
-              : "Task complete, claim your reward"}
-        </p>
-        <Button disabled={!adLoaded || remaining > 0 || completing} onClick={() => void onComplete()}>
-          {completing ? "Verifying…" : "Claim reward"}
-        </Button>
+        <Progress value={adLoaded ? (elapsed / Math.max(1, ad.watchSeconds)) * 100 : 0} className="h-1.5" />
+        <p className="text-center text-xs leading-4 text-muted-foreground">{!adLoaded ? "Loading ad… timer starts when the ad loads" : remaining > 0 ? `Keep the task open — ${remaining}s remaining` : "Task complete, claim your reward"}</p>
+        <Button disabled={!adLoaded || remaining > 0 || completing} onClick={() => void onComplete()}>{completing ? "Verifying…" : "Claim reward"}</Button>
       </DialogContent>
     </Dialog>
   );
