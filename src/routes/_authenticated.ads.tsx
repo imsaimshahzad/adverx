@@ -335,15 +335,15 @@ function AdPlayer({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-[360px] gap-3 p-3 sm:p-4">
+        <DialogHeader className="space-y-1">
           <DialogTitle>{ad.title}</DialogTitle>
           <DialogDescription>{ad.advertiser}</DialogDescription>
         </DialogHeader>
         {ad.taskType === "watch_ad" && ad.adCode && frameWidth && frameHeight ? (
           <div
             ref={adFrameRef}
-            className="w-full overflow-hidden rounded-xl bg-muted/20"
+            className="mx-auto w-full overflow-hidden rounded-lg bg-muted/20"
             style={{ height: `${frameHeight}px` }}
           >
             <div
@@ -374,8 +374,8 @@ function AdPlayer({
             </div>
           </div>
         )}
-        <Progress value={(elapsed / ad.watchSeconds) * 100} />
-        <p className="text-center text-xs text-muted-foreground">
+        <Progress value={(elapsed / ad.watchSeconds) * 100} className="h-1.5" />
+        <p className="text-center text-xs leading-4 text-muted-foreground">
           {!adLoaded
             ? "Loading ad… timer starts when the ad frame loads"
             : remaining > 0
