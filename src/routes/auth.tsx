@@ -87,20 +87,6 @@ export function AuthPage() {
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-5 py-10 sm:px-6">
       {!ready ? <p className="mb-3 text-center text-sm text-muted-foreground">Checking your session…</p> : null}
       {ready && dataError && !state.user ? <p role="alert" className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">Authentication succeeded, but your profile could not be loaded: {dataError}</p> : null}
-      <div className="glass-panel mb-6 overflow-hidden bg-primary p-6 text-primary-foreground shadow-brand">
-        <BrandLogo className="mb-5 max-w-[11.5rem] rounded bg-white/95 p-2 sm:max-w-[15.75rem]" />
-        <p className="text-xs uppercase tracking-widest opacity-80">
-          AdverX
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold leading-snug">
-          Complete daily ad tasks. Grow your network. Withdraw your earnings.
-        </h1>
-        <p className="mt-2 text-sm opacity-85">
-          Activate a plan, complete verified tasks and request payouts once you
-          reach the minimum threshold.
-        </p>
-      </div>
-
       <Tabs defaultValue={pathMode} className="glass-panel min-w-0 p-4 sm:p-6">
         <TabsList className="grid h-10 w-full min-w-0 grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1">
           <TabsTrigger value="register" className="min-w-0 truncate px-2 text-xs sm:text-sm">Create account</TabsTrigger>
