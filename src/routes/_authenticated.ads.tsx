@@ -136,45 +136,6 @@ function AdsPage() {
     previousCardRectsRef.current = nextRects;
   }, [displayAdIds]);
 
-  useEffect(() => {
-    // Warm the provider connection only; request/render the ad when the user opens the visible task.
-    // Do not preload or render hidden ad creatives, which may create invalid impressions.
-    const scriptUrls = new Set<string>();
-    for (const item of ADS) {
-      if (item.taskType !== "watch_ad" || !item.adCode) continue;
-      const matches = item.adCode.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi);
-      for (const match of matches) {
-        try {
-          scriptUrls.add(new URL(match[1], window.location.href).href);
-        } catch {
-          // Ignore invalid URLs in an admin-configured ad code.
-        }
-      }
-    }
-
-    const connectedOrigins = new Set<string>();
-    for (const scriptUrl of scriptUrls) {
-      try {
-        const url = new URL(scriptUrl);
-        if (!connectedOrigins.has(url.origin)) {
-          connectedOrigins.add(url.origin);
-          const preconnect = document.createElement("link");
-          preconnect.rel = "preconnect";
-          preconnect.href = url.origin;
-          document.head.appendChild(preconnect);
-
-          const dnsPrefetch = document.createElement("link");
-          dnsPrefetch.rel = "dns-prefetch";
-          dnsPrefetch.href = url.origin;
-          document.head.appendChild(dnsPrefetch);
-        }
-
-      } catch {
-        // Keep ad tasks usable if a browser rejects a preload hint.
-      }
-    }
-  }, [catalogReady]);
-
   const isPrivilegedAccount = ["admin", "super_admin", "moderator"].includes(
     String(state.user?.role ?? "").toLowerCase(),
   );
@@ -398,8 +359,6 @@ function AdPlayer({
   const [mediaKey, setMediaKey] = useState(0);
   const [htmlHeight, setHtmlHeight] = useState<number | null>(null);
   const [htmlRenderKey, setHtmlRenderKey] = useState(0);
-  const [iframeScale, setIframeScale] = useState(1);
-  const [iframeStage, setIframeStage] = useState({ width: 0, height: 0 });
   const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
   const [imageWidth, setImageWidth] = useState(520);
   const adFrameRef = useRef<HTMLDivElement | null>(null);
@@ -412,23 +371,17 @@ function AdPlayer({
   const isActionTask = taskType === "join_whatsapp" || taskType === "subscribe_youtube" || taskType === "visit_website";
   const format =
     taskType === "watch_ad"
-      ? String(ad?.provider ?? "").toLowerCase() === "adsterra" && ad?.adCode
-        ? "adsterra"
-        : ad?.htmlCode
-          ? "html"
-          : ad?.videoUrl
-            ? "video"
-            : ad?.imageUrl
-              ? "image"
-              : ad?.adCode
-                ? "adsterra"
-                : "none"
+      ? ad?.htmlCode
+        ? "html"
+        : ad?.videoUrl
+          ? "video"
+          : ad?.imageUrl
+            ? "image"
+            : "none"
       : taskType;
   const htmlMessageId = ad && sessionId ? `ad-${ad.id}-${sessionId}` : "pending";
   const videoDuration = Math.max(1, ad?.watchSeconds ?? 1);
   const remaining = Math.max(0, videoDuration - elapsed);
-  const iframeWidth = Math.max(1, ad?.adWidth ?? 300);
-  const iframeHeight = Math.max(1, ad?.adHeight ?? 250);
 
   useEffect(() => {
     if (!ad) return;
@@ -437,8 +390,6 @@ function AdPlayer({
     setLoadError(null);
     setHtmlHeight(null);
     setHtmlRenderKey(0);
-    setIframeScale(1);
-    setIframeStage({ width: 0, height: 0 });
     setVideoAspectRatio(16 / 9);
     setImageWidth(520);
     videoLastTimeRef.current = 0;
@@ -499,39 +450,6 @@ function AdPlayer({
     return () => window.removeEventListener("message", messageHandler);
   }, [ad, format, sessionId, htmlMessageId]);
 
-  useEffect(() => {
-    if (!ad || format !== "adsterra") return;
-    const element = adFrameRef.current;
-    if (!element) return;
-
-    let timer: number | null = null;
-    const update = () => {
-      if (timer !== null) window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        const availableWidth = Math.max(0, element.clientWidth);
-        const scale = Math.min(1, availableWidth / iframeWidth);
-        setIframeScale(scale);
-        setIframeStage({
-          width: iframeWidth * scale,
-          height: iframeHeight * scale,
-        });
-      }, 100);
-    };
-
-    update();
-    window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-
-    return () => {
-      if (timer !== null) window.clearTimeout(timer);
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-      observer.disconnect();
-    };
-  }, [ad, format, iframeWidth, iframeHeight]);
-
   if (!ad) return null;
 
   const handleLoaded = async () => {
@@ -585,7 +503,7 @@ function AdPlayer({
     w,
     h,
   }: {
-    type: "video" | "html" | "image" | "adsterra";
+    type: "video" | "html" | "image";
     src: string;
     w?: number;
     h?: number;
@@ -702,34 +620,6 @@ img, video, canvas, iframe { max-width: 100%; }
       );
     }
 
-    return (
-      <div className="task-content-adsterra" ref={adFrameRef}>
-        <div
-          className="task-adsterra-stage"
-          style={{
-            width: iframeStage.width || iframeWidth,
-            height: iframeStage.height || iframeHeight,
-          }}
-        >
-          <iframe
-            title={ad.title}
-            srcDoc={src}
-            width={iframeWidth}
-            height={iframeHeight}
-            onLoad={() => {
-              window.setTimeout(() => void handleLoaded(), 1200);
-            }}
-            className="task-adsterra-frame"
-            scrolling="no"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-            allow="autoplay; fullscreen; encrypted-media"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-      </div>
-    );
-  };
-
   const actionSteps = (ad.description ?? "")
     .split(/\r?\n/)
     .map((line) => line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, "").trim())
@@ -742,9 +632,7 @@ img, video, canvas, iframe { max-width: 100%; }
         ? "task-modal task-modal-video"
         : format === "image"
           ? "task-modal task-modal-image"
-          : format === "adsterra"
-            ? "task-modal task-modal-adsterra"
-            : format === "join_whatsapp"
+          : format === "join_whatsapp"
               ? "task-modal task-modal-whatsapp"
               : format === "subscribe_youtube"
                 ? "task-modal task-modal-youtube"
@@ -759,9 +647,7 @@ img, video, canvas, iframe { max-width: 100%; }
         : "640px"
       : format === "image"
         ? `${Math.max(320, Math.min(520, imageWidth))}px`
-        : format === "adsterra"
-          ? `${Math.max(340, iframeWidth + 48)}px`
-          : format === "html"
+        : format === "html"
             ? "fit-content"
             : format === "join_whatsapp"
               ? "400px"
@@ -862,10 +748,8 @@ img, video, canvas, iframe { max-width: 100%; }
                   </div>
                 ) : (
                   mountAd({
-                    type: format === "video" ? "video" : format === "html" ? "html" : format === "image" ? "image" : "adsterra",
-                    src: format === "video" ? ad.videoUrl ?? "" : format === "html" ? ad.htmlCode ?? "" : format === "image" ? ad.imageUrl ?? "" : ad.adCode ?? "",
-                    w: iframeWidth,
-                    h: iframeHeight,
+                    type: format === "video" ? "video" : format === "html" ? "html" : "image",
+                    src: format === "video" ? ad.videoUrl ?? "" : format === "html" ? ad.htmlCode ?? "" : ad.imageUrl ?? "",
                   })
                 )}
               </div>
