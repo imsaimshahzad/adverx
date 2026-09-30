@@ -1713,8 +1713,15 @@ function CreateRecordButton({
         }
         if (taskType === "watch_ad") {
           const adType = form.adType || "html";
-          if (adType === "html" && !form.htmlCode.trim()) {
-            throw new Error("HTML Ad requires HTML ad code.");
+          if (
+            adType === "html" &&
+            (!form.htmlCode.trim() ||
+              !Number.isInteger(adWidth) ||
+              !Number.isInteger(adHeight) ||
+              adWidth <= 0 ||
+              adHeight <= 0)
+          ) {
+            throw new Error("HTML Ad requires HTML code and valid ad dimensions.");
           }
           if (adType === "video" && !form.videoUrl.trim()) {
             throw new Error("Video Ad requires a video.");
@@ -1750,8 +1757,8 @@ function CreateRecordButton({
           task_type: taskType,
           provider: taskType === "watch_ad" && form.adType === "adsterra" ? form.provider.trim() || null : null,
           ad_code: taskType === "watch_ad" && form.adType === "adsterra" ? form.adCode.trim() || null : null,
-          ad_width: taskType === "watch_ad" && form.adType === "adsterra" && Number.isFinite(adWidth) ? adWidth : null,
-          ad_height: taskType === "watch_ad" && form.adType === "adsterra" && Number.isFinite(adHeight) ? adHeight : null,
+          ad_width: taskType === "watch_ad" && ["html", "adsterra"].includes(form.adType) && Number.isFinite(adWidth) ? adWidth : null,
+          ad_height: taskType === "watch_ad" && ["html", "adsterra"].includes(form.adType) && Number.isFinite(adHeight) ? adHeight : null,
           destination_url: form.destinationUrl.trim() || null,
           image_url: taskType === "watch_ad" && form.adType === "image" ? form.imageUrl.trim() || null : null,
           video_url: taskType === "watch_ad" && form.adType === "video" ? form.videoUrl.trim() || null : null,
@@ -1883,10 +1890,22 @@ function CreateRecordButton({
                       </select>
                     </label>
                     {form.adType === "html" ? (
-                      <label className="grid gap-2 text-sm font-medium">
-                        HTML ad code
-                        <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Paste HTML ad code here" />
-                      </label>
+                      <>
+                        <label className="grid gap-2 text-sm font-medium">
+                          HTML ad code
+                          <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={form.htmlCode} onChange={(e) => setForm({ ...form, htmlCode: e.target.value })} placeholder="Paste HTML ad code here" />
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <label className="grid gap-2 text-sm font-medium">
+                            Width
+                            <Input type="number" min="1" value={form.adWidth} onChange={(e) => setForm({ ...form, adWidth: e.target.value })} placeholder="300" />
+                          </label>
+                          <label className="grid gap-2 text-sm font-medium">
+                            Height
+                            <Input type="number" min="1" value={form.adHeight} onChange={(e) => setForm({ ...form, adHeight: e.target.value })} placeholder="250" />
+                          </label>
+                        </div>
+                      </>
                     ) : form.adType === "video" ? (
                       <MediaUploadField label="Video ad" kind="video" value={form.videoUrl} onChange={(value) => setForm({ ...form, videoUrl: value })} />
                     ) : form.adType === "image" ? (
