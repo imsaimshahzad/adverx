@@ -2100,6 +2100,7 @@ function ManagementEditDialog({
 }) {
   const [form, setForm] = useState<AdminRow>({});
   useEffect(() => { setForm(row ? { ...row } : {}); }, [row]);
+
   const planPrice = Number(form.price_pkr ?? 0);
   const adminProfit = Number(form.admin_profit_pct ?? 0);
   const referralCommission = Number(form.referrer_commission_pct ?? 0);
@@ -2107,30 +2108,223 @@ function ManagementEditDialog({
   const recoveryFund = Number(form.recovery_fund_pct ?? 0);
   const rewardReserve = 100 - adminProfit - referralCommission - indirectReferral - recoveryFund;
   const rewardBudget = planPrice * Math.max(0, rewardReserve) / 100;
-  const fields = table === "plans"
-    ? ["name", "description", "price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "ads_per_day", "active"]
-    : table === "ads"
-      ? ["title", "description", "destination_url", "duration_seconds", "reward", "reward_enabled", "display_order", "status", "task_type", "provider", "ad_code", "ad_width", "ad_height", "image_url", "video_url", "html_code"]
-      : table === "deposit_methods"
-        ? ["name", "account_title", "account_number", "instructions", "min_deposit_pkr", "max_deposit_pkr", "sort_order", "is_active"]
-        : table === "withdrawal_methods"
-          ? ["name", "destination_label", "instructions", "min_withdrawal_pkr", "max_withdrawal_pkr", "sort_order", "is_active"]
-          : ["key", "value"];
+
+  const taskType = String(form.task_type ?? "watch_ad");
+  const isWatchAd = taskType === "watch_ad";
+  const adTemplate = isWatchAd
+    ? String(form.provider ?? "").toLowerCase() === "adsterra"
+      ? "adsterra"
+      : form.html_code
+        ? "html"
+        : form.video_url
+          ? "video"
+          : form.image_url
+            ? "image"
+            : "html"
+    : taskType;
+
+  const setAdTemplate = (template: string) => {
+    const next: AdminRow = {
+      ...form,
+      provider: null,
+      ad_code: null,
+      ad_width: null,
+      ad_height: null,
+      image_url: null,
+      video_url: null,
+      html_code: null,
+      destination_url: null,
+    };
+    if (template === "adsterra") {
+      next.task_type = "watch_ad";
+      next.provider = "adsterra";
+    } else if (["html", "video", "image"].includes(template)) {
+      next.task_type = "watch_ad";
+    } else {
+      next.task_type = template;
+    }
+    setForm(next);
+  };
+
+  const commonAdFields = ["title", "description", "duration_seconds", "reward", "reward_enabled", "display_order", "status"];
+  const planFields = ["name", "description", "price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "ads_per_day", "active"];
+  const otherFields = table === "deposit_methods"
+    ? ["name", "account_title", "account_number", "instructions", "min_deposit_pkr", "max_deposit_pkr", "sort_order", "is_active"]
+    : table === "withdrawal_methods"
+      ? ["name", "destination_label", "instructions", "min_withdrawal_pkr", "max_withdrawal_pkr", "sort_order", "is_active"]
+      : ["key", "value"];
+
+  const saveChanges = () => {
+    if (table !== "ads") {
+      const fields = table === "plans" ? planFields : otherFields;
+      onSave(Object.fromEntries(fields.map((field) => [field, form[field]])));
+      return;
+    }
+
+    const changes: AdminRow = Object.fromEntries(commonAdFields.map((field) => [field, form[field]]));
+    changes.task_type = taskType;
+
+    if (taskType === "watch_ad") {
+      changes.destination_url = null;
+      changes.image_url = null;
+      changes.video_url = null;
+      changes.html_code = null;
+      changes.provider = null;
+      changes.ad_code = null;
+      changes.ad_width = null;
+      changes.ad_height = null;
+
+      if (adTemplate === "html") changes.html_code = String(form.html_code ?? "").trim() || null;
+      if (adTemplate === "video") changes.video_url = String(form.video_url ?? "").trim() || null;
+      if (adTemplate === "image") changes.image_url = String(form.image_url ?? "").trim() || null;
+      if (adTemplate === "adsterra") {
+        changes.provider = "adsterra";
+        changes.ad_code = String(form.ad_code ?? "").trim() || null;
+        changes.ad_width = Number(form.ad_width ?? 0) || null;
+        changes.ad_height = Number(form.ad_height ?? 0) || null;
+      }
+    } else if (["join_whatsapp", "subscribe_youtube", "visit_website"].includes(taskType)) {
+      changes.destination_url = String(form.destination_url ?? "").trim() || null;
+      changes.image_url = null;
+      changes.video_url = null;
+      changes.html_code = null;
+      changes.provider = null;
+      changes.ad_code = null;
+      changes.ad_width = null;
+      changes.ad_height = null;
+    } else {
+      changes.destination_url = String(form.destination_url ?? "").trim() || null;
+      changes.image_url = null;
+      changes.video_url = null;
+      changes.html_code = null;
+      changes.provider = null;
+      changes.ad_code = null;
+      changes.ad_width = null;
+      changes.ad_height = null;
+    }
+
+    onSave(changes);
+  };
+
+  const renderField = (field: string) => {
+    const value = form[field];
+    const booleanField = typeof value === "boolean" || ["active", "is_active", "reward_enabled", "referral_enabled"].includes(field);
+    return (
+      <label key={field} className="grid gap-1 text-sm font-medium">
+        {field.replaceAll("_", " ")}
+        {booleanField ? (
+          <select
+            className="h-9 rounded-md border bg-background px-2"
+            value={String(Boolean(value))}
+            onChange={(e) => setForm({ ...form, [field]: e.target.value === "true" })}
+          >
+            <option value="true">Active / enabled</option>
+            <option value="false">Inactive / disabled</option>
+          </select>
+        ) : (
+          <Input
+            type={["price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "ads_per_day", "duration_seconds", "reward", "display_order", "sort_order", "min_deposit_pkr", "max_deposit_pkr", "min_withdrawal_pkr", "max_withdrawal_pkr", "ad_width", "ad_height"].includes(field) ? "number" : "text"}
+            value={String(value ?? "")}
+            onChange={(e) => setForm({ ...form, [field]: e.target.type === "number" ? Number(e.target.value) : e.target.value })}
+          />
+        )}
+      </label>
+    );
+  };
+
   return (
     <Dialog open={Boolean(row)} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader><DialogTitle>Edit {table.replaceAll("_", " ")}</DialogTitle><DialogDescription>Changes are saved to Supabase and audit logged.</DialogDescription></DialogHeader>
-        <div className="grid gap-3">
-          {fields.map((field) => {
-            const value = form[field];
-            if (table === "ads" && field === "task_type") return <label key={field} className="grid gap-1 text-sm font-medium">Task type<select className="h-9 rounded-md border bg-background px-2" value={String(value ?? "watch_ad")} onChange={(e) => setForm({ ...form, [field]: e.target.value })}><option value="watch_ad">Watch Ad</option><option value="join_whatsapp">Join WhatsApp</option><option value="subscribe_youtube">Subscribe YouTube</option><option value="visit_website">Visit Website</option><option value="custom">Custom Task</option></select></label>;
-            if (table === "ads" && field === "image_url") return <MediaUploadField key={field} label="Image" kind="image" value={String(value ?? "")} onChange={(next) => setForm({ ...form, image_url: next })} />;
-            if (table === "ads" && field === "video_url") return <MediaUploadField key={field} label="Video" kind="video" value={String(value ?? "")} onChange={(next) => setForm({ ...form, video_url: next })} />;
-            if (table === "ads" && field === "html_code") return <label key={field} className="grid gap-1 text-sm font-medium">HTML code<textarea className="min-h-28 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={String(value ?? "")} onChange={(e) => setForm({ ...form, html_code: e.target.value })} /></label>;
-            const booleanField = typeof value === "boolean" || ["active", "is_active", "reward_enabled", "referral_enabled"].includes(field);
-            return <label key={field} className="grid gap-1 text-sm font-medium">{table === "plans" && field === "ads_per_day" ? "Daily Ads Limit" : field.replaceAll("_", " ")}{booleanField ? <select className="h-9 rounded-md border bg-background px-2" value={String(Boolean(value))} onChange={(e) => setForm({ ...form, [field]: e.target.value === "true" })}><option value="true">Active / enabled</option><option value="false">Inactive / disabled</option></select> : <Input type={["price_pkr", "admin_profit_pct", "referrer_commission_pct", "indirect_referral_pct", "recovery_fund_pct", "base_ad_reward_pkr", "max_ad_reward_pkr", "daily_reward_limit_pkr", "ads_per_day", "duration_seconds", "reward", "display_order", "sort_order", "min_deposit_pkr", "max_deposit_pkr", "min_withdrawal_pkr", "max_withdrawal_pkr", "ad_width", "ad_height"].includes(field) ? "number" : "text"} value={String(value ?? "")} onChange={(e) => setForm({ ...form, [field]: e.target.type === "number" ? Number(e.target.value) : e.target.value })} />}</label>;
-          })}
-        </div>
+        <DialogHeader>
+          <DialogTitle>Edit {table.replaceAll("_", " ")}</DialogTitle>
+          <DialogDescription>
+            {table === "ads"
+              ? "Choose an ad template. Only fields required by that template are shown."
+              : "Changes are saved to Supabase and audit logged."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {table === "ads" ? (
+          <div className="grid gap-3">
+            {commonAdFields.map(renderField)}
+
+            <label className="grid gap-1 text-sm font-medium">
+              Task type
+              <select
+                className="h-9 rounded-md border bg-background px-2"
+                value={taskType}
+                onChange={(e) => setAdTemplate(e.target.value)}
+              >
+                <option value="watch_ad">Watch Ad</option>
+                <option value="join_whatsapp">Join WhatsApp</option>
+                <option value="subscribe_youtube">Subscribe YouTube</option>
+                <option value="visit_website">Visit Website</option>
+                <option value="custom">Custom Task</option>
+              </select>
+            </label>
+
+            {isWatchAd ? (
+              <>
+                <label className="grid gap-1 text-sm font-medium">
+                  Ad template
+                  <select
+                    className="h-9 rounded-md border bg-background px-2"
+                    value={adTemplate}
+                    onChange={(e) => setAdTemplate(e.target.value)}
+                  >
+                    <option value="html">HTML Ad</option>
+                    <option value="video">Video Ad</option>
+                    <option value="image">Image Ad</option>
+                    <option value="adsterra">Adsterra</option>
+                  </select>
+                </label>
+
+                {adTemplate === "adsterra" ? (
+                  <div className="grid gap-3 rounded-xl border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">
+                      Adsterra configuration — paste the provider code and set the exact creative dimensions.
+                    </p>
+                    <label className="grid gap-1 text-sm font-medium">
+                      Provider
+                      <Input value={String(form.provider ?? "adsterra")} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="adsterra" />
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium">
+                      Ad code
+                      <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={String(form.ad_code ?? "")} onChange={(e) => setForm({ ...form, ad_code: e.target.value })} placeholder="Paste Adsterra code here" />
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {renderField("ad_width")}
+                      {renderField("ad_height")}
+                    </div>
+                  </div>
+                ) : adTemplate === "html" ? (
+                  <label className="grid gap-1 text-sm font-medium">
+                    HTML code
+                    <textarea className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs" value={String(form.html_code ?? "")} onChange={(e) => setForm({ ...form, html_code: e.target.value })} placeholder="Paste HTML ad code here" />
+                  </label>
+                ) : adTemplate === "video" ? (
+                  <MediaUploadField label="Video" kind="video" value={String(form.video_url ?? "")} onChange={(next) => setForm({ ...form, video_url: next })} />
+                ) : (
+                  <MediaUploadField label="Image" kind="image" value={String(form.image_url ?? "")} onChange={(next) => setForm({ ...form, image_url: next })} />
+                )}
+              </>
+            ) : (
+              <label className="grid gap-1 text-sm font-medium">
+                {taskType === "join_whatsapp" ? "WhatsApp Group / Channel URL" : taskType === "subscribe_youtube" ? "YouTube Channel URL" : taskType === "visit_website" ? "Website URL" : "Destination URL (optional)"}
+                <Input
+                  value={String(form.destination_url ?? "")}
+                  onChange={(e) => setForm({ ...form, destination_url: e.target.value })}
+                  placeholder={taskType === "join_whatsapp" ? "https://chat.whatsapp.com/..." : taskType === "subscribe_youtube" ? "https://youtube.com/@..." : "https://example.com"}
+                />
+              </label>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {(table === "plans" ? planFields : otherFields).map(renderField)}
+          </div>
+        )}
+
         {table === "plans" && (
           <div className="rounded-lg border bg-muted/30 p-3 text-sm">
             <p className="mb-2 font-medium">Live allocation summary</p>
@@ -2141,12 +2335,17 @@ function ManagementEditDialog({
             <p>Reward reserve: {rewardReserve}% = Rs. {rewardBudget.toFixed(2)}</p>
           </div>
         )}
-        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={busy || (table === "plans" && rewardReserve < 0)} onClick={() => onSave(Object.fromEntries(fields.map((field) => [field, form[field]])))}>{busy ? "Saving…" : "Save changes"}</Button></DialogFooter>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button disabled={busy || (table === "plans" && rewardReserve < 0)} onClick={saveChanges}>
+            {busy ? "Saving…" : "Save changes"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
 export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data: AdminRow | null; loading: boolean; onBack: () => void; onLoginAsUser?: (userId: string) => void }) {
   if (loading) {
     return <div className="flex min-h-64 items-center justify-center"><LoadingIndicator size="md" label="Loading user details" /></div>;
