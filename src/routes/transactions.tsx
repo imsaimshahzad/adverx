@@ -46,9 +46,10 @@ function TransactionsPage() {
   const [copied, setCopied] = useState(false);
 
   const lastLiveRefreshRef = useRef(0);
+  const loadVersionRef = useRef(0);
 
   const load = useCallback(async () => {
-    let mounted = true;
+    const requestVersion = ++loadVersionRef.current;
       setLoading(true);
       setError(null);
       try {
@@ -65,10 +66,7 @@ function TransactionsPage() {
         if (profileError) throw new Error(profileError.message);
 
         const staff = ["admin", "super_admin", "moderator"].includes(String(profile?.role ?? ""));
-        if (mounted) {
-          setAccountUid(String(profile?.public_uid ?? "").trim() || null);
-          setIsStaff(staff);
-        }
+        if (requestVersion !== loadVersionRef.current) return;\n        setAccountUid(String(profile?.public_uid ?? "").trim() || null);\n        setIsStaff(staff);
 
         let query = db.from("transactions").select("*").order("created_at", { ascending: false });
         if (!staff) query = query.eq("user_id", uid);
@@ -84,11 +82,11 @@ function TransactionsPage() {
         // Keep the existing wallet-state read intact; display never derives or estimates balances.
         if (!staff) await db.rpc("wallet_state", { _user_id: uid });
 
-        if (mounted) setItems(rows);
+        if (requestVersion === loadVersionRef.current) setItems(rows);
       } catch (cause) {
-        if (mounted) setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
+        if (requestVersion === loadVersionRef.current) setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
       } finally {
-        if (mounted) setLoading(false);
+        if (requestVersion === loadVersionRef.current) setLoading(false);
       }
   }, []);
 
