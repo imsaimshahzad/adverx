@@ -83,15 +83,16 @@ export function AuthPage() {
   }, []);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-5 py-10 sm:px-6">
+    <div className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-5 py-10 sm:px-6">
       {!ready ? <p className="mb-3 text-center text-sm text-muted-foreground">Checking your session…</p> : null}
       {ready && dataError && !state.user ? <p role="alert" className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">Authentication succeeded, but your profile could not be loaded: {dataError}</p> : null}
-      <Tabs defaultValue={pathMode} className="glass-panel min-w-0 p-4 sm:p-6">
-        <TabsList className="grid h-10 w-full min-w-0 grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1">
+      <Tabs defaultValue={pathMode} className="min-w-0 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <TabsList className="mb-6 grid h-10 w-full min-w-0 grid-cols-2 gap-1 rounded-lg bg-muted p-1">
           <TabsTrigger value="register" className="min-w-0 truncate px-2 text-xs sm:text-sm">Create account</TabsTrigger>
           <TabsTrigger value="login" className="min-w-0 truncate px-2 text-xs sm:text-sm">Sign in</TabsTrigger>
         </TabsList>
-        <TabsContent value="register" className="mt-5 space-y-3">
+        <TabsContent value="register" className="mt-0 space-y-4">
+          <h1 className="mb-6 text-xl font-semibold tracking-tight text-foreground">Create your AdverX account</h1>
           <Field label="Full name">
             <Input
               value={form.fullName}
@@ -113,8 +114,9 @@ export function AuthPage() {
               placeholder="ahmed@example.com"
             />
           </Field>
-          <Field label="Password">
+          <Field label="Your password">
             <Input
+              className="w-full rounded-md border border-input bg-secondary/50 px-3 py-2.5 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -208,7 +210,8 @@ export function AuthPage() {
           </Button>
         </TabsContent>
 
-        <TabsContent value="login" className="mt-5 space-y-3">
+        <TabsContent value="login" className="mt-0 space-y-4">
+          <h1 className="mb-6 text-xl font-semibold tracking-tight text-foreground">Sign in to AdverX</h1>
           {state.user ? (
             <div className="glass-input flex flex-col gap-4 p-4 text-center">
               <div>
@@ -220,8 +223,9 @@ export function AuthPage() {
             </div>
           ) : (
             <>
-          <Field label="Email">
+          <Field label="Your email">
             <Input
+              className="w-full rounded-md border border-input bg-secondary/50 px-3 py-2.5 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
