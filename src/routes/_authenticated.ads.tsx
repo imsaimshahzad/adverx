@@ -315,6 +315,11 @@ function AdPlayer({
   useEffect(() => {
     if (!ad || !adFrameRef.current) { setAdScale(1); return; }
     const element = adFrameRef.current;
+    const format = ad.htmlCode ? "html" : ad.videoUrl ? "video" : ad.imageUrl ? "image" : ad.adCode ? "adsterra" : "none";
+    if (format === "html") {
+      setAdScale(1);
+      return;
+    }
     const width = ad.adWidth || 300;
     const updateScale = () => setAdScale(Math.min(1, element.clientWidth / width));
     updateScale();
@@ -338,8 +343,8 @@ function AdPlayer({
         {ad.taskType === "watch_ad" && format !== "none" ? (
           <div ref={adFrameRef} className="mx-auto w-full overflow-hidden rounded-lg bg-muted/20">
             {format === "html" ? (
-              <div className="mx-auto origin-top" style={{ width: `${frameWidth}px`, height: `${frameHeight}px`, transform: `scale(${adScale})`, transformOrigin: "top center" }}>
-                <iframe title={ad.title} onLoad={markLoaded} srcDoc={ad.htmlCode} width={frameWidth} height={frameHeight} className="block border-0" scrolling="no" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms" />
+              <div className="w-full overflow-hidden">
+                <iframe title={ad.title} onLoad={markLoaded} srcDoc={ad.htmlCode} className="block h-[60vh] min-h-[180px] w-full border-0" scrolling="auto" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms" />
               </div>
             ) : format === "adsterra" ? (
               <div className="mx-auto origin-top" style={{ width: `${frameWidth}px`, height: `${frameHeight}px`, transform: `scale(${adScale})`, transformOrigin: "top center" }}>
