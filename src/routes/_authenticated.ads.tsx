@@ -56,6 +56,7 @@ function AdsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const [startingAdId, setStartingAdId] = useState<string | null>(null);
+  const [adsterraBlobUrl, setAdsterraBlobUrl] = useState<string | null>(null);
   const openRequestRef = useRef(0);
   const cardRefs = useRef(new Map<string, HTMLDivElement>());
   const previousCardRectsRef = useRef(new Map<string, DOMRect>());
@@ -67,6 +68,22 @@ function AdsPage() {
       .map((v) => v.adId),
   );
   const watchedIds = new Set([...persistedWatchedIds, ...completedAdIds]);
+
+  useEffect(() => {
+    const code = selectedAd?.provider?.toLowerCase() === "adsterra" ? selectedAd.adCode : null;
+    if (!code) {
+      setAdsterraBlobUrl(null);
+      return;
+    }
+
+    // srcDoc gives the provider an opaque/null origin. Adsterra's delivery
+    // script can refuse to serve in that environment. A Blob URL inherits
+    // AdverX's origin while still isolating the provider inside an iframe.
+    const html = code.replace(/<script\b/gi, "<script\n").replace(/<\/script>/gi, "</script>");
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    setAdsterraBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedAd?.id, selectedAd?.provider, selectedAd?.adCode]);
 
   const openAd = (ad: Ad) => {
     openRequestRef.current += 1;
@@ -713,12 +730,12 @@ img, video, canvas, iframe { max-width: 100%; }
         >
           <iframe
             title={ad.title}
-            srcDoc={src}
+            src={adsterraBlobUrl ?? undefined}
             width={iframeWidth}
             height={iframeHeight}
             onLoad={() => {
-              // Adsterra's invoke.js expects a normal document and can render
-              // asynchronously after the iframe's initial load event.
+              // The provider script injects the creative after the document
+              // load event, so only unlock the timer after a short settling time.
               window.setTimeout(() => void handleLoaded(), 1200);
             }}
             className="task-adsterra-frame"
