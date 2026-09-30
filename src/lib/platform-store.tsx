@@ -108,10 +108,6 @@ export type Ad = {
   watchSeconds: number;
   reward?: number;
   taskType: "watch_ad" | "join_whatsapp" | "subscribe_youtube" | "visit_website" | "custom";
-  provider?: string;
-  adCode?: string;
-  adWidth?: number;
-  adHeight?: number;
   destinationUrl?: string;
   imageUrl?: string;
   videoUrl?: string;
@@ -250,7 +246,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }] = await Promise.all([
     db
       .from("ads")
-      .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at, task_type, provider, ad_code, ad_width, ad_height, image_url, video_url, html_code")
+      .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at, task_type, image_url, video_url, html_code")
       .eq("status", "active")
       .eq("reward_enabled", true)
       .order("display_order", { ascending: true, nullsFirst: false })
@@ -272,10 +268,6 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
       watchSeconds: num(a.duration_seconds),
       reward: num(a.reward),
       taskType: ["watch_ad", "join_whatsapp", "subscribe_youtube", "visit_website", "custom"].includes(String(a.task_type)) ? a.task_type : "watch_ad",
-      provider: a.provider ?? undefined,
-      adCode: a.ad_code ?? undefined,
-      adWidth: a.ad_width == null ? undefined : num(a.ad_width),
-      adHeight: a.ad_height == null ? undefined : num(a.ad_height),
       destinationUrl: a.destination_url ?? undefined,
       imageUrl: a.image_url ?? undefined,
       videoUrl: a.video_url ?? undefined,
@@ -327,10 +319,6 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     watchSeconds: a.duration_seconds ?? 15,
     reward: num(a.reward),
     taskType: ["watch_ad", "join_whatsapp", "subscribe_youtube", "visit_website", "custom"].includes(String(a.task_type)) ? a.task_type : "watch_ad",
-    provider: a.provider ?? undefined,
-    adCode: a.ad_code ?? undefined,
-    adWidth: a.ad_width == null ? undefined : num(a.ad_width),
-    adHeight: a.ad_height == null ? undefined : num(a.ad_height),
     destinationUrl: a.destination_url ?? undefined,
     imageUrl: a.image_url ?? undefined,
     videoUrl: a.video_url ?? undefined,
@@ -473,10 +461,6 @@ async function loadState(user: {
       watchSeconds: a.required_watch_seconds ?? 15,
       reward: num(a.reward),
       taskType: ["watch_ad", "join_whatsapp", "subscribe_youtube", "visit_website", "custom"].includes(String(a.task_type)) ? a.task_type : "watch_ad",
-      provider: a.provider ?? undefined,
-      adCode: a.ad_code ?? undefined,
-      adWidth: a.ad_width == null ? undefined : num(a.ad_width),
-      adHeight: a.ad_height == null ? undefined : num(a.ad_height),
       destinationUrl: a.destination_url ?? undefined,
       imageUrl: a.image_url ?? undefined,
       videoUrl: a.video_url ?? undefined,
