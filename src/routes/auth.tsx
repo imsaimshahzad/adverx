@@ -114,7 +114,7 @@ export function AuthPage() {
               placeholder="ahmed@example.com"
             />
           </Field>
-          <Field label="Your password">
+          <Field label="Password">
             <Input
               className="w-full rounded-md border border-input bg-secondary/50 px-3 py-2.5 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
               type="password"
@@ -232,8 +232,9 @@ export function AuthPage() {
               placeholder="ahmed@example.com"
             />
           </Field>
-          <Field label="Password">
+          <Field label="Your password">
             <Input
+              className="w-full rounded-md border border-input bg-secondary/50 px-3 py-2.5 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
