@@ -180,6 +180,7 @@ export const PAYMENT_METHODS: Array<{ id: string; name: string; accountTitle: st
   },
 ];
 export const ADS: Ad[] = [];
+let catalogRequestVersion = 0;
 
 const EMPTY = {
   user: null,
@@ -245,6 +246,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
   
   async function loadCatalog() {
+  const requestVersion = ++catalogRequestVersion;
   const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }] = await Promise.all([
     db
       .from("ads")
@@ -256,6 +258,8 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     db.from("plans").select("*").eq("active", true).eq("status", "active").order("price_pkr"),
     db.from("deposit_methods").select("*").eq("is_active", true).order("sort_order"),
   ]);
+
+  if (requestVersion !== catalogRequestVersion) return;
 
   // Keep the availability list independent from account/catalog data. A failure in
   // another catalog query must not erase successfully fetched active ads.
@@ -278,6 +282,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
       htmlCode: a.html_code ?? undefined,
   })));
 
+  if (requestVersion !== catalogRequestVersion) return;
   if (adsError) { console.error("[AdverX] active ads query failed", adsError); throw new Error("Unable to load available ads."); }
   if (plansError) { console.error("[AdverX] plans query failed", plansError); throw new Error("Unable to load available plans."); }
   if (methodsError) { console.error("[AdverX] deposit methods query failed", methodsError); throw new Error("Unable to load payment methods."); }
