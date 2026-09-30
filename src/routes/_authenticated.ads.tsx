@@ -323,7 +323,7 @@ function AdPlayer({
   const [adLoaded, setAdLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mediaKey, setMediaKey] = useState(0);
-  const [htmlHeight, setHtmlHeight] = useState(180);
+  const [htmlHeight, setHtmlHeight] = useState<number | null>(null);
   const [iframeScale, setIframeScale] = useState(1);
   const [iframeStage, setIframeStage] = useState({ width: 0, height: 0 });
   const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
@@ -359,7 +359,7 @@ function AdPlayer({
     setElapsed(0);
     setAdLoaded(false);
     setLoadError(null);
-    setHtmlHeight(180);
+    setHtmlHeight(null);
     setIframeScale(1);
     setIframeStage({ width: 0, height: 0 });
     setVideoAspectRatio(16 / 9);
@@ -415,7 +415,7 @@ function AdPlayer({
       if (!data || data.type !== "adHeight" || data.id !== htmlMessageId) return;
       const height = Number(data.height);
       if (!Number.isFinite(height) || height < 1 || height > 200000) return;
-      setHtmlHeight(Math.max(180, Math.ceil(height)));
+      setHtmlHeight(Math.ceil(height));
     };
 
     window.addEventListener("message", messageHandler);
@@ -590,7 +590,7 @@ function AdPlayer({
             srcDoc={srcdoc}
             onLoad={() => void handleLoaded()}
             className="task-html-frame"
-            style={{ height: `${htmlHeight}px` }}
+            style={{ height: `${htmlHeight ?? 180}px` }}
             sandbox="allow-scripts"
             scrolling="no"
           />
