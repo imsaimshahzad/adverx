@@ -50,6 +50,7 @@ function AdsPage() {
     cancelAd,
     markAdLoaded,
     refreshLiveData,
+    catalogRevision,
   } = usePlatform();
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -102,7 +103,7 @@ function AdsPage() {
       ...serverIds.filter((id) => !completed.has(id)),
       ...serverIds.filter((id) => completed.has(id)),
     ]);
-  }, [catalogReady, selectedAd, state.adViews.length, state.user?.id, completedAdIds]);
+  }, [catalogReady, catalogRevision, selectedAd, state.adViews.length, state.user?.id, completedAdIds]);
 
   useLayoutEffect(() => {
     if (!displayAdIds.length) return;
