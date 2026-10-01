@@ -44,6 +44,8 @@ function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<TransactionRowData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [activityFilter, setActivityFilter] = useState<"all" | "deposits" | "withdrawals" | "rewards" | "referrals">("all");
 
   const lastLiveRefreshRef = useRef(0);
   const loadVersionRef = useRef(0);
@@ -120,6 +122,22 @@ function TransactionsPage() {
     };
   }, [load]);
 
+  const visibleItems = [...items]
+    .filter((item) => {
+      if (activityFilter === "all") return true;
+      const kind = String(item.kind ?? "").toLowerCase();
+      const source = String(item.source_type ?? "").toLowerCase();
+      if (activityFilter === "deposits") return kind.includes("deposit") || source.includes("deposit") || kind.includes("purchase");
+      if (activityFilter === "withdrawals") return kind.includes("withdrawal") || source.includes("withdrawal");
+      if (activityFilter === "rewards") return kind.includes("reward") || source.includes("reward") || kind.includes("ad_reward");
+      return kind.includes("referral") || source.includes("referral");
+    })
+    .sort((a, b) => {
+      const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (diff !== 0) return sortOrder === "newest" ? -diff : diff;
+      return String(a.transaction_no ?? a.id).localeCompare(String(b.transaction_no ?? b.id)) * (sortOrder === "newest" ? -1 : 1);
+    });
+
   const selectedStatus = selected ? statusBadge(selected.status) : null;
   const selectedType = selected ? typeLabel(selected.kind, selected.metadata) : null;
 
@@ -147,8 +165,28 @@ function TransactionsPage() {
             <div className="hidden grid-cols-[minmax(150px,1.1fr)_minmax(150px,1fr)_minmax(180px,1.6fr)_minmax(90px,.8fr)_minmax(110px,.8fr)] gap-3 border-b border-border/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
               <span>Type</span><span>Description</span><span>Date</span><span>Status</span><span className="text-right">Amount</span>
             </div>
+            <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-muted-foreground">{visibleItems.length} {visibleItems.length === 1 ? "activity" : "activities"}</p>
+              <div className="flex flex-wrap gap-2">
+                <label className="sr-only" htmlFor="activity-filter">Activity type</label>
+                <select id="activity-filter" value={activityFilter} onChange={(event) => setActivityFilter(event.target.value as typeof activityFilter)} className="rounded-lg border border-border/60 bg-background px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="all">All Activity</option>
+                  <option value="deposits">Deposits</option>
+                  <option value="withdrawals">Withdrawals</option>
+                  <option value="rewards">Rewards</option>
+                  <option value="referrals">Referral Activity</option>
+                </select>
+                <label className="sr-only" htmlFor="activity-sort">Sort activity</label>
+                <select id="activity-sort" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as typeof sortOrder)} className="rounded-lg border border-border/60 bg-background px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                </select>
+              </div>
+            </div>
             <div>
-              {items.map((item) => (
+              {visibleItems.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">No activity matches this filter.</div>
+              ) : visibleItems.map((item) => (
                 <TransactionRow key={item.id} row={item} onClick={() => { setSelected(item); setCopied(false); }} />
               ))}
             </div>
