@@ -179,25 +179,9 @@ export async function ensureSupabaseSessionReady() {
       url.searchParams.delete(IMPERSONATION_TOKEN_PARAM);
       window.history.replaceState(window.history.state, document.title, url.toString());
 
-      const consumeResponse = await fetch("/api/impersonation/consume", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tokenHash }),
-      });
-
-      const consumePayload = (await consumeResponse.json().catch(() => null)) as
-        | { ok?: boolean; message?: string }
-        | null;
-
-      if (!consumeResponse.ok || !consumePayload?.ok) {
-        throw new Error(
-          consumePayload?.message ?? "Impersonation token is invalid or expired.",
-        );
-      }
-
       const { error } = await getSupabase().auth.verifyOtp({
         token_hash: tokenHash,
-        type: "email",
+        type: "magiclink",
       });
 
       if (error) {
