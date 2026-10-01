@@ -1,6 +1,14 @@
 -- Keep referral-funded reward reserves visible in admin financial summaries.
 -- User-specific reserve credits remain separate from spendable wallet cash.
 
+-- Members can see only their own referral-reserve credits for Recent Activity.
+drop policy if exists recovery_fund_user_select on public.recovery_fund_ledger;
+create policy recovery_fund_user_select
+on public.recovery_fund_ledger
+for select
+to authenticated
+using (user_id = auth.uid());
+
 create or replace function public.admin_operations_overview()
 returns jsonb
 language plpgsql
