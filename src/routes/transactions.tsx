@@ -72,12 +72,14 @@ function TransactionsPage() {
         setAccountUid(String(profile?.public_uid ?? "").trim() || null);
         setIsStaff(staff);
 
-        let query = db
+        // This page is the signed-in user's wallet activity, including when the user is staff.
+        // Admin-wide transaction monitoring belongs in the admin area, not the personal wallet.
+        const query = db
           .from("transactions")
           .select("*")
+          .eq("user_id", uid)
           .order("created_at", { ascending: false })
           .order("transaction_no", { ascending: false });
-        if (!staff) query = query.eq("user_id", uid);
         const { data, error: txError } = await query.limit(500);
         if (txError) throw new Error(txError.message);
 
