@@ -46,6 +46,7 @@ export type Plan = {
   maxAdReward: number;
   dailyRewardLimit: number;
   remainingRewardBudget: number;
+  referralRewardAllocated: number;
   adminProfitPct: number;
   referrerCommissionPct: number;
   indirectReferralPct: number;
@@ -431,6 +432,7 @@ async function loadState(user: {
       durationDays: p.duration_days == null ? null : num(p.duration_days),
       dailyAdLimit: num(p.ads_per_day),
       rewardBudget: num(p.reward_budget_pkr),
+      referralRewardAllocated: (userPlanSnapshot as any)?.plan_id === p.id ? num((userPlanSnapshot as any)?.referral_reward_allocated_pkr) : 0,
       baseAdReward: num(p.base_ad_reward_pkr),
       maxAdReward: num(p.max_ad_reward_pkr),
       dailyRewardLimit: num(p.daily_reward_limit_pkr),
@@ -493,11 +495,12 @@ async function loadState(user: {
         description: activePlanRow.description ?? "Active rewards plan",
         durationDays: activePlanRow.duration_days ?? 30,
         dailyAdLimit: num(snapshotRow?.ads_per_day ?? activePlanRow.daily_task_limit ?? activePlanRow.ads_per_day ?? activePlanRow.daily_ads) || 10,
-        rewardBudget: num(snapshotRow?.reward_budget_pkr),
+        rewardBudget: num(snapshotRow?.reward_budget_pkr) + num(snapshotRow?.referral_reward_allocated_pkr),
         baseAdReward: num(snapshotRow?.base_ad_reward_pkr),
         maxAdReward: num(snapshotRow?.max_ad_reward_pkr),
         dailyRewardLimit: num(snapshotRow?.daily_reward_limit_pkr),
-        remainingRewardBudget: num(snapshotRow?.remaining_reward_budget_pkr),
+        remainingRewardBudget: num(snapshotRow?.remaining_reward_budget_pkr) + num(profileRow?.recovery_reserve_pkr),
+        referralRewardAllocated: num(snapshotRow?.referral_reward_allocated_pkr),
         adminProfitPct: num(activePlanConfig?.admin_profit_pct),
         referrerCommissionPct: num(activePlanConfig?.referrer_commission_pct),
         indirectReferralPct: num(activePlanConfig?.indirect_referral_pct),
