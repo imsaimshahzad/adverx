@@ -1065,7 +1065,20 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       p_method: input.method,
       p_plan_id: input.planId,
     });
-    if (error) { console.error("[AdverX] deposit creation failed", error); throw new Error("Unable to submit the deposit request."); }
+    if (error) {
+      console.error("[AdverX] deposit creation failed", error);
+      const message = String(error.message ?? "").trim();
+      const knownMessages = [
+        "You already have a pending deposit. Wait for admin review.",
+        "This transaction ID is already linked to an approved or active deposit.",
+        "selected plan is unavailable",
+        "invalid plan amount",
+        "transaction id is required",
+        "payment method is required",
+        "not authenticated",
+      ];
+      throw new Error(knownMessages.includes(message) ? message : "Unable to submit the deposit request. Please check your details and try again.");
+    }
     await refresh(auth.user);
   if (input.imageHash) {
     const { error: hashError } = await db.from("deposits").update({ image_hash: input.imageHash }).eq("user_id", auth.user.id).eq("transaction_id", input.transactionId).is("image_hash", null);
