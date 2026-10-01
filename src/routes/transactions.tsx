@@ -70,7 +70,11 @@ function TransactionsPage() {
         setAccountUid(String(profile?.public_uid ?? "").trim() || null);
         setIsStaff(staff);
 
-        let query = db.from("transactions").select("*").order("created_at", { ascending: false });
+        let query = db
+          .from("transactions")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .order("transaction_no", { ascending: false });
         if (!staff) query = query.eq("user_id", uid);
         const { data, error: txError } = await query.limit(500);
         if (txError) throw new Error(txError.message);
@@ -117,7 +121,7 @@ function TransactionsPage() {
   }, [load]);
 
   const selectedStatus = selected ? statusBadge(selected.status) : null;
-  const selectedType = selected ? typeLabel(selected.kind) : null;
+  const selectedType = selected ? typeLabel(selected.kind, selected.metadata) : null;
 
   return (
     <AppShell title="Transactions" subtitle={accountUid ? `Wallet activity · ${accountUid}` : "Wallet activity"}>
@@ -188,7 +192,7 @@ function TransactionsPage() {
 
             <div className="mt-3 rounded-xl border border-border/50 p-4">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Description</p>
-              <p className="mt-1 text-sm">{plainDescription(selected.kind)}</p>
+              <p className="mt-1 text-sm">{plainDescription(selected.kind, selected.metadata)}</p>
             </div>
 
             {isStaff ? (
