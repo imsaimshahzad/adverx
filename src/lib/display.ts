@@ -12,10 +12,10 @@ const TYPE_MAP: Record<string, { label: string; icon: string }> = {
   plan_ad_budget: { label: "Ad Reward Budget", icon: "🎁" },
   ad_reward: { label: "Ad Reward", icon: "🎬" },
   task_reward: { label: "Ad Reward", icon: "🎬" },
-  referral_commission: { label: "Referral Reward", icon: "👥" },
-  referral_reward: { label: "Referral Reward", icon: "👥" },
-  platform_admin_profit: { label: "Platform Fee", icon: "🏦" },
-  platform_profit: { label: "Platform Fee", icon: "🏦" },
+  referral_commission: { label: "Direct Referral", icon: "👥" },
+  referral_reward: { label: "Direct Referral", icon: "👥" },
+  platform_admin_profit: { label: "Platform Commission", icon: "🏦" },
+  platform_profit: { label: "Platform Commission", icon: "🏦" },
   admin_adjustment: { label: "Balance Adjustment", icon: "🛠️" },
   refund: { label: "Refund", icon: "↩️" },
   withdrawal_refund: { label: "Withdrawal Refund", icon: "↩️" },
@@ -30,14 +30,20 @@ const PLAIN_DESCRIPTION: Record<string, string> = {
   ad_reward: "Advertisement completed",
   task_reward: "Advertisement completed",
   referral_commission: "Direct referral reward",
-  referral_reward: "Referral reward",
-  platform_admin_profit: "Platform fee",
-  platform_profit: "Platform fee",
+  referral_reward: "Direct referral reward",
+  platform_admin_profit: "Platform commission",
+  platform_profit: "Platform commission",
   admin_adjustment: "Balance adjustment",
   refund: "Refund issued",
   withdrawal_refund: "Withdrawal returned",
   unassigned_referral: "Referral allocation",
 };
+
+type TransactionMetadata = Record<string, unknown> | null | undefined;
+
+function isIndirectReferral(metadata: TransactionMetadata): boolean {
+  return String(metadata?.commission_source ?? "").trim().toLowerCase() === "indirect";
+}
 
 export function formatMoney(amount: unknown, currency = "PKR"): string {
   if (amount === null || amount === undefined || amount === "" || !Number.isFinite(Number(amount))) return "—";
@@ -71,17 +77,23 @@ export function shortUserId(publicUid: unknown): string {
   return value ? `UID ${value}` : "—";
 }
 
-export function typeLabel(value: unknown): { label: string; icon: string } {
+export function typeLabel(value: unknown, metadata?: TransactionMetadata): { label: string; icon: string } {
   const raw = String(value ?? "").trim().toLowerCase();
   if (!raw) return { label: "Other", icon: "•" };
   if (raw.endsWith("_correction")) return { label: "Balance Correction", icon: "🛠️" };
+  if ((raw === "referral_reward" || raw === "referral_commission") && isIndirectReferral(metadata)) {
+    return { label: "Indirect Referral", icon: "👥" };
+  }
   return TYPE_MAP[raw] ?? { label: "Other", icon: "•" };
 }
 
-export function plainDescription(value: unknown): string {
+export function plainDescription(value: unknown, metadata?: TransactionMetadata): string {
   const raw = String(value ?? "").trim().toLowerCase();
   if (!raw) return "—";
   if (raw.endsWith("_correction")) return "Balance correction";
+  if ((raw === "referral_reward" || raw === "referral_commission") && isIndirectReferral(metadata)) {
+    return "Indirect referral reward";
+  }
   return PLAIN_DESCRIPTION[raw] ?? "—";
 }
 
