@@ -619,13 +619,20 @@ export function AdminRoute() {
       { label: "Tracked cash retained", value: Number(overview.tracked_cash_retained ?? 0) },
       { label: "Rewards issued", value: Number(overview.total_rewards_issued ?? 0) },
       { label: "Remaining reserves", value: Number(overview.total_remaining_user_reward_reserves ?? 0) },
+      {
+        label: "Total allocated reward capacity",
+        value: reserveSummary.reduce(
+          (total, summary) => total + Number(summary.total_original_reserve ?? 0),
+          0,
+        ),
+      },
   { label: "Recovery fund collected", value: Number(overview.total_recovery_fund_collected ?? 0) },
   { label: "Recovery fund remaining", value: Number(overview.remaining_recovery_fund ?? 0) },
   { label: "Ad budget recovered", value: Number(overview.total_ad_budget_recovered ?? 0) },
   { label: "Pending support", value: Number(overview.pending_support_tickets ?? 0) },
       { label: "Risk alerts", value: Number(overview.risk_alerts ?? 0) },
     ],
-    [overview],
+    [overview, reserveSummary],
   );
   async function openReceipt(row: AdminRow) {
     const path = typeof row.proof_url === "string" ? row.proof_url.trim() : "";
