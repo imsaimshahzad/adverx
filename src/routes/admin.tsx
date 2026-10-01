@@ -943,7 +943,7 @@ export function AdminRoute() {
               } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Unable to login as user."); }
             })(); }} />
           ) : active === "overview" ? (
-            <Overview metrics={metrics} rows={rows} reserveSummary={reserveSummary} />
+            <Overview metrics={metrics} overview={overview} reserveSummary={reserveSummary} />
           ) : active === "settings" ? (
             <HomepageHeroSettings />
           ) : active === "support" ? (
@@ -1469,11 +1469,11 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
 
 function Overview({
   metrics,
-  rows,
+  overview,
   reserveSummary,
 }: {
   metrics: Array<{ label: string; value: number }>;
-  rows: Record<string, AdminRow[]>;
+  overview: Record<string, number>;
   reserveSummary: AdminRow[];
 }) {
   return (
@@ -1512,23 +1512,19 @@ function Overview({
           {[
             [
               "Pending Deposits",
-              rows.deposits?.filter((row) => row.status === "pending").length ??
-                0,
+              Number(overview.pending_deposits ?? 0),
             ],
             [
               "Pending Withdrawals",
-              rows.withdrawals?.filter((row) => row.status === "pending")
-                .length ?? 0,
+              Number(overview.pending_withdrawals ?? 0),
             ],
             [
               "Open fraud flags",
-              rows.fraud_flags?.filter((row) => row.status === "open").length ??
-                0,
+              Number(overview.risk_alerts ?? 0),
             ],
             [
               "Open support",
-              rows.support_tickets?.filter((row) => row.status === "open")
-                .length ?? 0,
+              Number(overview.pending_support_tickets ?? 0),
             ],
           ].map(([label, value]) => (
             <div key={String(label)} className="rounded-lg border p-4">
