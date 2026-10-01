@@ -72,6 +72,7 @@ export type LedgerType =
   | "deposit"
   | "ad_reward"
   | "referral_reward"
+  | "referral_reserve"
   | "withdrawal"
   | "refund"
   | "adjustment"
@@ -349,6 +350,7 @@ async function loadState(user: {
     { data: depositMethods },
     { data: withdrawalMethods },
     { data: recoveries },
+    { data: referralReserveActivity },
   ] = await Promise.all([
     db.from("profiles").select("*").eq("id", uid).maybeSingle(),
     db.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
@@ -410,6 +412,7 @@ async function loadState(user: {
     db.from("deposit_methods").select("*").order("sort_order"),
     db.from("withdrawal_methods").select("*").eq("is_active", true).order("sort_order"),
     db.from("ad_budget_recoveries").select("id, amount_pkr, status, created_at, referred_id").eq("referrer_id", uid).order("created_at", { ascending: false }),
+    db.from("recovery_fund_ledger").select("id, entry_type, amount_pkr, created_at, note").eq("user_id", uid).eq("entry_type", "referrer_credit").order("created_at", { ascending: false }),
   ]);
   if (profileError) { console.error("[AdverX] profile query failed", profileError); throw new Error("Unable to load your account profile."); }
   if (plansError) { console.error("[AdverX] active plans query failed", plansError); throw new Error("Unable to load available plans."); }
@@ -595,11 +598,12 @@ async function loadState(user: {
       status: d.status,
       createdAt: new Date(d.created_at).getTime(),
     })),
-    ledger: Array.from(
-      new Map(
-        ([...(walletTransactions ?? []), ...(ledgerEntries ?? [])] as any[]).map((entry) => [entry.id, entry]),
-      ).values(),
-    )
+    ledger: [
+      ...Array.from(
+        new Map(
+          ([...(walletTransactions ?? []), ...(ledgerEntries ?? [])] as any[]).map((entry) => [entry.id, entry]),
+        ).values(),
+      )
       // Wallet transactions are the live user ledger. Keep legacy ledger rows as
       // a fallback so older rewards remain visible after the admin mapping change.
       .filter((e: any) => USER_LEDGER_TYPES.has(String(e.type ?? "").toUpperCase()))
@@ -656,6 +660,17 @@ async function loadState(user: {
           reference: e.reference_id,
         };
       }),
+      ...((referralReserveActivity ?? []) as any[]).map((entry) => ({
+        id: `referral-reserve-${entry.id}`,
+        type: "referral_reserve" as const,
+        label: "Referral Reward Reserve",
+        credit: num(entry.amount_pkr),
+        debit: 0,
+        status: "Allocated",
+        createdAt: new Date(entry.created_at).getTime(),
+        reference: entry.note ?? undefined,
+      })),
+    ].sort((a, b) => b.createdAt - a.createdAt),
     withdrawals: ((withdrawals ?? []) as any[]).map((w) => ({
       id: w.id,
       amount: num(w.amount),
