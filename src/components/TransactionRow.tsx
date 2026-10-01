@@ -11,6 +11,7 @@ type TransactionRowData = {
   currency?: string | null;
   status?: string | null;
   description?: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at?: string | number | null;
 };
 
@@ -21,11 +22,12 @@ type Props = {
 };
 
 export function TransactionRow({ row, onClick, showId = true }: Props) {
-  const type = typeLabel(row.kind ?? row.entry_type ?? row.source);
+  const kind = row.kind ?? row.entry_type ?? row.source;
+  const type = typeLabel(kind, row.metadata);
   const badge = statusBadge(row.status);
-  const description = plainDescription(row.kind ?? row.entry_type ?? row.source) === "—"
+  const description = plainDescription(kind, row.metadata) === "—"
     ? "Transaction activity"
-    : plainDescription(row.kind ?? row.entry_type ?? row.source);
+    : plainDescription(kind, row.metadata);
 
   return (
     <button
