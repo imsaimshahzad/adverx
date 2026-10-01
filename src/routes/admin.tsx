@@ -628,7 +628,6 @@ export function AdminRoute() {
       },
   { label: "Recovery fund collected", value: Number(overview.total_recovery_fund_collected ?? 0) },
   { label: "Recovery fund remaining", value: Number(overview.remaining_recovery_fund ?? 0) },
-  { label: "Ad budget recovered", value: Number(overview.total_ad_budget_recovered ?? 0) },
   { label: "Pending support", value: Number(overview.pending_support_tickets ?? 0) },
       { label: "Risk alerts", value: Number(overview.risk_alerts ?? 0) },
     ],
