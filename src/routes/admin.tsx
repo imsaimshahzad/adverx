@@ -1499,9 +1499,9 @@ function Overview({
         ))}
       </section>
       {reserveSummary.length ? <Card>
-        <CardHeader><CardTitle>User reward reserve summary</CardTitle><p className="text-sm text-muted-foreground">Database-backed reserve usage by plan. Reserves are funded capacity, not guaranteed earnings.</p></CardHeader>
+        <CardHeader><CardTitle>User reward reserve summary</CardTitle><p className="text-sm text-muted-foreground">Plan budget plus referral-funded reward reserve, grouped by the user’s active plan. Reserves are funded capacity, not guaranteed earnings.</p></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
-          {reserveSummary.map((summary) => <div key={String(summary.plan_name)} className="rounded-lg border p-4"><p className="font-medium">{String(summary.plan_name)}</p><p className="mt-2 text-xs text-muted-foreground">Users {String(summary.total_users)} · Original {String(summary.total_original_reserve)} PKR</p><p className="text-xs text-muted-foreground">Used {String(summary.total_reserve_used)} PKR · Remaining {String(summary.total_reserve_remaining)} PKR</p><p className="mt-1 text-sm font-semibold">Rewards issued {String(summary.total_rewards_issued)} PKR</p></div>)}
+          {reserveSummary.map((summary) => <div key={String(summary.plan_name)} className="rounded-lg border p-4"><p className="font-medium">{String(summary.plan_name)}</p><p className="mt-2 text-xs text-muted-foreground">Users {String(summary.total_users)} · Total allocated {Number(summary.total_original_reserve ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p><p className="text-xs text-muted-foreground">Used {Number(summary.total_reserve_used ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR · Remaining {Number(summary.total_reserve_remaining ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p><p className="mt-1 text-sm font-semibold">Rewards issued {Number(summary.total_rewards_issued ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p></div>)}
         </CardContent>
       </Card> : null}
       <Card>
