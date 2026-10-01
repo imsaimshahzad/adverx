@@ -1210,13 +1210,13 @@ function RevenueDashboard({
     ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral],
     ["Unallocated Recovery", summary.unallocated_recovery],
     ["Retained Reward Budget", summary.retained_reward_budget],
-    ["Referrer Recovery Reserve", referrerRecoveryReserve],
+    ["Referrer Reward Reserve", referrerRecoveryReserve],
     ["Admin Own Balance", summary.admin_own_balance],
   ];
   const cardDescription = (label: string) => {
     if (label === "Unassigned Referral") return "Referral commission from a purchase where no eligible referrer existed. This amount is automatically assigned to Admin.";
     if (label === "Unallocated Recovery") return "Recovery allocation from purchases where no eligible referrer existed. Normally this amount would go to the eligible referrer's Recovery Reserve; without a referrer, it remains in this separate platform-use fund.";
-    if (label === "Referrer Recovery Reserve") return "Recovery reserves belonging to eligible referrers and supporting their future ad earning capacity.";
+    if (label === "Referrer Reward Reserve") return "Referral-generated funds belonging to eligible referrers and available to support their ad reward capacity.";
     if (label === "Available Withdrawable Balance") return "Admin/platform balance currently available for withdrawal.";
     if (label === "Admin Own Balance") return "Admin-owned balance shown separately from platform profit.";
     return undefined;
@@ -1228,7 +1228,7 @@ function RevenueDashboard({
         <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Unassigned Referral is available to the admin/platform under existing accounting logic, but is not Platform Profit.</p>
       </div>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, key]) => <Card key={label}><CardContent className="flex h-full flex-col p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="This is the referral allocation, not Platform Profit." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{label === "Unallocated Recovery" ? <Badge variant="outline" className="mt-3 w-fit border-destructive/30 text-destructive">NOT WITHDRAWABLE</Badge> : null}{label === "Referrer Recovery Reserve" ? <Badge variant="outline" className="mt-3 w-fit border-primary/30 text-primary">Not Admin Funds</Badge> : null}{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}{label === "Unallocated Recovery" ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Used only for campaigns, promotions, incentives and approved platform expenses.</p> : null}</CardContent></Card>)}
+        {cards.map(([label, key]) => <Card key={label}><CardContent className="flex h-full flex-col p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="This is the referral allocation, not Platform Profit." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{label === "Unallocated Recovery" ? <Badge variant="outline" className="mt-3 w-fit border-destructive/30 text-destructive">NOT WITHDRAWABLE</Badge> : null}{label === "Referrer Reward Reserve" ? <Badge variant="outline" className="mt-3 w-fit border-primary/30 text-primary">Not Admin Funds</Badge> : null}{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}{label === "Unallocated Recovery" ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Used only for campaigns, promotions, incentives and approved platform expenses.</p> : null}</CardContent></Card>)}
       </section>
       <Card>
         <CardHeader>
@@ -2366,8 +2366,10 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
       {(() => {
         const activePlan = plans.find((row) => String(row.status ?? "").toLowerCase() === "active");
         if (!activePlan) return null;
-        const allocated = Number(activePlan.reward_budget_pkr ?? activePlan.original_reward_reserve_pkr ?? 0);
-        const remaining = Number(activePlan.remaining_reward_budget_pkr ?? 0);
+        const initialBudget = Number(activePlan.reward_budget_pkr ?? activePlan.original_reward_reserve_pkr ?? 0);
+        const referralAllocated = Number(activePlan.referral_reward_allocated_pkr ?? 0);
+        const allocated = initialBudget + referralAllocated;
+        const remaining = Number(activePlan.remaining_reward_budget_pkr ?? 0) + Number(profile.recovery_reserve_pkr ?? 0);
         const used = Math.max(0, allocated - remaining);
         const dailyUsed = Number(activePlan.daily_reward_used_pkr ?? 0);
         const dailyLimit = Number(activePlan.daily_reward_limit_pkr ?? 0);
@@ -2375,14 +2377,16 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
           <Card>
             <CardHeader className="px-4 py-3">
               <CardTitle className="text-sm">Reward Budget</CardTitle>
+              <p className="text-xs text-muted-foreground">Plan ad budget + referral-funded reward allocations</p>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3 px-4 pb-4 pt-0 sm:grid-cols-3 lg:grid-cols-5">
+            <CardContent className="grid grid-cols-2 gap-3 px-4 pb-4 pt-0 sm:grid-cols-3 lg:grid-cols-6">
               {[
-                ["Allocated", money(allocated)],
+                ["All Time Allocated", money(allocated)],
+                ["Plan Budget", money(initialBudget)],
+                ["Referral Added", money(referralAllocated)],
                 ["Used", money(used)],
                 ["Remaining", money(remaining)],
                 ["Daily Used", money(dailyUsed)],
-                ["Daily Limit", dailyLimit > 0 ? money(dailyLimit) : "—"],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-lg border bg-muted/30 p-3">
                   <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
