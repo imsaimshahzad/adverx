@@ -1074,7 +1074,9 @@ export function AdminRoute() {
             <AdminEmailComposer />
           ) : active === "revenue" ? (
             <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} plans={revenuePlans} referrerRecoveryReserve={referrerRecoveryReserve} onRefresh={load} />
-          ) : active === "reports" ? (\n            <ReportsPanel />\n          ) : (
+          ) : active === "reports" ? (
+            <ReportsPanel />
+          ) : (
             <ModuleTable
               active={active}
               rows={filtered}
