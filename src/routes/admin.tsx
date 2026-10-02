@@ -513,50 +513,6 @@ export function AdminRoute() {
           ? await queryAllRows(table)
           : await queryRows(table);
 
-        // Deposits should be human-readable for Admins. The deposits table stores
-        // the Supabase auth UUID, but Admins need the user's real name + public UID.
-        if (active === "deposits" && moduleRows.length) {
-          const userIds = [
-            ...new Set(
-              moduleRows
-                .map((row) => String(row.user_id ?? ""))
-                .filter(Boolean),
-            ),
-          ];
-
-          if (userIds.length) {
-            const { data: profiles, error: profilesError } = await db
-              .from("profiles")
-              .select("id, public_uid, full_name, username")
-              .in("id", userIds);
-
-            if (!profilesError) {
-              const profileMap = new Map(
-                (profiles ?? []).map((profile: any) => [
-                  String(profile.id),
-                  profile,
-                ]),
-              );
-
-              moduleRows = moduleRows.map((row) => {
-                const profile: any = profileMap.get(String(row.user_id ?? ""));
-                return {
-                  ...row,
-                  deposit_user_name:
-                    profile?.full_name || profile?.username || "Unknown user",
-                  deposit_user_uid: profile?.public_uid || "—",
-                };
-              });
-            } else {
-              moduleRows = moduleRows.map((row) => ({
-                ...row,
-                deposit_user_name: "Unknown user",
-                deposit_user_uid: "—",
-              }));
-            }
-          }
-        }
-
         let moduleRows = active === "ledger"
           ? await queryAllRows(table)
           : await queryRows(table);
