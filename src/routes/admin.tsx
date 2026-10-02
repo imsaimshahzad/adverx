@@ -1074,7 +1074,7 @@ export function AdminRoute() {
             <AdminEmailComposer />
           ) : active === "revenue" ? (
             <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} plans={revenuePlans} referrerRecoveryReserve={referrerRecoveryReserve} onRefresh={load} />
-          ) : (
+          ) : active === "reports" ? (\n            <ReportsPanel />\n          ) : (
             <ModuleTable
               active={active}
               rows={filtered}
@@ -2560,6 +2560,144 @@ function prettyJson(value: unknown) {
     try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; }
   }
   return JSON.stringify(value ?? {}, null, 2);
+}
+
+
+function ReportsPanel() {
+  type ReportType = "all" | "deposits" | "withdrawals" | "rewards" | "referrals" | "plans";
+  type ReportRow = AdminRow & { report_type?: string; user_name?: string; user_uid?: string; record_id?: string; transaction_no?: string };
+  const [reportType, setReportType] = useState<ReportType>("all");
+  const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [reportRows, setReportRows] = useState<ReportRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    try {
+      const db = supabase as any;
+      const sources: Array<{ type: ReportType; table: string; kind?: string; entryType?: string }> = [
+        { type: "deposits", table: "deposits" },
+        { type: "withdrawals", table: "withdrawals" },
+        { type: "rewards", table: "ledger_entries", entryType: "ad_reward" },
+        { type: "referrals", table: "referral_commissions" },
+        { type: "plans", table: "transactions", kind: "PLAN_PURCHASE" },
+      ];
+      const selected = reportType === "all" ? sources : sources.filter((source) => source.type === reportType);
+      const results = await Promise.allSettled(selected.map(async (source) => {
+        let request = db.from(source.table).select("*").order("created_at", { ascending: false }).limit(1000);
+        if (source.kind) request = request.eq("kind", source.kind);
+        if (source.entryType) request = request.eq("entry_type", source.entryType);
+        const result = await request;
+        if (result.error) throw result.error;
+        return { source, rows: (result.data ?? []) as AdminRow[] };
+      }));
+      const raw: ReportRow[] = [];
+      for (const result of results) {
+        if (result.status !== "fulfilled") continue;
+        for (const row of result.value.rows) raw.push({ ...row, report_type: result.value.source.type, record_id: String(row.transaction_no ?? row.id ?? "—") });
+      }
+      const userIds = [...new Set(raw.map((row) => String(row.user_id ?? "").trim()).filter((id) => id.length > 20))];
+      const profileMap = new Map<string, AdminRow>();
+      if (userIds.length) {
+        const { data: profiles } = await db.from("profiles").select("id, public_uid, full_name, username").in("id", userIds);
+        for (const profile of profiles ?? []) profileMap.set(String(profile.id), profile);
+      }
+      setReportRows(raw.map((row) => {
+        const profile = profileMap.get(String(row.user_id ?? ""));
+        return { ...row, user_name: profile?.full_name || profile?.username || (row.user_id ? "Unknown user" : "Platform"), user_uid: profile?.public_uid || "—" };
+      }));
+      setPage(1);
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Unable to load reports.");
+      setReportRows([]);
+    } finally { setLoading(false); }
+  }, [reportType]);
+
+  useEffect(() => { void loadReports(); }, [loadReports]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const from = fromDate ? new Date(fromDate + "T00:00:00").getTime() : Number.NEGATIVE_INFINITY;
+    const to = toDate ? new Date(toDate + "T23:59:59.999").getTime() : Number.POSITIVE_INFINITY;
+    return reportRows.filter((row) => {
+      const time = Date.parse(String(row.created_at ?? ""));
+      if (Number.isFinite(time) && (time < from || time > to)) return false;
+      if (!Number.isFinite(time) && (from !== Number.NEGATIVE_INFINITY || to !== Number.POSITIVE_INFINITY)) return false;
+      if (!q) return true;
+      return [row.report_type, row.user_name, row.user_uid, row.transaction_no, row.record_id, row.amount, row.status, row.method, row.entry_type, row.kind, row.source, row.description, row.note].filter(Boolean).join(" ").toLowerCase().includes(q);
+    }).sort((a, b) => Date.parse(String(b.created_at ?? "")) - Date.parse(String(a.created_at ?? "")));
+  }, [fromDate, reportRows, search, toDate]);
+
+  const pageSize = 20;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  function labelForType(type: string) {
+    return ({ deposits: "Deposit", withdrawals: "Withdrawal", rewards: "Ad Reward", referrals: "Referral Commission", plans: "Plan Purchase" } as Record<string, string>)[type] ?? type;
+  }
+
+  function exportCsv() {
+    if (!filtered.length) { toast.info("There are no records to export."); return; }
+    const headers = ["Date & Time", "User", "UID", "Type", "Amount (PKR)", "Status", "Method", "Record ID"];
+    const escape = (value: unknown) => '"' + String(value ?? "—").replaceAll('"', '""') + '"';
+    const lines = [
+      headers.map(escape).join(","),
+      ...filtered.map((row) => [
+        row.created_at ? formatDate(String(row.created_at)) : "—", row.user_name ?? "Platform", row.user_uid ?? "—",
+        labelForType(String(row.report_type ?? "")), row.amount ?? "—", row.status ?? "—", row.method ?? "—", row.transaction_no ?? row.record_id ?? "—",
+      ].map(escape).join(",")),
+    ];
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = "adverx-report.csv"; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+    toast.success("Report exported.");
+  }
+
+  return (
+    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+      <CardHeader className="border-b border-slate-200/80 bg-white p-0">
+        <div className="flex flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div><CardTitle className="text-base font-semibold text-slate-900">Reports</CardTitle><p className="mt-1 text-sm text-slate-500">Search, filter and export detailed activity records.</p></div>
+          <Button variant="outline" onClick={exportCsv} disabled={loading || !filtered.length}>Export CSV</Button>
+        </div>
+        <div className="grid gap-3 border-t border-slate-100 bg-slate-50/70 p-4 md:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr_1fr]">
+          <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search user, UID, amount or record..." className="h-10 rounded-lg border-slate-200 bg-white pl-9 shadow-none" /></div>
+          <select value={reportType} onChange={(event) => { setReportType(event.target.value as ReportType); setPage(1); }} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200" aria-label="Report type">
+            <option value="all">All activity</option><option value="deposits">Deposits</option><option value="withdrawals">Withdrawals</option><option value="rewards">Ad rewards</option><option value="referrals">Referral commissions</option><option value="plans">Plan purchases</option>
+          </select>
+          <Input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setPage(1); }} className="h-10 rounded-lg border-slate-200 bg-white shadow-none" aria-label="From date" />
+          <Input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setPage(1); }} className="h-10 rounded-lg border-slate-200 bg-white shadow-none" aria-label="To date" />
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 text-sm text-slate-500 sm:px-5"><span>{filtered.length.toLocaleString()} record{filtered.length === 1 ? "" : "s"}</span><span>{loading ? "Loading..." : "Updated just now"}</span></div>
+        {loading ? <div className="flex min-h-48 items-center justify-center text-sm text-muted-foreground">Loading report records...</div> : !visible.length ? (
+          <div className="flex min-h-48 flex-col items-center justify-center p-10 text-center"><div className="mb-3 flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-500"><FileText className="size-5" /></div><p className="font-medium text-slate-800">No records found</p><p className="mt-1 max-w-sm text-sm text-slate-500">Try another report type, date range or search.</p></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] text-sm"><thead className="border-b border-slate-200 bg-slate-50/80"><tr className="text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+              <th className="px-4 py-3">Date &amp; Time</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Amount (PKR)</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Method</th><th className="px-4 py-3">Record ID</th>
+            </tr></thead><tbody>{visible.map((row, index) => (
+              <tr key={String(row.id ?? row.record_id ?? index)} className={index % 2 ? "border-b border-slate-100 bg-slate-50/35 hover:bg-[#fff8f2]" : "border-b border-slate-100 bg-white hover:bg-[#fff8f2]"}>
+                <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-600">{row.created_at ? formatDate(String(row.created_at)) : "—"}</td>
+                <td className="px-4 py-3"><div className="min-w-[150px]"><div className="truncate font-medium text-slate-900">{String(row.user_name ?? "Platform")}</div><div className="text-[11px] text-slate-500">{row.user_uid && row.user_uid !== "—" ? "UID " + row.user_uid : "Platform record"}</div></div></td>
+                <td className="px-4 py-3"><Badge variant="outline" className="whitespace-nowrap">{labelForType(String(row.report_type ?? "activity"))}</Badge></td>
+                <td className="whitespace-nowrap px-4 py-3 font-semibold tabular-nums">{row.amount === undefined || row.amount === null ? "—" : "PKR " + Number(row.amount).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td className="px-4 py-3"><Badge variant="secondary" className="whitespace-nowrap capitalize">{String(row.status ?? "—").replaceAll("_", " ")}</Badge></td>
+                <td className="px-4 py-3 text-slate-600">{String(row.method ?? "—").replaceAll("_", " ")}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold text-primary">{String(row.transaction_no ?? row.record_id ?? "—")}</td>
+              </tr>
+            ))}</tbody></table>
+            <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3"><p className="text-sm text-muted-foreground">Showing {visible.length} of {filtered.length}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(Math.max(1, page - 1))}>Previous</Button><span className="px-2 text-sm text-muted-foreground">Page {page} of {pageCount}</span><Button variant="outline" size="sm" disabled={page >= pageCount} onClick={() => setPage(Math.min(pageCount, page + 1))}>Next</Button></div></div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function ModuleTable({
