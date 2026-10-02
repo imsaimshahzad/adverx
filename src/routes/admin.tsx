@@ -1217,15 +1217,15 @@ function RevenueDashboard({
     ["This month", summary.month_profit],
     ["Available Withdrawable Balance", summary.available_balance],
     ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral],
-    ["Unallocated Recovery", summary.unallocated_recovery],
+    ["Bonus & Promotion Fund", summary.unallocated_recovery],
     ["Retained Reward Budget", summary.retained_reward_budget],
-    ["Referrer Reward Reserve", referrerRecoveryReserve],
+    ["User Reward Reserve", referrerRecoveryReserve],
     ["Admin Own Balance", summary.admin_own_balance],
   ];
   const cardDescription = (label: string) => {
     if (label === "Unassigned Referral") return "Referral commission from a purchase where no eligible referrer existed. This amount is automatically assigned to Admin.";
-    if (label === "Unallocated Recovery") return "Recovery allocation from purchases where no eligible referrer existed. Normally this amount would go to the eligible referrer's Recovery Reserve; without a referrer, it remains in this separate platform-use fund.";
-    if (label === "Referrer Reward Reserve") return "Referral-generated funds belonging to eligible referrers and available to support their ad reward capacity.";
+    if (label === "Bonus & Promotion Fund") return "Separate platform fund available for admin bonuses, promotions, incentives, and approved platform expenses. This is not part of user reward reserves.";
+    if (label === "User Reward Reserve") return "Reserved for eligible referrers/users. This is not an admin bonus fund and should not be used for admin bonuses.";
     if (label === "Available Withdrawable Balance") return "Admin/platform balance currently available for withdrawal.";
     if (label === "Admin Own Balance") return "Admin-owned balance shown separately from platform profit.";
     return undefined;
@@ -1237,7 +1237,7 @@ function RevenueDashboard({
         <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Unassigned Referral is available to the admin/platform under existing accounting logic, but is not Platform Profit.</p>
       </div>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, key]) => <Card key={label}><CardContent className="flex h-full flex-col p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="This is the referral allocation, not Platform Profit." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{label === "Unallocated Recovery" ? <Badge variant="outline" className="mt-3 w-fit border-destructive/30 text-destructive">NOT WITHDRAWABLE</Badge> : null}{label === "Referrer Reward Reserve" ? <Badge variant="outline" className="mt-3 w-fit border-primary/30 text-primary">Not Admin Funds</Badge> : null}{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}{label === "Unallocated Recovery" ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Used only for campaigns, promotions, incentives and approved platform expenses.</p> : null}</CardContent></Card>)}
+        {cards.map(([label, key]) => <Card key={label}><CardContent className="flex h-full flex-col p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="This is the referral allocation, not Platform Profit." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{label === "Bonus & Promotion Fund" ? <Badge variant="outline" className="mt-3 w-fit border-destructive/30 text-destructive">NOT WITHDRAWABLE</Badge> : null}{label === "User Reward Reserve" ? <Badge variant="outline" className="mt-3 w-fit border-primary/30 text-primary">Not Admin Funds</Badge> : null}{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}{label === "Bonus & Promotion Fund" ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Used only for campaigns, promotions, incentives and approved platform expenses.</p> : null}</CardContent></Card>)}
       </section>
       <Card>
         <CardHeader>
@@ -1309,7 +1309,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
       setActivity(rows);
       setError("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load Unallocated Recovery activity.");
+      setError(cause instanceof Error ? cause.message : "Unable to load Bonus & Promotion Fund activity.");
     }
   };
 
@@ -1331,9 +1331,9 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
       setReason("");
       setReference("");
       await Promise.all([load(), onRefresh()]);
-      toast.success(`Unallocated Recovery used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
+      toast.success(`Bonus & Promotion Fund used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to use Unallocated Recovery.");
+      setError(cause instanceof Error ? cause.message : "Unable to use Bonus & Promotion Fund.");
     } finally {
       setBusy(false);
     }
@@ -1343,16 +1343,16 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
     <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.35fr)]">
       <Card className="min-w-0 overflow-hidden">
         <CardHeader className="space-y-2 p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Use Unallocated Recovery</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Use Bonus & Promotion Fund</CardTitle>
           <p className="text-sm leading-6 text-muted-foreground">
-            Use this separate non-withdrawable fund for campaigns, promotions, incentives or approved platform expenses.
+            Use this separate platform fund for admin bonuses, promotions, incentives, or approved platform expenses. It is not part of user reward reserves.
           </p>
         </CardHeader>
         <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
           <form className="grid gap-4" onSubmit={submit}>
             <div className="grid gap-3 rounded-xl border bg-muted/30 p-3 text-sm sm:grid-cols-3 sm:p-4">
               <div className="min-w-0">
-                <p className="text-xs leading-5 text-muted-foreground">Current Unallocated Recovery</p>
+                <p className="text-xs leading-5 text-muted-foreground">Current Bonus & Promotion Fund</p>
                 <p className="mt-1 text-lg font-semibold tabular-nums">{remaining.toLocaleString()} PKR</p>
               </div>
               <div className="min-w-0">
@@ -1399,7 +1399,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
             {error ? <p className="rounded-lg bg-destructive/10 p-3 text-sm leading-5 text-destructive" role="alert">{error}</p> : null}
 
             <Button type="submit" disabled={busy} className="w-full sm:w-auto sm:min-w-52">
-              {busy ? "Recording…" : "Use Unallocated Recovery"}
+              {busy ? "Recording…" : "Use Bonus & Promotion Fund"}
             </Button>
           </form>
         </CardContent>
@@ -1407,7 +1407,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
 
       <Card className="min-w-0 overflow-hidden">
         <CardHeader className="space-y-2 p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Unallocated Recovery Activity</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Bonus & Promotion Fund Activity</CardTitle>
           <p className="text-sm leading-6 text-muted-foreground">
             Credits come from purchases with no eligible referrer; debits represent approved platform use.
           </p>
@@ -1437,7 +1437,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                   </div>
                 </div>
               );
-            }) : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No Unallocated Recovery activity yet.</div>}
+            }) : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No Bonus & Promotion Fund activity yet.</div>}
           </div>
 
           <div className="hidden overflow-x-auto sm:block">
@@ -1466,7 +1466,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                       <td className="whitespace-nowrap p-4 text-right font-medium tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td>
                     </tr>
                   );
-                }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Unallocated Recovery activity yet.</td></tr>}
+                }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Bonus & Promotion Fund activity yet.</td></tr>}
               </tbody>
             </table>
           </div>
