@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ensureSupabaseSessionReady } from "@/integrations/supabase/client";
 import { checkRouteAccess } from "@/lib/auth-guard.functions";
-import { LoadingScreen } from "@/components/LoadingIndicator";
 
 const ADMIN_ONLY_PATHS = ["/users/detail/"];
 
@@ -11,9 +10,6 @@ function requiresAdmin(pathname: string) {
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  pendingMs: 0,
-  pendingMinMs: 250,
-  pendingComponent: () => <LoadingScreen label="Loading your workspace" />,
   beforeLoad: async ({ location }) => {
     await ensureSupabaseSessionReady();
 
