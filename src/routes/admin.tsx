@@ -182,7 +182,7 @@ function mapUserForDisplay(row: AdminRow): AdminRow {
 
 async function enrichAdminRows(rows: AdminRow[]) {
   if (!rows.length) return rows;
-  const userReferenceFields = ["user_id","referrer_id","referred_id","referral_id","sponsor_id","recipient_id","owner_id","created_by","approved_by","reviewed_by","moderator_id"];
+  const userReferenceFields = ["user_id","referrer_id","referred_id","sponsor_id","recipient_id","owner_id","created_by","approved_by","reviewed_by","moderator_id"];
   const userIds = [...new Set(rows.flatMap((row) =>
     userReferenceFields.map((field) => row[field]).filter((value) => typeof value === "string" && value.length > 20)
   ))];
@@ -191,6 +191,13 @@ async function enrichAdminRows(rows: AdminRow[]) {
     const { data: profiles, error } = await db.from("profiles").select("id, public_uid, full_name, username").in("id", userIds);
     if (!error) for (const profile of profiles ?? []) profileMap.set(String(profile.id), profile);
   }
+  const referralIds = [...new Set(rows.map((row) => String(row.referral_id ?? "").trim()).filter((value) => value.length > 20))];
+  const referralMap = new Map<string, { referrer_id?: string; referred_id?: string }>();
+  if (referralIds.length) {
+    const { data: referrals, error } = await db.from("referrals").select("id, referrer_id, referred_id").in("id", referralIds);
+    if (!error) for (const referral of referrals ?? []) referralMap.set(String(referral.id), referral);
+  }
+
   return rows.map((row) => {
     const enriched = { ...row } as AdminRow;
     for (const field of userReferenceFields) {
@@ -200,6 +207,17 @@ async function enrichAdminRows(rows: AdminRow[]) {
         enriched[`${field}_name`] = profile.full_name || profile.username || "Unknown user";
         enriched[`${field}_uid`] = profile.public_uid || "—";
       }
+    }
+    const referral = referralMap.get(String(row.referral_id ?? "").trim());
+    if (referral) {
+      const referrer = profileMap.get(String(referral.referrer_id ?? ""));
+      const referred = profileMap.get(String(referral.referred_id ?? ""));
+      enriched.referral_id_name = referrer?.full_name || referrer?.username
+        ? `${referrer?.full_name || referrer?.username} → ${referred?.full_name || referred?.username || "Unknown user"}`
+        : "Unknown referral";
+      enriched.referral_id_uid = referrer?.public_uid && referred?.public_uid
+        ? `${referrer.public_uid} → ${referred.public_uid}`
+        : "—";
     }
     if (typeof row.id === "string" && row.id.length > 20) enriched.display_id = shortId(row.id);
     return enriched;
@@ -2747,6 +2765,8 @@ function ModuleTable({
   ? ["user_id_name", "user_id_uid", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "referrals"
   ? ["referrer_user_name", "referrer_user_uid", "referred_user_name", "referred_user_uid", "level", "created_at"].filter((column) => rawColumns.includes(column))
+  : active === "referral-commissions"
+  ? ["id", "referral_id", "user_id", "amount", "level", "source"].filter((column) => rawColumns.includes(column))
   : active === "plans"
   ? [
   ...[
