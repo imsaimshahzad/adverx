@@ -463,9 +463,54 @@ export function AdminRoute() {
         const table = tableFor[active];
         if (!table) return;
 
-        const moduleRows = active === "ledger"
+        let moduleRows = active === "ledger"
           ? await queryAllRows(table)
           : await queryRows(table);
+
+        // Deposits should be human-readable for Admins. The deposits table stores
+        // the Supabase auth UUID, but Admins need the user's real name + public UID.
+        if (active === "deposits" && moduleRows.length) {
+          const userIds = [
+            ...new Set(
+              moduleRows
+                .map((row) => String(row.user_id ?? ""))
+                .filter(Boolean),
+            ),
+          ];
+
+          if (userIds.length) {
+            const { data: profiles, error: profilesError } = await db
+              .from("profiles")
+              .select("id, public_uid, full_name, username")
+              .in("id", userIds);
+
+            if (!profilesError) {
+              const profileMap = new Map(
+                (profiles ?? []).map((profile: any) => [
+                  String(profile.id),
+                  profile,
+                ]),
+              );
+
+              moduleRows = moduleRows.map((row) => {
+                const profile: any = profileMap.get(String(row.user_id ?? ""));
+                return {
+                  ...row,
+                  deposit_user_name:
+                    profile?.full_name || profile?.username || "Unknown user",
+                  deposit_user_uid: profile?.public_uid || "—",
+                };
+              });
+            } else {
+              moduleRows = moduleRows.map((row) => ({
+                ...row,
+                deposit_user_name: "Unknown user",
+                deposit_user_uid: "—",
+              }));
+            }
+          }
+        }
+
         if (requestVersion !== loadVersion.current) return;
         setRows({ [table]: moduleRows });
       };
@@ -2675,7 +2720,7 @@ function ModuleTable({
   : active === "ledger"
   ? ["user_id", "entry_type", "amount", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "deposits"
-  ? ["user_id", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
+  ? ["deposit_user_name", "deposit_user_uid", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "withdrawals"
   ? ["user_id", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "plans"
@@ -2857,6 +2902,13 @@ function ModuleTable({
                           reference_id: "Reference",
                           note: "Description",
                           created_at: "Date & Time",
+                        } as Record<string, string>)[column] ?? column : active === "deposits" ? ({
+                          deposit_user_name: "User",
+                          deposit_user_uid: "UID",
+                          amount: "Amount (PKR)",
+                          method: "Method",
+                          status: "Status",
+                          created_at: "Date & Time",
                         } as Record<string, string>)[column] ?? column : active === "plans" && column === "ads_per_day" ? "Daily Ads Limit" : column.replaceAll("_", " ")}</span>
                         <ArrowUpDown className="size-3.5 shrink-0 text-slate-400" aria-hidden="true" />
                       </button>
@@ -2907,6 +2959,29 @@ function ModuleTable({
                           ) : (
                             <span>{String(row[column] ?? "—")}</span>
                           )
+                        ) : active === "deposits" && column === "deposit_user_name" ? (
+                          <div className="min-w-[150px]">
+                            <div className="truncate font-medium text-slate-900">{String(row.deposit_user_name ?? "Unknown user")}</div>
+                            <div className="truncate text-[11px] text-slate-500">User deposit</div>
+                          </div>
+                        ) : active === "deposits" && column === "deposit_user_uid" ? (
+                          <div className="flex min-w-[100px] items-center gap-1.5">
+                            <span className="font-mono text-xs font-semibold text-slate-700">{String(row.deposit_user_uid ?? "—")}</span>
+                            {row.deposit_user_uid && row.deposit_user_uid !== "—" ? (
+                              <button
+                                type="button"
+                                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                                aria-label="Copy user UID"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void navigator.clipboard?.writeText(String(row.deposit_user_uid));
+                                  toast.success("User UID copied");
+                                }}
+                              >
+                                <Copy className="size-3" />
+                              </button>
+                            ) : null}
+                          </div>
                         ) : active === "transactions" && column === "transaction_no" ? (
                           <span className="font-mono text-xs font-semibold text-primary">{String(row.transaction_no ?? "—")}</span>
                         ) : active === "transactions" && column === "user_id" ? (
