@@ -182,7 +182,7 @@ function mapUserForDisplay(row: AdminRow): AdminRow {
 
 async function enrichAdminRows(rows: AdminRow[]) {
   if (!rows.length) return rows;
-  const userReferenceFields = ["user_id","referrer_id","referred_id","sponsor_id","recipient_id","owner_id","created_by","approved_by","reviewed_by","moderator_id"];
+  const userReferenceFields = ["user_id","referrer_id","referred_id","referral_id","sponsor_id","recipient_id","owner_id","created_by","approved_by","reviewed_by","moderator_id"];
   const userIds = [...new Set(rows.flatMap((row) =>
     userReferenceFields.map((field) => row[field]).filter((value) => typeof value === "string" && value.length > 20)
   ))];
