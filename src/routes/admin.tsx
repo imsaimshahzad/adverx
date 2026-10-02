@@ -129,6 +129,26 @@ type UserCounts = {
   pro: number;
 };
 
+function friendlyAdminLabel(field: string) {
+  const labels: Record<string, string> = {
+    id: "Record ID", user_id: "User", referrer_id: "Referrer", referred_id: "Referred User",
+    sponsor_id: "Sponsor", recipient_id: "Recipient", owner_id: "Owner", created_by: "Created By",
+    approved_by: "Approved By", reviewed_by: "Reviewed By", moderator_id: "Moderator",
+    public_uid: "Public UID", referral_code: "Referral Code", price_pkr: "Price (PKR)",
+    reward_budget_pkr: "Reward Budget (PKR)", base_ad_reward_pkr: "Base Ad Reward (PKR)",
+    max_ad_reward_pkr: "Max Ad Reward (PKR)", daily_reward_limit_pkr: "Daily Reward Limit (PKR)",
+    max_lifetime_reward_pkr: "Max Lifetime Reward (PKR)", ads_per_day: "Daily Ads Limit",
+    direct_referral_pct: "Direct Referral (%)", referrer_commission_pct: "Referral Commission (%)",
+    indirect_referral_pct: "Indirect Referral (%)", admin_profit_pct: "Admin Profit (%)",
+    recovery_fund_pct: "Recovery Fund (%)", ad_budget_pct: "Ad Budget (%)",
+    recovery_per_referral_pkr: "Recovery Per Referral (PKR)", max_recovery_pkr: "Max Recovery (PKR)",
+    duration_seconds: "Duration (Seconds)", created_at: "Date & Time", updated_at: "Updated At",
+    status: "Status", role: "Role", entry_type: "Transaction Type", reference_id: "Reference",
+    transaction_id: "Transaction", transaction_no: "Transaction No.", task_type: "Task Type",
+  };
+  return labels[field] ?? field.replaceAll("_", " ").replace(/\\b\\w/g, (char) => char.toUpperCase());
+}
+
 function classifyUser(row: AdminRow): UserClassification {
   const role = String(row.role ?? row.account_role ?? "").toLowerCase();
   const accountType = String(row.account_type ?? row.user_type ?? "").toLowerCase();
@@ -2277,7 +2297,7 @@ function ManagementEditDialog({
     const booleanField = typeof value === "boolean" || ["active", "is_active", "reward_enabled", "referral_enabled"].includes(field);
     return (
       <label key={field} className="grid gap-1 text-sm font-medium">
-        {field.replaceAll("_", " ")}
+        {friendlyAdminLabel(field)}
         {booleanField ? (
           <select
             className="h-9 rounded-md border bg-background px-2"
@@ -2975,7 +2995,7 @@ function ModuleTable({
                           referred_user_uid: "Referred UID",
                           level: "Level",
                           created_at: "Date & Time",
-                        } as Record<string, string>)[column] ?? column : active === "plans" && column === "ads_per_day" ? "Daily Ads Limit" : column.replaceAll("_", " ")}</span>
+                        } as Record<string, string>)[column] ?? column : friendlyAdminLabel(column)}</span>
                         <ArrowUpDown className="size-3.5 shrink-0 text-slate-400" aria-hidden="true" />
                       </button>
                     </th>
@@ -3130,14 +3150,36 @@ function ModuleTable({
                             <Eye className="size-3.5" /> View details
                           </Button>
                         ) : active === "audit-logs" && ["actor_id", "admin_id", "user_id", "target_id"].includes(column) ? (
-                          <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-600" title={String(row[column] ?? "")}>{shortId(row[column])}<button type="button" className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-indigo-700" aria-label="Copy ID" onClick={(event) => { event.stopPropagation(); void navigator.clipboard?.writeText(String(row[column] ?? "")); }}><Copy className="size-3" /></button></span>
+                          <span className="inline-flex items-center gap-1.5 text-xs text-slate-700" title={String(row[column] ?? "")}>
+                            {row[`${column}_name`] ? (
+                              <span>
+                                <span className="font-medium">{String(row[`${column}_name`])}</span>
+                                <span className="ml-1 font-mono text-[10px] text-slate-500">UID {String(row[`${column}_uid`] ?? "—")}</span>
+                              </span>
+                            ) : (
+                              <span className="font-mono text-xs">{shortId(row[column])}</span>
+                            )}
+                            <button type="button" className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-indigo-700" aria-label="Copy ID" onClick={(event) => { event.stopPropagation(); void navigator.clipboard?.writeText(String(row[column] ?? "")); }}><Copy className="size-3" /></button></span>
                         ) : active === "audit-logs" && ["action", "event_type"].includes(column) ? (
                           <Badge variant="outline" className={`border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${actionBadgeClass(String(row[column] ?? ""))}`}>{String(row[column] ?? "—").replaceAll("_", " ")}</Badge>
                         ) : ["deposits", "withdrawals", "ledger", "revenue"].includes(active) && ["id", "reference_id"].includes(column) ? (
                           <span className="font-mono text-xs font-semibold text-primary" title="AdverX tracking ID">
                             {transactionNoMap[String(row[column] ?? "")] ?? shortId(String(row[column] ?? ""))}
                           </span>
-                        ) : <span title={String(row[column] ?? "")}>{active === "tasks" && column !== "created_at" ? String(row[column] ?? "—") : formatValue(row[column])}</span>}
+                        ) : (
+                          <span title={String(row[column] ?? "")}>
+                            {row[`${column}_name`] ? (
+                              <span>
+                                <span className="font-medium">{String(row[`${column}_name`])}</span>
+                                <span className="ml-1 font-mono text-[10px] text-slate-500">UID {String(row[`${column}_uid`] ?? "—")}</span>
+                              </span>
+                            ) : column === "id" && typeof row[column] === "string" && String(row[column]).length > 20 ? (
+                              <span className="font-mono text-xs">{String(row.display_id ?? shortId(String(row[column])))}</span>
+                            ) : active === "tasks" && column !== "created_at" ? (
+                              String(row[column] ?? "—")
+                            ) : formatValue(row[column])}
+                          </span>
+                        )}
                       </td>
                     ))}
                     {active === "notifications" ? (
