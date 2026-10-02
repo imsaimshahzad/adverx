@@ -654,13 +654,30 @@ export async function getUserDetails(identifier: string) {
 }
 
 export async function getUsersPage(search = "", status = "", page = 1, pageSize = 25) {
-  const [{ data: profiles, error: profilesError }, { data: activePlans, error: plansError }, { data: plans, error: planNamesError }] = await Promise.all([
+  const [
+    { data: profiles, error: profilesError },
+    { data: activePlans, error: plansError },
+    { data: plans, error: planNamesError },
+    { data: transactions, error: transactionsError },
+    { data: deposits, error: depositsError },
+    { data: withdrawals, error: withdrawalsError },
+  ] = await Promise.all([
     db.from("profiles").select("*").order("created_at", { ascending: false }),
     db.from("user_plans").select("user_id, plan_id, status").eq("status", "active"),
     db.from("plans").select("id, name"),
+    db.from("transactions").select("*").order("created_at", { ascending: false }),
+    db.from("deposits").select("*").order("created_at", { ascending: false }),
+    db.from("withdrawals").select("*").order("created_at", { ascending: false }),
   ]);
 
-  if (profilesError || plansError || planNamesError) {
+  if (
+    profilesError ||
+    plansError ||
+    planNamesError ||
+    transactionsError ||
+    depositsError ||
+    withdrawalsError
+  ) {
     throw new Error("Unable to load users.");
   }
 
@@ -675,21 +692,44 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
     }
   }
 
+  // Build searchable tokens from related financial records as well.
+  // This lets Admin → Users find a user by TXID / transaction reference,
+  // deposit reference, withdrawal reference, or any related record value.
+  const relatedSearchByUser = new Map<string, string[]>();
+  const addRelatedRows = (rows: AdminRow[]) => {
+    for (const row of rows) {
+      const userId = String(row.user_id ?? "").trim();
+      if (!userId) continue;
+      const tokens = relatedSearchByUser.get(userId) ?? [];
+      tokens.push(JSON.stringify(row));
+      relatedSearchByUser.set(userId, tokens);
+    }
+  };
+  addRelatedRows((transactions ?? []) as AdminRow[]);
+  addRelatedRows((deposits ?? []) as AdminRow[]);
+  addRelatedRows((withdrawals ?? []) as AdminRow[]);
+
   const normalizedSearch = search.trim().toLowerCase();
   const matchingRows = (profiles ?? [])
     .map((profile: AdminRow) => {
       const activePlan = activePlanByUser.get(String(profile.id));
       const planName = activePlan ? planById.get(String(activePlan.plan_id)) ?? "" : "";
+      const relatedSearch = relatedSearchByUser.get(String(profile.id))?.join(" ") ?? "";
       return {
         ...profile,
         active_plan_name: planName,
         user_plan_status: activePlan?.status ?? null,
         has_active_plan: Boolean(activePlan && planName),
+        _related_search: relatedSearch,
       };
     })
     .filter((row: AdminRow) => {
-      const matchesSearch = !normalizedSearch || JSON.stringify(row).toLowerCase().includes(normalizedSearch);
-      const matchesStatus = !status || String(row.status ?? "").toLowerCase() === status.toLowerCase();
+      const matchesSearch =
+        !normalizedSearch ||
+        JSON.stringify(row).toLowerCase().includes(normalizedSearch);
+      const matchesStatus =
+        !status ||
+        String(row.status ?? "").toLowerCase() === status.toLowerCase();
       return matchesSearch && matchesStatus;
     });
 
