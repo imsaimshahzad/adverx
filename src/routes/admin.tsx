@@ -247,11 +247,19 @@ export function AdminRoute() {
   const [authorization, setAuthorization] = useState<"checking" | "authorized" | "unauthorized">("checking");
   const [error, setError] = useState<string | null>(null);
   const [adminName, setAdminName] = useState("Admin");
-  const [active, setActive] = useState<AdminModule>(() => {
-    const section = new URLSearchParams(window.location.search).get("section") ||
-      (window.location.pathname.startsWith("/admin/") ? window.location.pathname.split("/")[2] : "overview");
-    return menu.some(([key]) => key === section) ? section as AdminModule : "overview";
-  });
+  const getAdminPathState = useCallback((pathname: string) => {
+    const segments = pathname.split("/").filter(Boolean);
+    const section = segments[0] === "admin" ? segments[1] : undefined;
+    const detailId =
+      section === "users" && segments[2] === "detail" && segments[3]
+        ? decodeURIComponent(segments.slice(3).join("/"))
+        : null;
+    return {
+      section: menu.some(([key]) => key === section) ? section as AdminModule : "overview",
+      detailId,
+    };
+  }, []);
+  const [active, setActive] = useState<AdminModule>(() => getAdminPathState(window.location.pathname).section);
   const [rows, setRows] = useState<Record<string, AdminRow[]>>({});
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
@@ -292,7 +300,7 @@ export function AdminRoute() {
   const [userPageRows, setUserPageRows] = useState<AdminRow[]>([]);
   const [userTotal, setUserTotal] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [detailUserId, setDetailUserId] = useState<string | null>(() => new URLSearchParams(window.location.search).get("user"));
+  const [detailUserId, setDetailUserId] = useState<string | null>(() => getAdminPathState(window.location.pathname).detailId);
   const [detailData, setDetailData] = useState<AdminRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const openUserDetails = useCallback((userId: string) => {
@@ -302,21 +310,12 @@ export function AdminRoute() {
       toast.error("Unable to identify this user.");
       return;
     }
-    void navigate({ to: "/admin/users/detail/$publicUid", params: { publicUid } });
+    void navigate({ to: "/admin/$", params: { _splat: `users/detail/${publicUid}` } });
   }, [navigate, userPageRows]);
   const closeUserDetails = useCallback(() => {
-    window.history.pushState({}, "", "/admin");
-    setDetailUserId(null);
+    void navigate({ to: "/admin/$", params: { _splat: "users" } });
     setDetailData(null);
-  }, []);
-  useEffect(() => {
-    const onPopState = () => {
-      setDetailUserId(new URLSearchParams(window.location.search).get("user"));
-      setDetailData(null);
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [navigate]);
   useEffect(() => {
     if (!detailUserId) return;
     let cancelled = false;
@@ -513,11 +512,11 @@ export function AdminRoute() {
   }, [active, navigate, location.pathname]);
 
   useEffect(() => {
-    const searchSection = new URLSearchParams(window.location.search).get("section");
-    const section = searchSection || (location.pathname.startsWith("/admin/") ? location.pathname.split("/")[2] : "overview");
-    if (menu.some(([key]) => key === section)) setActive(section as AdminModule);
-    else if (location.pathname === "/admin" && !searchSection) setActive("overview");
-  }, [location.pathname, location.search]);
+    const next = getAdminPathState(location.pathname);
+    setActive(next.section);
+    setDetailUserId(next.detailId);
+    if (!next.detailId) setDetailData(null);
+  }, [getAdminPathState, location.pathname]);
 
   useEffect(() => {
     if (location.pathname === "/admin/login") return;
@@ -832,7 +831,17 @@ export function AdminRoute() {
             <p className="mt-7 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Operations</p>
             <nav className="mt-3 flex flex-col gap-1">
               {menu.map(([key, label, Icon]) => (
-                <button key={key} data-active={active === key} className="admin-nav-item group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors" onClick={() => { setActive(key); setQuery(""); setPage(1); setSelectedUser(null); setMobileMenuOpen(false); }}>
+                <button key={key} data-active={active === key} className="admin-nav-item group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors" onClick={() => {
+                  setQuery("");
+                  setPage(1);
+                  setSelectedUser(null);
+                  setMobileMenuOpen(false);
+                  if (key === "overview") {
+                    void navigate({ to: "/admin" });
+                  } else {
+                    void navigate({ to: "/admin/$", params: { _splat: key } });
+                  }
+                }}>
                   <Icon className="size-5 shrink-0 transition-colors" />
                   <span className="min-w-0 flex-1">{label}</span>
                   {key === "deposits" && counts.deposits ? <Badge className="ml-auto">{counts.deposits}</Badge> : null}
@@ -858,11 +867,14 @@ export function AdminRoute() {
               key={key}
               className="admin-nav-item group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors" data-active={active === key}
               onClick={() => {
-                setActive(key);
                 setQuery("");
                 setPage(1);
                 setSelectedUser(null);
-                if (key === "overview") void navigate({ to: "/admin" });
+                if (key === "overview") {
+                  void navigate({ to: "/admin" });
+                } else {
+                  void navigate({ to: "/admin/$", params: { _splat: key } });
+                }
               }}
             >
               <Icon className="size-5 shrink-0 transition-colors" />
