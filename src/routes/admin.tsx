@@ -513,10 +513,6 @@ export function AdminRoute() {
           ? await queryAllRows(table)
           : await queryRows(table);
 
-        let moduleRows = active === "ledger"
-          ? await queryAllRows(table)
-          : await queryRows(table);
-
         moduleRows = await enrichAdminRows(moduleRows);
 
         if (active === "deposits" && moduleRows.length) {
