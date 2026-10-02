@@ -168,6 +168,8 @@ function userSearchText(row: AdminRow) {
     row.email,
     row.phone,
     row.public_uid,
+    row.referral_code,
+    row.referred_by,
     row.role,
     row.account_role,
     row.active_plan_name,
@@ -175,6 +177,7 @@ function userSearchText(row: AdminRow) {
     classification.system ? "system admin" : classification.paid ? "paid" : "unpaid",
     row.plan,
     row.payment,
+    row._related_search,
   ]
     .filter((value) => value !== null && value !== undefined)
     .join(" ")
