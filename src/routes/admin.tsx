@@ -160,6 +160,32 @@ function mapUserForDisplay(row: AdminRow): AdminRow {
   };
 }
 
+async function enrichAdminRows(rows: AdminRow[]) {
+  if (!rows.length) return rows;
+  const userReferenceFields = ["user_id","referrer_id","referred_id","sponsor_id","recipient_id","owner_id","created_by","approved_by","reviewed_by","moderator_id"];
+  const userIds = [...new Set(rows.flatMap((row) =>
+    userReferenceFields.map((field) => row[field]).filter((value) => typeof value === "string" && value.length > 20)
+  ))];
+  const profileMap = new Map<string, any>();
+  if (userIds.length) {
+    const { data: profiles, error } = await db.from("profiles").select("id, public_uid, full_name, username").in("id", userIds);
+    if (!error) for (const profile of profiles ?? []) profileMap.set(String(profile.id), profile);
+  }
+  return rows.map((row) => {
+    const enriched = { ...row } as AdminRow;
+    for (const field of userReferenceFields) {
+      const raw = String(row[field] ?? "").trim();
+      const profile = profileMap.get(raw);
+      if (profile) {
+        enriched[`${field}_name`] = profile.full_name || profile.username || "Unknown user";
+        enriched[`${field}_uid`] = profile.public_uid || "—";
+      }
+    }
+    if (typeof row.id === "string" && row.id.length > 20) enriched.display_id = shortId(row.id);
+    return enriched;
+  });
+}
+
 function userSearchText(row: AdminRow) {
   const classification = classifyUser(row);
   return [
@@ -509,6 +535,30 @@ export function AdminRoute() {
               }));
             }
           }
+        }
+
+        let moduleRows = active === "ledger"
+          ? await queryAllRows(table)
+          : await queryRows(table);
+
+        moduleRows = await enrichAdminRows(moduleRows);
+
+        if (active === "deposits" && moduleRows.length) {
+          moduleRows = moduleRows.map((row) => ({
+            ...row,
+            deposit_user_name: row.user_id_name || "Unknown user",
+            deposit_user_uid: row.user_id_uid || "—",
+          }));
+        }
+
+        if (active === "referrals" && moduleRows.length) {
+          moduleRows = moduleRows.map((row) => ({
+            ...row,
+            referrer_user_name: row.referrer_id_name || "Unknown user",
+            referrer_user_uid: row.referrer_id_uid || "—",
+            referred_user_name: row.referred_id_name || "Unknown user",
+            referred_user_uid: row.referred_id_uid || "—",
+          }));
         }
 
         if (requestVersion !== loadVersion.current) return;
@@ -2722,7 +2772,9 @@ function ModuleTable({
   : active === "deposits"
   ? ["deposit_user_name", "deposit_user_uid", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "withdrawals"
-  ? ["user_id", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
+  ? ["user_id_name", "user_id_uid", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
+  : active === "referrals"
+  ? ["referrer_user_name", "referrer_user_uid", "referred_user_name", "referred_user_uid", "level", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "plans"
   ? [
   ...[
@@ -2909,6 +2961,20 @@ function ModuleTable({
                           method: "Method",
                           status: "Status",
                           created_at: "Date & Time",
+                        } as Record<string, string>)[column] ?? column : active === "withdrawals" ? ({
+                          user_id_name: "User",
+                          user_id_uid: "UID",
+                          amount: "Amount (PKR)",
+                          method: "Method",
+                          status: "Status",
+                          created_at: "Date & Time",
+                        } as Record<string, string>)[column] ?? column : active === "referrals" ? ({
+                          referrer_user_name: "Referrer",
+                          referrer_user_uid: "Referrer UID",
+                          referred_user_name: "Referred User",
+                          referred_user_uid: "Referred UID",
+                          level: "Level",
+                          created_at: "Date & Time",
                         } as Record<string, string>)[column] ?? column : active === "plans" && column === "ads_per_day" ? "Daily Ads Limit" : column.replaceAll("_", " ")}</span>
                         <ArrowUpDown className="size-3.5 shrink-0 text-slate-400" aria-hidden="true" />
                       </button>
@@ -2982,6 +3048,21 @@ function ModuleTable({
                               </button>
                             ) : null}
                           </div>
+                        ) : active === "withdrawals" && column === "user_id_name" ? (
+                          <div className="min-w-[150px]">
+                            <div className="truncate font-medium text-slate-900">{String(row.user_id_name ?? "Unknown user")}</div>
+                            <div className="truncate text-[11px] text-slate-500">Withdrawal account</div>
+                          </div>
+                        ) : active === "withdrawals" && column === "user_id_uid" ? (
+                          <span className="font-mono text-xs font-semibold text-slate-700">{String(row.user_id_uid ?? "—")}</span>
+                        ) : active === "referrals" && column === "referrer_user_name" ? (
+                          <span className="font-medium text-slate-900">{String(row.referrer_user_name ?? "Unknown user")}</span>
+                        ) : active === "referrals" && column === "referrer_user_uid" ? (
+                          <span className="font-mono text-xs text-slate-600">{String(row.referrer_user_uid ?? "—")}</span>
+                        ) : active === "referrals" && column === "referred_user_name" ? (
+                          <span className="font-medium text-slate-900">{String(row.referred_user_name ?? "Unknown user")}</span>
+                        ) : active === "referrals" && column === "referred_user_uid" ? (
+                          <span className="font-mono text-xs text-slate-600">{String(row.referred_user_uid ?? "—")}</span>
                         ) : active === "transactions" && column === "transaction_no" ? (
                           <span className="font-mono text-xs font-semibold text-primary">{String(row.transaction_no ?? "—")}</span>
                         ) : active === "transactions" && column === "user_id" ? (
