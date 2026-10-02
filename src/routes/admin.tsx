@@ -195,7 +195,23 @@ async function enrichAdminRows(rows: AdminRow[]) {
   const referralMap = new Map<string, { referrer_id?: string; referred_id?: string }>();
   if (referralIds.length) {
     const { data: referrals, error } = await db.from("referrals").select("id, referrer_id, referred_id").in("id", referralIds);
-    if (!error) for (const referral of referrals ?? []) referralMap.set(String(referral.id), referral);
+    if (!error) {
+      for (const referral of referrals ?? []) {
+        referralMap.set(String(referral.id), referral);
+        const extraUserIds = [referral.referrer_id, referral.referred_id]
+          .map((value) => String(value ?? "").trim())
+          .filter((value) => value.length > 20 && !profileMap.has(value));
+        if (extraUserIds.length) {
+          const { data: extraProfiles, error: extraProfileError } = await db
+            .from("profiles")
+            .select("id, public_uid, full_name, username")
+            .in("id", extraUserIds);
+          if (!extraProfileError) {
+            for (const profile of extraProfiles ?? []) profileMap.set(String(profile.id), profile);
+          }
+        }
+      }
+    }
   }
 
   return rows.map((row) => {
@@ -214,7 +230,7 @@ async function enrichAdminRows(rows: AdminRow[]) {
       const referred = profileMap.get(String(referral.referred_id ?? ""));
       enriched.referral_id_name = referrer?.full_name || referrer?.username
         ? `${referrer?.full_name || referrer?.username} → ${referred?.full_name || referred?.username || "Unknown user"}`
-        : "Unknown referral";
+        : "—";
       enriched.referral_id_uid = referrer?.public_uid && referred?.public_uid
         ? `${referrer.public_uid} → ${referred.public_uid}`
         : "—";
