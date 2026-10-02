@@ -807,6 +807,31 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     setReady(true);
     return;
   }
+  // Let the authenticated shell open as soon as Supabase confirms a user.
+  // The full account snapshot includes many independent queries; waiting for all
+  // of them before exposing state leaves the login screen spinning unnecessarily.
+  setState((current) => {
+    if (current.user?.id === user.id) return current;
+    return {
+      ...(EMPTY as unknown as State),
+      user: {
+        id: user.id,
+        fullName: String(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Member"),
+        username: String(user.user_metadata?.username ?? user.email?.split("@")[0] ?? "member"),
+        email: user.email ?? "",
+        phone: String(user.user_metadata?.phone ?? ""),
+        publicUid: "",
+        referralCode: user.id.slice(0, 8).toUpperCase(),
+        verified: true,
+        planId: null,
+        planActivatedAt: null,
+        status: "active",
+        role: "user",
+        createdAt: Date.now(),
+      },
+    } as State;
+  });
+  setReady(true);
   try {
   const nextState = await loadState(user);
   if (version === refreshVersion.current) setState(nextState);
