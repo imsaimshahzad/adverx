@@ -14,7 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlatformProvider } from "@/lib/platform-store";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { Toaster } from "@/components/ui/sonner";
-import { LoadingScreen } from "@/components/LoadingIndicator";
 
 
 function NotFoundComponent() {
@@ -114,7 +113,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
   }),
   shellComponent: RootShell,
-  pendingComponent: () => <LoadingScreen label="Loading your workspace" />,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
