@@ -59,7 +59,6 @@ function NetworkPage() {
   return (
     <AppShell
       title="My network"
-      hideWhatsAppBanner
     >
       <div className="space-y-3">
         {!ready ? (
@@ -252,21 +251,6 @@ function NetworkPage() {
           )}
         </section>
 
-        {/* WhatsApp — intentionally last on this page */}
-        <a
-          href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42"
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5"
-        >
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white">
-              <span className="text-sm font-bold">WA</span>
-            </div>
-            <p className="truncate text-sm font-medium">AdverX WhatsApp Channel</p>
-          </div>
-          <span className="shrink-0 text-sm font-semibold text-primary">Join →</span>
-        </a>
       </div>
     </AppShell>
   );
