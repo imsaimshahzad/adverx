@@ -195,6 +195,8 @@ const EMPTY = {
   indirectNetwork: 0,
   paidReferrals: 0,
   unpaidReferrals: 0,
+  directReferralCommission: 0,
+  indirectReferralCommission: 0,
   notifications: [],
   recoveries: [],
   adminProfitSummary: null,
@@ -213,6 +215,8 @@ type State = {
   indirectNetwork: number;
   paidReferrals: number;
   unpaidReferrals: number;
+  directReferralCommission: number;
+  indirectReferralCommission: number;
   notifications: Notification[];
   recoveries: Array<{ id: string; amount: number; status: string; createdAt: number; referredId: string }>;
   adminProfitSummary: AdminProfitSummary | null;
@@ -592,9 +596,15 @@ async function loadState(user: {
   const planById = new Map<string, any>((referredPlans ?? []).map((row: any) => [row.user_id, PLANS.find((plan) => plan.id === row.plan_id)]));
   const commissionByUser = new Map<string, number>();
   let totalReferralCommission = 0;
+  let directReferralCommission = 0;
+  let indirectReferralCommission = 0;
+  const levelByUserId = new Map<string, number>(graphRows.map((row: any) => [row.referred_id, Number(row.level)]));
   for (const row of commissions ?? []) {
     const amount = num(row.amount);
     totalReferralCommission += amount;
+    const sourceLevel = row.source_user_id ? levelByUserId.get(row.source_user_id) : Number(row.level);
+    if (sourceLevel === 1) directReferralCommission += amount;
+    else if (Number(sourceLevel) > 1) indirectReferralCommission += amount;
     if (row.source_user_id) commissionByUser.set(row.source_user_id, (commissionByUser.get(row.source_user_id) ?? 0) + amount);
   }
   let adminProfitSummary: AdminProfitSummary | null = null;
@@ -752,6 +762,8 @@ async function loadState(user: {
     indirectNetwork,
     paidReferrals,
     unpaidReferrals,
+    directReferralCommission,
+    indirectReferralCommission,
     notifications: ((notifications ?? []) as any[]).map((n) => ({
       id: n.id,
       title: n.title,
