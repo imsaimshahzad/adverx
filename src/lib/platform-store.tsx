@@ -124,6 +124,7 @@ export type NetworkMember = {
   planName: string;
   commission: number;
   status: string;
+  level: number;
 };
 export type Notification = {
   id: string;
@@ -588,6 +589,17 @@ async function loadState(user: {
     .select("referred_id, level")
     .eq("referrer_id", uid);
   const graphRows = (referralGraph ?? []) as any[];
+  const graphProfileIds = graphRows.map((row) => row.referred_id).filter(Boolean);
+  const { data: graphProfiles } = graphProfileIds.length
+    ? await db
+        .from("profiles")
+        .select("id, full_name, created_at, referral_code, referred_by")
+        .in("id", graphProfileIds)
+    : { data: [] };
+  const allNetworkProfiles = [
+    ...(referredProfiles ?? []),
+    ...((graphProfiles ?? []) as any[]),
+  ];
   const directNetwork = graphRows.filter((row) => Number(row.level) === 1).length;
   const indirectNetwork = graphRows.filter((row) => Number(row.level) > 1).length;
   const allTimeNetwork = graphRows.length;
@@ -608,7 +620,9 @@ async function loadState(user: {
   const unpaidIndirectReferrals = Math.max(0, indirectIds.size - paidIndirectReferrals);
   const paidReferrals = paidDirectReferrals + paidIndirectReferrals;
   const unpaidReferrals = unpaidDirectReferrals + unpaidIndirectReferrals;
-  const profileById = new Map<string, any>((referredProfiles ?? []).map((row: any) => [row.id, row]));
+  const profileById = new Map<string, any>(
+    allNetworkProfiles.map((row: any) => [row.id, row]),
+  );
   const planById = new Map<string, any>((referredPlans ?? []).map((row: any) => [row.user_id, PLANS.find((plan) => plan.id === row.plan_id)]));
   const commissionByUser = new Map<string, number>();
   let totalReferralCommission = 0;
@@ -764,17 +778,20 @@ async function loadState(user: {
       completedAt: new Date(c.completed_at).getTime(),
       reward: num(c.reward_amount_pkr),
     })),
-    network: referralRows.map((r) => {
-      const member = profileById.get(r.id);
-      const plan = planById.get(r.id);
+    network: graphRows.map((r) => {
+      const member = profileById.get(r.referred_id);
+      const plan = planById.get(r.referred_id);
       return {
-        id: r.id,
+        id: r.referred_id,
         name: member?.full_name ?? "Member",
-        joinedAt: new Date(r.created_at).getTime(),
+        joinedAt: member?.created_at
+          ? new Date(member.created_at).getTime()
+          : Date.now(),
         active: Boolean(plan),
         planName: plan?.name ?? "No Plan",
-        commission: commissionByUser.get(r.id) ?? 0,
+        commission: commissionByUser.get(r.referred_id) ?? 0,
         status: plan ? "Active" : "Registered",
+        level: Number(r.level) || 1,
       };
     }),
     totalReferralCommission,
