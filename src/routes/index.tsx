@@ -59,7 +59,6 @@ export const Route = createFileRoute("/")({
 function PublicHome() {
   const { state } = usePlatform();
   const plans = PLANS;
-  const minimumWithdrawal = WITHDRAWAL_METHODS.filter((method) => method.isActive && method.minWithdrawal > 0).reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY);
   const hero = useHomepageHero();
 
   return (
@@ -161,6 +160,10 @@ function FeatureSection() {
 }
 
 function PlansPreview({ plans }: { plans: typeof PLANS }) {
+  const minimumWithdrawal = WITHDRAWAL_METHODS
+    .filter((method) => method.isActive && method.minWithdrawal > 0)
+    .reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY);
+
   return (
     <section id="plans" className="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
       <SectionIntro
