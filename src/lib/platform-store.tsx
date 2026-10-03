@@ -568,7 +568,7 @@ async function loadState(user: {
   if (referralCode) {
     const referralQuery = await db
       .from("profiles")
-      .select("id, full_name, created_at, referral_code, referred_by")
+      .select("id, full_name, created_at, referral_code, referred_by, plan_id")
       .eq("referred_by", referralCode);
     if (referralQuery.error) {
       console.error("[v0] Referral count query failed", {
@@ -593,7 +593,7 @@ async function loadState(user: {
   const { data: graphProfiles } = graphProfileIds.length
     ? await db
         .from("profiles")
-        .select("id, full_name, created_at, referral_code, referred_by")
+        .select("id, full_name, created_at, referral_code, referred_by, plan_id")
         .in("id", graphProfileIds)
     : { data: [] };
   const allNetworkProfiles = [
@@ -611,7 +611,13 @@ async function loadState(user: {
       : Promise.resolve({ data: [] }),
     db.from("referral_commissions").select("source_user_id, amount, created_at").eq("user_id", uid).eq("status", "completed"),
   ]);
-  const paidReferralIds = new Set((referredPlans ?? []).map((row: any) => row.user_id));
+  const paidReferralIds = new Set<string>((referredPlans ?? []).map((row: any) => row.user_id));
+  // RLS can hide another member's user_plans row from the client. The profile's
+  // active plan_id is maintained when a plan is activated, so use it as a
+  // fallback for network visibility while keeping user_plans as the primary source.
+  for (const member of allNetworkProfiles) {
+    if (member?.plan_id) paidReferralIds.add(member.id);
+  }
   const directIds = new Set(graphRows.filter((row) => Number(row.level) === 1).map((row) => row.referred_id).filter(Boolean));
   const indirectIds = new Set(graphRows.filter((row) => Number(row.level) > 1).map((row) => row.referred_id).filter(Boolean));
   const paidDirectReferrals = [...directIds].filter((id) => paidReferralIds.has(id)).length;
@@ -786,17 +792,20 @@ async function loadState(user: {
     network: graphRows.map((r) => {
       const member = profileById.get(r.referred_id);
       const activePlanRow = activePlanRowByUserId.get(r.referred_id);
+      const memberPlanId = member?.plan_id;
       const plan = activePlanRow
         ? PLANS.find((catalogPlan) => catalogPlan.id === activePlanRow.plan_id)
-        : null;
+        : memberPlanId
+          ? PLANS.find((catalogPlan) => catalogPlan.id === memberPlanId)
+          : null;
       return {
         id: r.referred_id,
         name: member?.full_name ?? "Member",
         joinedAt: member?.created_at
           ? new Date(member.created_at).getTime()
           : Date.now(),
-        active: Boolean(activePlanRow),
-        planName: plan?.name ?? (activePlanRow ? "Active Plan" : "No Plan"),
+        active: Boolean(activePlanRow || memberPlanId),
+        planName: plan?.name ?? (activePlanRow || memberPlanId ? "Active Plan" : "No Plan"),
         commission: commissionByUser.get(r.referred_id) ?? 0,
         status: plan ? "Active" : "Registered",
         level: Number(r.level) || 1,
