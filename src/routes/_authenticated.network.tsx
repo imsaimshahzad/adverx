@@ -45,7 +45,7 @@ function NetworkPage() {
     <AppShell title="My network" subtitle="Invite friends and grow your active members">
       {!ready ? <div className="surface flex items-center gap-2 p-4 text-sm text-muted-foreground"><LoadingIndicator size="sm" label="Loading your network" /> Loading your network…</div> : dataError ? <div className="surface p-4 text-sm text-destructive">Unable to load your network. {dataError}</div> : null}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile label="Total" value={`${members.length}`} />
+        <StatTile label="Total" value={`${state.allTimeNetwork}`} />
         <StatTile label="Active" value={`${active}`} />
         <StatTile label="No plan" value={`${members.filter((m) => !m.active).length}`} />
         <StatTile label="This month" value={`+${thisMonth}`} />
