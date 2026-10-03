@@ -59,6 +59,7 @@ export const Route = createFileRoute("/")({
 function PublicHome() {
   const { state } = usePlatform();
   const plans = PLANS;
+  const minimumWithdrawal = WITHDRAWAL_METHODS.filter((method) => method.isActive && method.minWithdrawal > 0).reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY);
   const hero = useHomepageHero();
 
   return (
@@ -212,7 +213,7 @@ function PlansPreview({ plans }: { plans: typeof PLANS }) {
                   ? `Indirect referral: ${plan.indirectReferralPct}% · Up to Level 6 earnings`
                   : "Indirect referral not included"}
               </PlanFeature>
-              <PlanFeature>Minimum withdrawal {money(WITHDRAWAL_METHODS.filter((method) => method.isActive && method.minWithdrawal > 0).reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY) === Number.POSITIVE_INFINITY ? 100 : WITHDRAWAL_METHODS.filter((method) => method.isActive && method.minWithdrawal > 0).reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY))}</PlanFeature>
+              <PlanFeature>Minimum withdrawal {Number.isFinite(minimumWithdrawal) ? money(minimumWithdrawal) : "Not set"}</PlanFeature>
               {plan.networkEligible ? (
                 <PlanFeature>Network rewards enabled</PlanFeature>
               ) : (
