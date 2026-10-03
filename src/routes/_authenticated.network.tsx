@@ -95,7 +95,7 @@ function NetworkPage() {
                   {m.planName} · Joined {formatDate(m.joinedAt)}
                 </p>
               </div>
-              <div className="text-right"><Badge className={statusBadge(m.status).className}>{statusBadge(m.status).label}</Badge><p className="mt-1 text-xs text-muted-foreground">{formatMoney(m.commission, "PKR")}</p></div>
+              <div className="text-right"><Badge className={m.active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : statusBadge(m.status).className}>{m.active ? "● Active" : statusBadge(m.status).label}</Badge><p className="mt-1 text-xs text-muted-foreground">{formatMoney(m.commission, "PKR")}</p></div>
             </div>
           ))
         )}
