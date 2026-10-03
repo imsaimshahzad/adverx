@@ -8,6 +8,8 @@ import {
   LifeBuoy,
   History,
   Menu,
+  Moon,
+  Sun,
   BadgeCheck,
   ShieldCheck,
   X,
@@ -64,7 +66,34 @@ export function AppShell({
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState<"PKR" | "USD">("PKR");
+  const [darkMode, setDarkMode] = useState(false);
   const user = state.user;
+
+  useEffect(() => {
+    try {
+      setDisplayCurrency(window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR");
+      const savedTheme = window.localStorage.getItem("adverx-theme");
+      const isDark = savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      setDarkMode(isDark);
+      document.documentElement.classList.toggle("dark", isDark);
+    } catch {
+      // Keep the default display settings when local storage is unavailable.
+    }
+  }, []);
+
+  const changeCurrency = (currency: "PKR" | "USD") => {
+    setDisplayCurrency(currency);
+    window.localStorage.setItem("adverx-display-currency", currency);
+    window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: currency }));
+  };
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    window.localStorage.setItem("adverx-theme", next ? "dark" : "light");
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -142,9 +171,9 @@ export function AppShell({
         <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between gap-2 border-b px-3 sm:gap-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-2"><Button variant="ghost" size="icon" aria-label="Open menu" className="shrink-0 lg:hidden" onClick={() => setMobileOpen(true)}><Menu /></Button><div className="min-w-0"><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1><p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p></div></div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <div className="hidden items-center gap-1 rounded-full bg-muted p-1 sm:flex"><button type="button" className="rounded-full px-2 py-1 text-[10px] font-semibold text-foreground" onClick={() => { window.localStorage.setItem("adverx-display-currency", "PKR"); window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: "PKR" })); }}>PKR</button><button type="button" className="rounded-full px-2 py-1 text-[10px] font-semibold text-muted-foreground" onClick={() => { window.localStorage.setItem("adverx-display-currency", "USD"); window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: "USD" })); }}>USD</button></div>
+            <div className="flex items-center gap-0.5 rounded-full bg-muted p-1"><button type="button" aria-pressed={displayCurrency === "PKR"} className={displayCurrency === "PKR" ? "rounded-full bg-background px-2 py-1 text-[10px] font-semibold text-foreground shadow-sm" : "rounded-full px-2 py-1 text-[10px] font-semibold text-muted-foreground"} onClick={() => changeCurrency("PKR")}>PKR</button><button type="button" aria-pressed={displayCurrency === "USD"} className={displayCurrency === "USD" ? "rounded-full bg-background px-2 py-1 text-[10px] font-semibold text-foreground shadow-sm" : "rounded-full px-2 py-1 text-[10px] font-semibold text-muted-foreground"} onClick={() => changeCurrency("USD")}>USD</button></div>
             <Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
-            <button type="button" aria-label="Toggle dark mode" className="hidden size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted sm:inline-flex" onClick={() => document.documentElement.classList.toggle("dark")}>◐</button>
+            <button type="button" aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"} className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted" onClick={toggleDarkMode}>{darkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}</button>
             <Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link>
           </div>
         </header>
