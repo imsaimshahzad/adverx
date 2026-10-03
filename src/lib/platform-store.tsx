@@ -154,6 +154,7 @@ export type ActivityLevel =
 export const PLANS: Plan[] = [];
 export type WithdrawalMethod = { id: string; name: string; type: string; instructions: string; isActive: boolean; minWithdrawal: number; maxWithdrawal: number };
 export const WITHDRAWAL_METHODS: WithdrawalMethod[] = [];
+export let PUBLIC_MIN_WITHDRAWAL: number | null = null;
 export const PAYMENT_METHODS: Array<{ id: string; name: string; accountTitle: string; accountNumber: string; instructions: string }> = [
   {
     id: "jazzcash",
@@ -252,7 +253,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   
   async function loadCatalog() {
   const requestVersion = ++catalogRequestVersion;
-  const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }, { data: withdrawalMethods, error: withdrawalMethodsError }] = await Promise.all([
+  const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }, { data: withdrawalMethods, error: withdrawalMethodsError }, { data: publicMinWithdrawal, error: publicMinWithdrawalError }] = await Promise.all([
     db
       .from("ads")
       .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at, task_type, image_url, video_url, html_code")
@@ -263,6 +264,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     db.from("plans").select("*").eq("active", true).eq("status", "active").order("price_pkr"),
     db.from("deposit_methods").select("*").eq("is_active", true).order("sort_order"),
     db.from("withdrawal_methods").select("*").eq("is_active", true).order("sort_order"),
+    db.from("public_min_withdrawal").select("min_withdrawal_pkr").maybeSingle(),
   ]);
 
   if (requestVersion !== catalogRequestVersion) return;
@@ -289,6 +291,8 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   if (plansError) { console.error("[AdverX] plans query failed", plansError); throw new Error("Unable to load available plans."); }
   if (methodsError) { console.error("[AdverX] deposit methods query failed", methodsError); throw new Error("Unable to load payment methods."); }
   if (withdrawalMethodsError) { console.error("[AdverX] withdrawal methods query failed", withdrawalMethodsError); throw new Error("Unable to load withdrawal methods."); }
+  if (publicMinWithdrawalError) { console.error("[AdverX] public minimum withdrawal query failed", publicMinWithdrawalError); throw new Error("Unable to load public withdrawal minimum."); }
+  PUBLIC_MIN_WITHDRAWAL = publicMinWithdrawal?.min_withdrawal_pkr == null ? null : num(publicMinWithdrawal.min_withdrawal_pkr);
 
   WITHDRAWAL_METHODS.splice(0, WITHDRAWAL_METHODS.length, ...((withdrawalMethods ?? []) as any[]).map((method) => ({
     id: method.id,
