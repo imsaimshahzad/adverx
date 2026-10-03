@@ -13,7 +13,16 @@ const key = "homepage_hero";
 
 export function useHomepageHero() {
   const [config, setConfig] = useState(defaultHomepageHero);
-  useEffect(() => { let active = true; void db.from("admin_settings").select("text_value").eq("key", key).maybeSingle().then(({ data }: any) => { if (!active || !data?.text_value) return; try { setConfig({ ...defaultHomepageHero, ...JSON.parse(data.text_value) }); } catch { /* use defaults */ } }); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; void db.from("admin_settings").select("text_value").eq("key", key).maybeSingle().then(({ data }: any) => { if (!active || !data?.text_value) return; try { const saved = JSON.parse(data.text_value);
+        setConfig({
+          ...defaultHomepageHero,
+          ...saved,
+          stats: {
+            members: { ...defaultHomepageHero.stats.members, ...(saved.stats?.members ?? {}) },
+            rewards: { ...defaultHomepageHero.stats.rewards, ...(saved.stats?.rewards ?? {}) },
+            withdrawalTime: { ...defaultHomepageHero.stats.withdrawalTime, ...(saved.stats?.withdrawalTime ?? {}) },
+          },
+        }); } catch { /* use defaults */ } }); return () => { active = false; }; }, []);
   return config;
 }
 
