@@ -217,7 +217,7 @@ export function AppShell({
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
-          {!hideWhatsAppBanner ? <a href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42" target="_blank" rel="noreferrer" className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-3 shadow-sm transition hover:bg-primary/[0.1]">
+          {hideWhatsAppBanner ? null : (<a href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42" target="_blank" rel="noreferrer" className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-3 shadow-sm transition hover:bg-primary/[0.1]">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-sm"><svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none">
   <path d="M20 11.5a8 8 0 0 1-12.5 6.6L4 19l.9-3.4A8 8 0 1 1 20 11.5Z" fill="currentColor"/>
@@ -227,6 +227,7 @@ export function AppShell({
             </div>
             <span className="shrink-0 text-xs font-semibold text-primary">Join Channel →</span>
           </a>
+)}
           {children}
         </main>
         {showWhatsAppPrompt ? (
