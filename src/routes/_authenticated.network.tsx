@@ -52,12 +52,12 @@ function NetworkPage() {
         <StatTile
           label="Direct referrals"
           value={`${state.directNetwork}`}
-          hint={`Paid ${Math.min(state.paidReferrals, state.directNetwork)} · Unpaid ${Math.max(0, state.directNetwork - state.paidReferrals)} · Commission ${formatMoney(state.directReferralCommission, "PKR")}`}
+          hint={`Paid ${state.paidDirectReferrals} · Unpaid ${state.unpaidDirectReferrals} · Commission ${formatMoney(state.directReferralCommission, "PKR")}`}
         />
         <StatTile
           label="Indirect referrals"
           value={`${state.indirectNetwork}`}
-          hint={`Paid ${Math.max(0, state.paidReferrals - state.directNetwork)} · Unpaid ${Math.max(0, state.indirectNetwork - Math.max(0, state.paidReferrals - state.directNetwork))} · Commission ${formatMoney(state.indirectReferralCommission, "PKR")}`}
+          hint={`Paid ${state.paidIndirectReferrals} · Unpaid ${state.unpaidIndirectReferrals} · Commission ${formatMoney(state.indirectReferralCommission, "PKR")}`}
         />
         <StatTile
           label="All-time commission"
