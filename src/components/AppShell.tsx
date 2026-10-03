@@ -19,7 +19,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePlatform } from "@/lib/platform-store";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/LoadingIndicator";
-import { FloatingDisplaySettings } from "@/components/FloatingDisplaySettings";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/BrandLogo";
 import "@/dashboard-design.css";
@@ -107,7 +106,8 @@ export function AppShell({
     <div className="flex h-full flex-col">
       <div className="flex h-20 items-center border-b border-sidebar-border px-6">
         <Link to="/" aria-label="AdverX home" onClick={() => setMobileOpen(false)}><BrandLogo compact className="max-w-[9.5rem]" /></Link>
-      </div>\n      <div className="flex-1 overflow-y-auto px-3 py-6">
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-6">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-6">
             <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{group.label}</p>
@@ -139,15 +139,16 @@ export function AppShell({
       {mobileOpen ? <button aria-label="Close navigation" className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
       <aside className={`app-mobile-sidebar fixed inset-y-0 left-0 z-40 w-72 bg-sidebar shadow-xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>{navigation}<button className="absolute right-4 top-6 rounded-md p-1 text-muted-foreground" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button></aside>
       <div className="min-w-0 flex-1">
-        <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between border-b px-4 sm:px-6 lg:px-8">
-          <div className="min-w-0"><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1></div>
-          <div className="flex items-center gap-2">
+        <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between gap-2 border-b px-3 sm:gap-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2"><Button variant="ghost" size="icon" aria-label="Open menu" className="shrink-0 lg:hidden" onClick={() => setMobileOpen(true)}><Menu /></Button><div className="min-w-0"><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1><p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p></div></div>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <div className="hidden items-center gap-1 rounded-full bg-muted p-1 sm:flex"><button type="button" className="rounded-full px-2 py-1 text-[10px] font-semibold text-foreground" onClick={() => { window.localStorage.setItem("adverx-display-currency", "PKR"); window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: "PKR" })); }}>PKR</button><button type="button" className="rounded-full px-2 py-1 text-[10px] font-semibold text-muted-foreground" onClick={() => { window.localStorage.setItem("adverx-display-currency", "USD"); window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: "USD" })); }}>USD</button></div>
             <Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
+            <button type="button" aria-label="Toggle dark mode" className="hidden size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted sm:inline-flex" onClick={() => document.documentElement.classList.toggle("dark")}>◐</button>
             <Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link>
             <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setMobileOpen(true)}><Menu /></Button>
           </div>
         </header>
-        <FloatingDisplaySettings />
         <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
           {hideWhatsAppBanner ? null : (<a href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42" target="_blank" rel="noreferrer" className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-3 shadow-sm transition hover:bg-primary/[0.1]">
             <div className="flex min-w-0 items-center gap-3">
