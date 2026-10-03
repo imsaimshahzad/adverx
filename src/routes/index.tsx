@@ -321,7 +321,7 @@ function Dashboard() {
   }
 
   return (
-    <AppShell title={`Hi, ${state.user?.fullName?.split(" ")[0] ?? "there"}>`);
+    <AppShell title={`Hi, ${state.user?.fullName?.split(" ")[0] ?? "there"}`}>
       <section className={`morphic-hero relative overflow-hidden ${expanded ? "is-expanded" : ""}`}>
         <div className="morphic-orb morphic-orb-one" />
         <div className="morphic-orb morphic-orb-two" />
