@@ -146,7 +146,6 @@ export function AppShell({
             <Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
             <button type="button" aria-label="Toggle dark mode" className="hidden size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted sm:inline-flex" onClick={() => document.documentElement.classList.toggle("dark")}>◐</button>
             <Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link>
-            <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setMobileOpen(true)}><Menu /></Button>
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
