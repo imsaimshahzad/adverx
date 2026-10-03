@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/network")({
 });
 
 function NetworkPage() {
-  const { state, ready, dataError, allTimeNetwork, directNetwork, indirectNetwork } = usePlatform();
+  const { state, ready, dataError } = usePlatform();
   const members = [...state.network].sort((a, b) => Number(b.active) - Number(a.active));
   const active = members.filter((m) => m.active).length;
   const now = new Date();
@@ -49,10 +49,11 @@ function NetworkPage() {
         <StatTile label="Active" value={`${active}`} />
         <StatTile label="No plan" value={`${members.filter((m) => !m.active).length}`} />
         <StatTile label="This month" value={`+${thisMonth}`} />
-        <StatTile label="All time" value={`${allTimeNetwork}`} />
-        <StatTile label="Direct" value={`${directNetwork}`} />
-        <StatTile label="Indirect" value={`${indirectNetwork}`} />
-        <StatTile label="Commission" value={formatMoney(state.totalReferralCommission, "PKR")} />
+        <StatTile
+          label="Referrals"
+          value={`${state.allTimeNetwork}`}
+          hint={`Direct ${state.directNetwork} · Indirect ${state.indirectNetwork} · Commission ${formatMoney(state.totalReferralCommission, "PKR")}`}
+        />
       </div>
 
       <div className="glass-panel mt-3 p-4">
