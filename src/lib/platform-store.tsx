@@ -209,7 +209,14 @@ type State = {
 const DAY = 86400000;
 export const money = (n: number) => {
   const value = Number(n ?? 0);
-  const currency = typeof window !== "undefined" && window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
+  let currency: "PKR" | "USD" = "PKR";
+  if (typeof window !== "undefined") {
+    try {
+      currency = window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
+    } catch {
+      currency = "PKR";
+    }
+  }
   if (currency === "USD") {
     return `$ ${ (value / 300).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }`;
   }
