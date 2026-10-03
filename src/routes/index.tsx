@@ -32,7 +32,7 @@ import { HeroTrustStrip, useHomepageHero } from "@/components/HomepageHeroSettin
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { money, PLANS, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
+import { money, PLANS, PUBLIC_MIN_WITHDRAWAL, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
 import { useState } from "react";
 import "@/morphic-dashboard.css";
 
@@ -160,7 +160,7 @@ function FeatureSection() {
 }
 
 function PlansPreview({ plans }: { plans: typeof PLANS }) {
-  const minimumWithdrawal = WITHDRAWAL_METHODS
+  const minimumWithdrawal = PUBLIC_MIN_WITHDRAWAL ?? WITHDRAWAL_METHODS
     .filter((method) => method.isActive && method.minWithdrawal > 0)
     .reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY);
 
