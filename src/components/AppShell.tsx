@@ -11,8 +11,6 @@ import {
   BadgeCheck,
   ShieldCheck,
   X,
-  ChevronDown,
-  Check,
   Phone,
   type LucideIcon,
 } from "lucide-react";
@@ -21,7 +19,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePlatform } from "@/lib/platform-store";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/LoadingIndicator";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { FloatingDisplaySettings } from "@/components/FloatingDisplaySettings";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/BrandLogo";
 import "@/dashboard-design.css";
@@ -55,25 +53,18 @@ export function AppShell({
   subtitle,
   children,
   requireAuth = true,
-  mobileSimpleHeader = false,
   hideWhatsAppBanner = false,
 }: {
   title: string;
   subtitle?: string | undefined;
   children: ReactNode;
   requireAuth?: boolean | undefined;
-  mobileSimpleHeader?: boolean | undefined;
   hideWhatsAppBanner?: boolean | undefined;
 }) {
   const { state, ready, dataError, unreadCount } = usePlatform();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showWhatsAppPrompt, setShowWhatsAppPrompt] = useState(false);
-  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
-  const [currency, setCurrency] = useState<"PKR" | "USD">(() => {
-    if (typeof window === "undefined") return "PKR";
-    return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
-  });
   const user = state.user;
 
   useEffect(() => {
@@ -81,20 +72,6 @@ export function AppShell({
     const key = `adverx-whatsapp-channel-prompt:${user.id}`;
     if (window.localStorage.getItem(key) !== "seen") setShowWhatsAppPrompt(true);
   }, [user?.id]);
-
-  const changeCurrency = (next: "PKR" | "USD") => {
-    window.localStorage.setItem("adverx-display-currency", next);
-    setCurrency(next);
-    setCurrencyMenuOpen(false);
-    window.dispatchEvent(new CustomEvent("adverx-currency-change", { detail: next }));
-  };
-
-  useEffect(() => {
-    if (!currencyMenuOpen) return;
-    const close = () => setCurrencyMenuOpen(false);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, [currencyMenuOpen]);
 
   const dismissWhatsAppPrompt = () => {
     if (!user?.id) return;
@@ -130,20 +107,7 @@ export function AppShell({
     <div className="flex h-full flex-col">
       <div className="flex h-20 items-center border-b border-sidebar-border px-6">
         <Link to="/" aria-label="AdverX home" onClick={() => setMobileOpen(false)}><BrandLogo compact className="max-w-[9.5rem]" /></Link>
-      </div>
-      {mobileSimpleHeader ? (
-        <div className="border-b border-sidebar-border px-4 py-3">
-          <p className="mb-2 text-xs font-semibold text-muted-foreground">Display settings</p>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-1 rounded-xl bg-muted p-1">
-              {(["PKR", "USD"] as const).map((option) => (
-                <button key={option} type="button" onClick={() => changeCurrency(option)} className={`min-h-10 rounded-lg px-3 text-xs font-semibold ${currency === option ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{option}</button>
-              ))}
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-      ) : null}\n      <div className="flex-1 overflow-y-auto px-3 py-6">
+      </div>\n      <div className="flex-1 overflow-y-auto px-3 py-6">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-6">
             <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{group.label}</p>
@@ -176,46 +140,14 @@ export function AppShell({
       <aside className={`app-mobile-sidebar fixed inset-y-0 left-0 z-40 w-72 bg-sidebar shadow-xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>{navigation}<button className="absolute right-4 top-6 rounded-md p-1 text-muted-foreground" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button></aside>
       <div className="min-w-0 flex-1">
         <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between border-b px-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3"><div className="min-w-0"><p className="hidden text-xs font-medium text-muted-foreground sm:block">AdverX workspace</p><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1>{subtitle ? <p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p> : null}</div></div>
+          <div className="min-w-0"><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1></div>
           <div className="flex items-center gap-2">
-            <div className={mobileSimpleHeader ? "hidden sm:block" : ""}>
-            <div className="relative" onClick={(event) => event.stopPropagation()}>
-              <button
-                type="button"
-                aria-haspopup="menu"
-                aria-expanded={currencyMenuOpen}
-                aria-label="Display currency"
-                onClick={() => setCurrencyMenuOpen((open) => !open)}
-                className="flex h-9 items-center gap-2 rounded-xl border border-border/70 bg-background/80 px-3 text-xs font-semibold text-foreground shadow-sm backdrop-blur transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold">{currency}</span>
-                <span className="text-muted-foreground">{currency === "PKR" ? "Rs" : "$"}</span>
-                <ChevronDown className={`size-3.5 text-muted-foreground transition-transform ${currencyMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-              {currencyMenuOpen ? (
-                <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-50 w-36 overflow-hidden rounded-xl border border-border/70 bg-popover p-1.5 shadow-xl backdrop-blur-xl">
-                  {(["PKR", "USD"] as const).map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      role="menuitem"
-                      onClick={() => changeCurrency(option)}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-foreground transition hover:bg-muted"
-                    >
-                      <span>{option === "PKR" ? "PKR — Rs" : "USD — $"}</span>
-                      {currency === option ? <Check className="size-3.5 text-primary" /> : null}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            <ThemeToggle />
-            </div>
-            <Button asChild variant="ghost" size="icon" className={`relative ${mobileSimpleHeader ? "hidden sm:inline-flex" : ""}`}><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
+            <Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
             <Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link>
-            <Button variant="ghost" size="icon" className={mobileSimpleHeader ? "sm:hidden" : "lg:hidden"} aria-label="Open menu" onClick={() => setMobileOpen(true)}><Menu /></Button>
+            <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setMobileOpen(true)}><Menu /></Button>
           </div>
         </header>
+        <FloatingDisplaySettings />
         <main className="mx-auto w-full max-w-[1320px] min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
           {hideWhatsAppBanner ? null : (<a href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42" target="_blank" rel="noreferrer" className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-3 shadow-sm transition hover:bg-primary/[0.1]">
             <div className="flex min-w-0 items-center gap-3">
