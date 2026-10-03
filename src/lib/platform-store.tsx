@@ -190,6 +190,7 @@ const EMPTY = {
   adViews: [],
   network: [],
   totalReferralCommission: 0,
+  thisMonthReferralCommission: 0,
   allTimeNetwork: 0,
   directNetwork: 0,
   indirectNetwork: 0,
@@ -214,6 +215,7 @@ type State = {
   adViews: AdView[];
   network: NetworkMember[];
   totalReferralCommission: number;
+  thisMonthReferralCommission: number;
   allTimeNetwork: number;
   directNetwork: number;
   indirectNetwork: number;
@@ -595,7 +597,7 @@ async function loadState(user: {
     referredIds.length
       ? db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active")
       : Promise.resolve({ data: [] }),
-    db.from("referral_commissions").select("source_user_id, amount").eq("user_id", uid).eq("status", "completed"),
+    db.from("referral_commissions").select("source_user_id, amount, created_at").eq("user_id", uid).eq("status", "completed"),
   ]);
   const paidReferralIds = new Set((referredPlans ?? []).map((row: any) => row.user_id));
   const directIds = new Set(graphRows.filter((row) => Number(row.level) === 1).map((row) => row.referred_id).filter(Boolean));
@@ -610,12 +612,15 @@ async function loadState(user: {
   const planById = new Map<string, any>((referredPlans ?? []).map((row: any) => [row.user_id, PLANS.find((plan) => plan.id === row.plan_id)]));
   const commissionByUser = new Map<string, number>();
   let totalReferralCommission = 0;
+  let thisMonthReferralCommission = 0;
   let directReferralCommission = 0;
   let indirectReferralCommission = 0;
   const levelByUserId = new Map<string, number>(graphRows.map((row: any) => [row.referred_id, Number(row.level)]));
+  const currentMonth = pakistanDate().slice(0, 7);
   for (const row of commissions ?? []) {
     const amount = num(row.amount);
     totalReferralCommission += amount;
+    if (row.created_at && pakistanDate(new Date(row.created_at)).slice(0, 7) === currentMonth) thisMonthReferralCommission += amount;
     const sourceLevel = row.source_user_id
       ? (levelByUserId.get(row.source_user_id) ?? Number(row.level))
       : Number(row.level);
@@ -773,6 +778,7 @@ async function loadState(user: {
       };
     }),
     totalReferralCommission,
+    thisMonthReferralCommission,
     allTimeNetwork,
     directNetwork,
     indirectNetwork,
