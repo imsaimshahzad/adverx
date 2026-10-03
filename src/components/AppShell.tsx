@@ -131,7 +131,19 @@ export function AppShell({
       <div className="flex h-20 items-center border-b border-sidebar-border px-6">
         <Link to="/" aria-label="AdverX home" onClick={() => setMobileOpen(false)}><BrandLogo compact className="max-w-[9.5rem]" /></Link>
       </div>
-      {mobileSimpleHeader ? (\n        <div className="border-b border-sidebar-border px-4 py-3">\n          <p className="mb-2 text-xs font-semibold text-muted-foreground">Display settings</p>\n          <div className="flex items-center justify-between gap-2">\n            <div className="flex gap-1 rounded-xl bg-muted p-1">\n              {(["PKR", "USD"] as const).map((option) => (\n                <button key={option} type="button" onClick={() => changeCurrency(option)} className={`min-h-10 rounded-lg px-3 text-xs font-semibold ${currency === option ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{option}</button>\n              ))}\n            </div>\n            <ThemeToggle />\n          </div>\n        </div>\n      ) : null}\n      <div className="flex-1 overflow-y-auto px-3 py-6">
+      {mobileSimpleHeader ? (
+        <div className="border-b border-sidebar-border px-4 py-3">
+          <p className="mb-2 text-xs font-semibold text-muted-foreground">Display settings</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-1 rounded-xl bg-muted p-1">
+              {(["PKR", "USD"] as const).map((option) => (
+                <button key={option} type="button" onClick={() => changeCurrency(option)} className={`min-h-10 rounded-lg px-3 text-xs font-semibold ${currency === option ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{option}</button>
+              ))}
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
+      ) : null}\n      <div className="flex-1 overflow-y-auto px-3 py-6">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-6">
             <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{group.label}</p>
