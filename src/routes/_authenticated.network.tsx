@@ -42,7 +42,9 @@ function InfoLabel({ children, text }: { children: ReactNode; text: string }) {
 function NetworkPage() {
   const { state, ready, dataError } = usePlatform();
   const [tab, setTab] = useState<"direct" | "indirect">("direct");
-  const members = [...state.network].sort((a, b) => Number(b.active) - Number(a.active));
+  const members = state.network
+    .filter((member) => (tab === "direct" ? member.level === 1 : member.level > 1))
+    .sort((a, b) => Number(b.active) - Number(a.active));
   const code = state.user?.referralCode ?? "—";
   const link = referralUrl(code);
   const notSubscribed = state.unpaidReferrals;
@@ -233,19 +235,40 @@ function NetworkPage() {
               )}
             </div>
           ) : (
-            <div className="px-4 py-8 text-center">
-              {state.indirectNetwork === 0 ? (
-                <>
+            <div className="divide-y divide-border/60">
+              {members.length === 0 ? (
+                <div className="px-4 py-8 text-center">
                   <UserPlus className="mx-auto size-6 text-muted-foreground" />
                   <p className="mt-2 text-sm font-semibold">No indirect referrals yet</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Share your code and help your direct referrals invite others.
                   </p>
-                </>
+                </div>
               ) : (
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Your indirect referrals are shown in the totals above. Commission is tracked automatically as eligible plans are activated.
-                </p>
+                members.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{m.name}</p>
+                      <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                        Level {m.level} · {m.planName} · Joined {formatDate(m.joinedAt)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge
+                        className={
+                          m.active
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : statusBadge(m.status).className
+                        }
+                      >
+                        {m.active ? "Currently earning" : "Not subscribed"}
+                      </Badge>
+                      <p className="mt-1 text-sm font-medium text-muted-foreground">
+                        {formatMoney(m.commission, "PKR")}
+                      </p>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           )}
