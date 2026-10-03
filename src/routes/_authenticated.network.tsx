@@ -52,7 +52,7 @@ function NetworkPage() {
         <StatTile
           label="Referrals"
           value={`${state.allTimeNetwork}`}
-          hint={`Direct ${state.directNetwork} · Indirect ${state.indirectNetwork} · Commission ${formatMoney(state.totalReferralCommission, "PKR")}`}
+          hint={`Direct ${state.directNetwork} · Indirect ${state.indirectNetwork} · Paid ${state.paidReferrals} · Unpaid ${state.unpaidReferrals} · ${formatMoney(state.totalReferralCommission, "PKR")}`}
         />
       </div>
 
