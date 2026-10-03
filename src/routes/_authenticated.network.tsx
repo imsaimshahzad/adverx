@@ -59,8 +59,6 @@ function NetworkPage() {
   return (
     <AppShell
       title="My network"
-      subtitle="Invite friends and track your referral earnings"
-      mobileSimpleHeader
       hideWhatsAppBanner
     >
       <div className="space-y-3">
