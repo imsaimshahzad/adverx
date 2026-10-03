@@ -321,10 +321,7 @@ function Dashboard() {
   }
 
   return (
-    <AppShell
-      title={`Hi, ${state.user?.fullName?.split(" ")[0] ?? "there"}`}
-      subtitle={plan ? `${plan.name} Plan Active` : "No Active Plan"}
-    >
+    <AppShell title={`Hi, ${state.user?.fullName?.split(" ")[0] ?? "there"}`} hideWhatsAppBanner>
       <section className={`morphic-hero relative overflow-hidden ${expanded ? "is-expanded" : ""}`}>
         <div className="morphic-orb morphic-orb-one" />
         <div className="morphic-orb morphic-orb-two" />
@@ -439,6 +436,11 @@ function Dashboard() {
           </Button>
         </div>
       )}
+
+      <a href="https://whatsapp.com/channel/0029VbDmSMAGk1Flgs0YeW42" target="_blank" rel="noreferrer" className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+        <div className="flex min-w-0 items-center gap-2.5"><div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white"><span className="text-sm font-bold">WA</span></div><p className="truncate text-sm font-medium">AdverX WhatsApp Channel</p></div>
+        <span className="shrink-0 text-sm font-semibold text-primary">Join →</span>
+      </a>
     </AppShell>
   );
 }
