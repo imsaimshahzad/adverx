@@ -136,7 +136,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    const theme = window.localStorage.getItem("adverx-theme") === "dark" ? "dark" : "light";
+    let theme: "light" | "dark" = "light";
+    try {
+      theme = window.localStorage.getItem("adverx-theme") === "dark" ? "dark" : "light";
+    } catch {
+      theme = "light";
+    }
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
   }, []);
