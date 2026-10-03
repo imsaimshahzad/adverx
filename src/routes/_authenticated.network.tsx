@@ -1,7 +1,7 @@
 import { formatDate, formatMoney, statusBadge } from "@/lib/display";
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, Copy, Info, Share2, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { toast } from "sonner";
 
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/network")({
   component: NetworkPage,
 });
 
-function InfoLabel({ children, text }: { children: React.ReactNode; text: string }) {
+function InfoLabel({ children, text }: { children: ReactNode; text: string }) {
   return (
     <span className="inline-flex items-center gap-1">
       {children}
