@@ -190,6 +190,9 @@ const EMPTY = {
   adViews: [],
   network: [],
   totalReferralCommission: 0,
+  allTimeNetwork: 0,
+  directNetwork: 0,
+  indirectNetwork: 0,
   notifications: [],
   recoveries: [],
   adminProfitSummary: null,
@@ -203,6 +206,9 @@ type State = {
   adViews: AdView[];
   network: NetworkMember[];
   totalReferralCommission: number;
+  allTimeNetwork: number;
+  directNetwork: number;
+  indirectNetwork: number;
   notifications: Notification[];
   recoveries: Array<{ id: string; amount: number; status: string; createdAt: number; referredId: string }>;
   adminProfitSummary: AdminProfitSummary | null;
@@ -559,6 +565,13 @@ async function loadState(user: {
     referredProfiles = (referralQuery.data ?? []) as any[];
   }
   const referralRows = referredProfiles;
+  const { data: referralGraph } = await db
+    .from("referrals")
+    .select("referred_id, level")
+    .eq("referrer_id", uid);
+  const directNetwork = (referralGraph ?? []).filter((row: any) => Number(row.level) === 1).length;
+  const indirectNetwork = (referralGraph ?? []).filter((row: any) => Number(row.level) > 1).length;
+  const allTimeNetwork = (referralGraph ?? []).length;
   const referredIds = referralRows.map((row) => row.id).filter(Boolean);
   const [{ data: referredPlans }, { data: commissions }] = await Promise.all([
     referredIds.length
@@ -725,6 +738,9 @@ async function loadState(user: {
       };
     }),
     totalReferralCommission,
+    allTimeNetwork,
+    directNetwork,
+    indirectNetwork,
     notifications: ((notifications ?? []) as any[]).map((n) => ({
       id: n.id,
       title: n.title,
