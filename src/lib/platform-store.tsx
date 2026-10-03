@@ -193,6 +193,8 @@ const EMPTY = {
   allTimeNetwork: 0,
   directNetwork: 0,
   indirectNetwork: 0,
+  paidReferrals: 0,
+  unpaidReferrals: 0,
   notifications: [],
   recoveries: [],
   adminProfitSummary: null,
@@ -209,6 +211,8 @@ type State = {
   allTimeNetwork: number;
   directNetwork: number;
   indirectNetwork: number;
+  paidReferrals: number;
+  unpaidReferrals: number;
   notifications: Notification[];
   recoveries: Array<{ id: string; amount: number; status: string; createdAt: number; referredId: string }>;
   adminProfitSummary: AdminProfitSummary | null;
@@ -569,16 +573,21 @@ async function loadState(user: {
     .from("referrals")
     .select("referred_id, level")
     .eq("referrer_id", uid);
-  const directNetwork = (referralGraph ?? []).filter((row: any) => Number(row.level) === 1).length;
-  const indirectNetwork = (referralGraph ?? []).filter((row: any) => Number(row.level) > 1).length;
-  const allTimeNetwork = (referralGraph ?? []).length;
-  const referredIds = referralRows.map((row) => row.id).filter(Boolean);
+  const graphRows = (referralGraph ?? []) as any[];
+  const directNetwork = graphRows.filter((row) => Number(row.level) === 1).length;
+  const indirectNetwork = graphRows.filter((row) => Number(row.level) > 1).length;
+  const allTimeNetwork = graphRows.length;
+  const graphIds = graphRows.map((row) => row.referred_id).filter(Boolean);
+  const referredIds = Array.from(new Set([...referralRows.map((row) => row.id).filter(Boolean), ...graphIds]));
   const [{ data: referredPlans }, { data: commissions }] = await Promise.all([
     referredIds.length
       ? db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active")
       : Promise.resolve({ data: [] }),
     db.from("referral_commissions").select("source_user_id, amount").eq("user_id", uid).eq("status", "completed"),
   ]);
+  const paidReferralIds = new Set((referredPlans ?? []).map((row: any) => row.user_id));
+  const paidReferrals = referredIds.filter((id) => paidReferralIds.has(id)).length;
+  const unpaidReferrals = Math.max(0, allTimeNetwork - paidReferrals);
   const profileById = new Map<string, any>((referredProfiles ?? []).map((row: any) => [row.id, row]));
   const planById = new Map<string, any>((referredPlans ?? []).map((row: any) => [row.user_id, PLANS.find((plan) => plan.id === row.plan_id)]));
   const commissionByUser = new Map<string, number>();
@@ -741,6 +750,8 @@ async function loadState(user: {
     allTimeNetwork,
     directNetwork,
     indirectNetwork,
+    paidReferrals,
+    unpaidReferrals,
     notifications: ((notifications ?? []) as any[]).map((n) => ({
       id: n.id,
       title: n.title,
