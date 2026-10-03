@@ -50,9 +50,19 @@ function NetworkPage() {
         <StatTile label="No plan" value={`${members.filter((m) => !m.active).length}`} />
         <StatTile label="This month" value={`+${thisMonth}`} />
         <StatTile
-          label="Referrals"
-          value={`${state.allTimeNetwork}`}
-          hint={`Direct ${state.directNetwork} · Indirect ${state.indirectNetwork} · Paid ${state.paidReferrals} · Unpaid ${state.unpaidReferrals} · Direct ${formatMoney(state.directReferralCommission, "PKR")} · Indirect ${formatMoney(state.indirectReferralCommission, "PKR")}`}
+          label="Direct referrals"
+          value={`${state.directNetwork}`}
+          hint={`Paid ${Math.min(state.paidReferrals, state.directNetwork)} · Unpaid ${Math.max(0, state.directNetwork - state.paidReferrals)} · Commission ${formatMoney(state.directReferralCommission, "PKR")}`}
+        />
+        <StatTile
+          label="Indirect referrals"
+          value={`${state.indirectNetwork}`}
+          hint={`Paid ${Math.max(0, state.paidReferrals - state.directNetwork)} · Unpaid ${Math.max(0, state.indirectNetwork - Math.max(0, state.paidReferrals - state.directNetwork))} · Commission ${formatMoney(state.indirectReferralCommission, "PKR")}`}
+        />
+        <StatTile
+          label="All-time commission"
+          value={formatMoney(state.totalReferralCommission, "PKR")}
+          hint={`Direct ${formatMoney(state.directReferralCommission, "PKR")} · Indirect ${formatMoney(state.indirectReferralCommission, "PKR")}`}
         />
       </div>
 
