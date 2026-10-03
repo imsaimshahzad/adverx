@@ -32,7 +32,7 @@ import { HeroTrustStrip, useHomepageHero } from "@/components/HomepageHeroSettin
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { money, PLANS, usePlatform } from "@/lib/platform-store";
+import { money, PLANS, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
 import { useState } from "react";
 import "@/morphic-dashboard.css";
 
@@ -212,7 +212,7 @@ function PlansPreview({ plans }: { plans: typeof PLANS }) {
                   ? `Indirect referral: ${plan.indirectReferralPct}% · Up to Level 6 earnings`
                   : "Indirect referral not included"}
               </PlanFeature>
-              <PlanFeature>Minimum withdrawal {money(plan.minWithdrawal)}</PlanFeature>
+              <PlanFeature>Minimum withdrawal {money(WITHDRAWAL_METHODS.filter((method) => method.isActive && method.minWithdrawal > 0).reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY) === Number.POSITIVE_INFINITY ? 100 : WITHDRAWAL_METHODS.filter((method) => method.isActive && method.minWithdrawal > 0).reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY))}</PlanFeature>
               {plan.networkEligible ? (
                 <PlanFeature>Network rewards enabled</PlanFeature>
               ) : (
