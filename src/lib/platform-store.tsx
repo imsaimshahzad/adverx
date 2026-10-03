@@ -616,7 +616,9 @@ async function loadState(user: {
   for (const row of commissions ?? []) {
     const amount = num(row.amount);
     totalReferralCommission += amount;
-    const sourceLevel = row.source_user_id ? levelByUserId.get(row.source_user_id) : Number(row.level);
+    const sourceLevel = row.source_user_id
+      ? (levelByUserId.get(row.source_user_id) ?? Number(row.level))
+      : Number(row.level);
     if (sourceLevel === 1) directReferralCommission += amount;
     else if (Number(sourceLevel) > 1) indirectReferralCommission += amount;
     if (row.source_user_id) commissionByUser.set(row.source_user_id, (commissionByUser.get(row.source_user_id) ?? 0) + amount);
