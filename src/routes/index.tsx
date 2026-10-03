@@ -304,7 +304,7 @@ function Dashboard() {
   } = usePlatform();
 
   const pendingDeposit = state.deposits.find((d) => d.status === "pending");
-  const activeMembers = state.network.length;
+  const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
 
