@@ -33,9 +33,11 @@ function NetworkPage() {
   const { state, ready, dataError } = usePlatform();
   const members = [...state.network].sort((a, b) => Number(b.active) - Number(a.active));
   const active = members.filter((m) => m.active).length;
-  const thisMonth = members.filter(
-    (m) => new Date(m.joinedAt).getMonth() === new Date().getMonth(),
-  ).length;
+  const now = new Date();
+  const thisMonth = members.filter((m) => {
+    const joined = new Date(m.joinedAt);
+    return joined.getFullYear() === now.getFullYear() && joined.getMonth() === now.getMonth();
+  }).length;
   const code = state.user?.referralCode ?? "—";
   const link = referralUrl(code);
 
