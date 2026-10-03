@@ -252,7 +252,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   
   async function loadCatalog() {
   const requestVersion = ++catalogRequestVersion;
-  const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }] = await Promise.all([
+  const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }, { data: withdrawalMethods, error: withdrawalMethodsError }] = await Promise.all([
     db
       .from("ads")
       .select("id, title, advertiser, description, destination_url, reward, duration_seconds, status, reward_enabled, display_order, created_at, task_type, image_url, video_url, html_code")
@@ -262,6 +262,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
       .order("created_at", { ascending: true }),
     db.from("plans").select("*").eq("active", true).eq("status", "active").order("price_pkr"),
     db.from("deposit_methods").select("*").eq("is_active", true).order("sort_order"),
+    db.from("withdrawal_methods").select("*").eq("is_active", true).order("sort_order"),
   ]);
 
   if (requestVersion !== catalogRequestVersion) return;
@@ -287,6 +288,17 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   if (adsError) { console.error("[AdverX] active ads query failed", adsError); throw new Error("Unable to load available ads."); }
   if (plansError) { console.error("[AdverX] plans query failed", plansError); throw new Error("Unable to load available plans."); }
   if (methodsError) { console.error("[AdverX] deposit methods query failed", methodsError); throw new Error("Unable to load payment methods."); }
+  if (withdrawalMethodsError) { console.error("[AdverX] withdrawal methods query failed", withdrawalMethodsError); throw new Error("Unable to load withdrawal methods."); }
+
+  WITHDRAWAL_METHODS.splice(0, WITHDRAWAL_METHODS.length, ...((withdrawalMethods ?? []) as any[]).map((method) => ({
+    id: method.id,
+    name: method.name,
+    type: method.destination_label ?? method.name,
+    instructions: method.instructions ?? "",
+    isActive: Boolean(method.is_active),
+    minWithdrawal: num(method.min_withdrawal_pkr),
+    maxWithdrawal: num(method.max_withdrawal_pkr),
+  })));
 
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({
     id: method.id,
