@@ -623,7 +623,12 @@ async function loadState(user: {
   const profileById = new Map<string, any>(
     allNetworkProfiles.map((row: any) => [row.id, row]),
   );
-  const planById = new Map<string, any>((referredPlans ?? []).map((row: any) => [row.user_id, PLANS.find((plan) => plan.id === row.plan_id)]));
+  // Keep the database active-plan row as the source of truth. The plan catalog
+  // can be refreshed independently, so matching only against the in-memory PLANS
+  // array can incorrectly mark a paid member as "No Plan".
+  const activePlanRowByUserId = new Map<string, any>(
+    (referredPlans ?? []).map((row: any) => [row.user_id, row]),
+  );
   const commissionByUser = new Map<string, number>();
   let totalReferralCommission = 0;
   let thisMonthReferralCommission = 0;
@@ -780,15 +785,18 @@ async function loadState(user: {
     })),
     network: graphRows.map((r) => {
       const member = profileById.get(r.referred_id);
-      const plan = planById.get(r.referred_id);
+      const activePlanRow = activePlanRowByUserId.get(r.referred_id);
+      const plan = activePlanRow
+        ? PLANS.find((catalogPlan) => catalogPlan.id === activePlanRow.plan_id)
+        : null;
       return {
         id: r.referred_id,
         name: member?.full_name ?? "Member",
         joinedAt: member?.created_at
           ? new Date(member.created_at).getTime()
           : Date.now(),
-        active: Boolean(plan),
-        planName: plan?.name ?? "No Plan",
+        active: Boolean(activePlanRow),
+        planName: plan?.name ?? (activePlanRow ? "Active Plan" : "No Plan"),
         commission: commissionByUser.get(r.referred_id) ?? 0,
         status: plan ? "Active" : "Registered",
         level: Number(r.level) || 1,
