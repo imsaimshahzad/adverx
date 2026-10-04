@@ -23,19 +23,29 @@ export function AdminPushNotifications() {
         toast.error("This browser does not support push notifications.");
         return;
       }
-      if (Notification.permission === "denied") {
-        toast.error("Notifications are blocked for AdverX. Allow them in Chrome site settings and try again.");
+
+      const currentPermission = Notification.permission;
+      if (currentPermission === "denied") {
+        toast.error("AdverX notifications are blocked in this browser. Chrome must be set to Allow notifications for this site.");
         return;
       }
 
       const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       await navigator.serviceWorker.ready;
 
-      const permission = Notification.permission === "granted"
+      const permission = currentPermission === "granted"
         ? "granted"
         : await Notification.requestPermission();
+
+      console.info("[AdverX] notification permission:", permission);
+
+      if (permission === "denied") {
+        toast.error("Chrome blocked AdverX notifications. Open Chrome site settings and set Notifications to Allow.");
+        return;
+      }
+
       if (permission !== "granted") {
-        toast.error("Notification permission was not granted.");
+        toast.error("Chrome did not grant notification permission. Tap Enable Deposit Alerts again and choose Allow.");
         return;
       }
 
@@ -86,7 +96,10 @@ export function AdminPushNotifications() {
       if (!profile || profile.id !== "dfe99973-80f9-480c-86e5-725197e83df3" || profile.role !== "admin") return;
 
       setIsAdmin(true);
-      if (Notification.permission === "granted") await enablePush();
+
+      if (Notification.permission === "granted") {
+        await enablePush();
+      }
     })().catch((error) => {
       console.error("[AdverX] admin push initialization failed", error);
     });
