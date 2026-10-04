@@ -15,6 +15,40 @@ export function AdminPushNotifications() {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const subscribePush = async () => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      throw new Error("This browser does not support push notifications.");
+    }
+
+    if (Notification.permission !== "granted") {
+      throw new Error("Notification permission is not granted yet.");
+    }
+
+    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+
+    const { data, error } = await supabase.functions.invoke("admin-push", {
+      body: { action: "public_key" },
+    });
+    if (error || !data?.publicKey) throw error ?? new Error("Push key unavailable");
+
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: decodeVapidKey(data.publicKey),
+      });
+    }
+
+    const { error: subscribeError } = await supabase.functions.invoke("admin-push", {
+      body: { action: "subscribe", subscription: subscription.toJSON() },
+    });
+    if (subscribeError) throw subscribeError;
+
+    setEnabled(true);
+    toast.success("Deposit alerts enabled on this device");
+  };
+
   const enablePush = async () => {
     if (busy) return;
     setBusy(true);
@@ -25,48 +59,27 @@ export function AdminPushNotifications() {
         return;
       }
 
-      // IMPORTANT: request permission before any await so Chrome keeps the
-      // user-gesture activation from the admin's tap/click.
+      // Chrome Android can now use a lighter, non-blocking notification prompt.
+      // Keep the permission request directly inside this user gesture.
       let permission = Notification.permission;
-      if (permission === "default") {
+
+      if (permission !== "granted") {
         permission = await Notification.requestPermission();
       }
 
       console.info("[AdverX] notification permission:", permission);
 
-      if (permission === "denied") {
-        toast.error("AdverX notifications are blocked. Reset this site's notification permission in Chrome, then try again.");
+      if (permission === "granted") {
+        await subscribePush();
         return;
       }
 
-      if (permission !== "granted") {
-        toast.error("Notification permission was not granted.");
+      if (permission === "default") {
+        toast.info("Chrome kept the notification request pending. Tap the site controls icon and allow notifications for AdverX.");
         return;
       }
 
-      const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-      await navigator.serviceWorker.ready;
-
-      const { data, error } = await supabase.functions.invoke("admin-push", {
-        body: { action: "public_key" },
-      });
-      if (error || !data?.publicKey) throw error ?? new Error("Push key unavailable");
-
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: decodeVapidKey(data.publicKey),
-        });
-      }
-
-      const { error: subscribeError } = await supabase.functions.invoke("admin-push", {
-        body: { action: "subscribe", subscription: subscription.toJSON() },
-      });
-      if (subscribeError) throw subscribeError;
-
-      setEnabled(true);
-      toast.success("Deposit alerts enabled on this device");
+      toast.error("Chrome has blocked AdverX notifications. This browser must reset the site's notification permission before push can be enabled.");
     } catch (error) {
       console.error("[AdverX] admin push setup failed", error);
       toast.error(error instanceof Error ? error.message : "Unable to enable deposit alerts.");
@@ -95,14 +108,28 @@ export function AdminPushNotifications() {
 
       setIsAdmin(true);
 
-      // If permission is already granted, finish registration silently.
+      // Chrome Android can change notification permission from Site Controls
+      // after the page has loaded. Subscribe immediately when it becomes granted.
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: "notifications" as PermissionName });
+        permissionStatus.onchange = () => {
+          if (Notification.permission === "granted" && !enabled) {
+            void subscribePush().catch((error) => {
+              console.error("[AdverX] push subscription after permission change failed", error);
+            });
+          }
+        };
+      } catch {
+        // Notification permission querying is not supported everywhere.
+      }
+
       if (Notification.permission === "granted") {
-        await enablePush();
+        await subscribePush();
       }
     })().catch((error) => {
       console.error("[AdverX] admin push initialization failed", error);
     });
-  }, []);
+  }, [enabled]);
 
   if (!isAdmin || enabled) return null;
 
