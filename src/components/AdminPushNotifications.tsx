@@ -131,7 +131,9 @@ export function AdminPushNotifications() {
     });
   }, [enabled]);
 
-  if (!isAdmin || enabled) return null;
+  // Push registration is now silent for the admin. Once the browser permission
+  // has been granted, do not show a recurring full-screen prompt on refresh.
+  return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
