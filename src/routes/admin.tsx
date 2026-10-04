@@ -55,6 +55,7 @@ import { Separator } from "@/components/ui/separator";
 import { LoadingButtonContent, LoadingIndicator, LoadingScreen } from "@/components/LoadingIndicator";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AdminPushNotifications } from "@/components/AdminPushNotifications";
 import { HomepageHeroSettings } from "@/components/HomepageHeroSettings";
 import { SupportTicketPanel } from "@/components/SupportTicketPanel";
 import { AdminEmailComposer } from "@/components/AdminEmailComposer";
@@ -918,6 +919,7 @@ export function AdminRoute() {
     );
   return (
     <div className="admin-shell min-h-screen text-foreground">
+      <AdminPushNotifications />
       {mobileMenuOpen ? (
         <div className="fixed inset-0 z-30 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin navigation">
           <button className="absolute inset-0 bg-foreground/30" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)} />
