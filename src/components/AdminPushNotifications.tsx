@@ -18,36 +18,34 @@ export function AdminPushNotifications() {
   const enablePush = async () => {
     if (busy) return;
     setBusy(true);
+
     try {
       if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
         toast.error("This browser does not support push notifications.");
         return;
       }
 
-      const currentPermission = Notification.permission;
-      if (currentPermission === "denied") {
-        toast.error("AdverX notifications are blocked in this browser. Chrome must be set to Allow notifications for this site.");
+      // IMPORTANT: request permission before any await so Chrome keeps the
+      // user-gesture activation from the admin's tap/click.
+      let permission = Notification.permission;
+      if (permission === "default") {
+        permission = await Notification.requestPermission();
+      }
+
+      console.info("[AdverX] notification permission:", permission);
+
+      if (permission === "denied") {
+        toast.error("AdverX notifications are blocked. Reset this site's notification permission in Chrome, then try again.");
+        return;
+      }
+
+      if (permission !== "granted") {
+        toast.error("Notification permission was not granted.");
         return;
       }
 
       const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       await navigator.serviceWorker.ready;
-
-      const permission = currentPermission === "granted"
-        ? "granted"
-        : await Notification.requestPermission();
-
-      console.info("[AdverX] notification permission:", permission);
-
-      if (permission === "denied") {
-        toast.error("Chrome blocked AdverX notifications. Open Chrome site settings and set Notifications to Allow.");
-        return;
-      }
-
-      if (permission !== "granted") {
-        toast.error("Chrome did not grant notification permission. Tap Enable Deposit Alerts again and choose Allow.");
-        return;
-      }
 
       const { data, error } = await supabase.functions.invoke("admin-push", {
         body: { action: "public_key" },
@@ -97,6 +95,7 @@ export function AdminPushNotifications() {
 
       setIsAdmin(true);
 
+      // If permission is already granted, finish registration silently.
       if (Notification.permission === "granted") {
         await enablePush();
       }
@@ -108,13 +107,23 @@ export function AdminPushNotifications() {
   if (!isAdmin || enabled) return null;
 
   return (
-    <button
-      type="button"
-      onClick={() => void enablePush()}
-      disabled={busy}
-      className="fixed bottom-4 right-4 z-[100] rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
-    >
-      {busy ? "Enabling alerts…" : "🔔 Enable Deposit Alerts"}
-    </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-background p-6 shadow-2xl">
+        <div className="mb-4 text-3xl">🔔</div>
+        <h2 className="text-xl font-bold">Enable Deposit Alerts</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Allow notifications on this admin device so AdverX can alert you when a new deposit is pending.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => void enablePush()}
+          disabled={busy}
+          className="mt-6 w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {busy ? "Enabling alerts…" : "Allow Notifications"}
+        </button>
+      </div>
+    </div>
   );
 }
