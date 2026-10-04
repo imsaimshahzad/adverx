@@ -13,7 +13,6 @@ export function AdminPushNotifications() {
   const started = useRef(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [enabled, setEnabled] = useState(false);
-  const [busy, setBusy] = useState(false);
 
   const subscribePush = async () => {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -46,7 +45,7 @@ export function AdminPushNotifications() {
     if (subscribeError) throw subscribeError;
 
     setEnabled(true);
-    toast.success("Deposit alerts enabled on this device");
+    toast.success("Deposit & withdrawal alerts enabled on this device");
   };
 
   useEffect(() => {
@@ -69,8 +68,6 @@ export function AdminPushNotifications() {
 
       setIsAdmin(true);
 
-      // Chrome Android can change notification permission from Site Controls
-      // after the page has loaded. Subscribe immediately when it becomes granted.
       try {
         const permissionStatus = await navigator.permissions.query({ name: "notifications" as PermissionName });
         permissionStatus.onchange = () => {
@@ -92,49 +89,5 @@ export function AdminPushNotifications() {
     });
   }, [enabled]);
 
-  if (!isAdmin) return null;
-
-  return (
-    <div className="fixed bottom-4 right-4 z-[100]">
-      <button
-        type="button"
-        onClick={async () => {
-          if (busy) return;
-          setBusy(true);
-          try {
-            const { data, error } = await supabase.functions.invoke("admin-push", {
-              body: { action: "test_notification" },
-            });
-
-            if (error) {
-              let detail = error.message;
-              try {
-                if ("context" in error && error.context instanceof Response) {
-                  const payload = await error.context.json().catch(() => null);
-                  if (payload?.error) detail = payload.error;
-                }
-              } catch {}
-              throw new Error(detail);
-            }
-
-            const sent = Number(data?.sent ?? 0);
-            if (sent > 0) {
-              toast.success(`Push sent successfully 🔔 (${sent} device)`);
-            } else {
-              toast.error("Push service returned 0 devices. Subscription needs to be re-enabled.");
-            }
-          } catch (error) {
-            console.error("[AdverX] test push failed", error);
-            toast.error(error instanceof Error ? error.message : "Failed to send test notification.");
-          } finally {
-            setBusy(false);
-          }
-        }}
-        disabled={busy}
-        className="rounded-xl border border-white/10 bg-background px-4 py-3 text-sm font-semibold shadow-xl transition hover:opacity-90 disabled:opacity-60"
-      >
-        {busy ? "Sending…" : "🔔 Test Notification"}
-      </button>
-    </div>
-  );
+  return null;
 }
