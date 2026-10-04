@@ -131,11 +131,35 @@ export function AdminPushNotifications() {
     });
   }, [enabled]);
 
-  // Push registration is now silent for the admin. Once the browser permission
-  // has been granted, do not show a recurring full-screen prompt on refresh.
-  return null;
+  if (!isAdmin) return null;
 
   return (
+    <div className="fixed bottom-4 right-4 z-[100]">
+      <button
+        type="button"
+        onClick={async () => {
+          if (busy) return;
+          setBusy(true);
+          try {
+            const { error } = await supabase.functions.invoke("admin-push", {
+              body: { action: "test_notification" },
+            });
+            if (error) throw error;
+            toast.success("Test notification sent 🔔");
+          } catch (error) {
+            console.error("[AdverX] test push failed", error);
+            toast.error(error instanceof Error ? error.message : "Failed to send test notification.");
+          } finally {
+            setBusy(false);
+          }
+        }}
+        disabled={busy}
+        className="rounded-xl border border-white/10 bg-background px-4 py-3 text-sm font-semibold shadow-xl transition hover:opacity-90 disabled:opacity-60"
+      >
+        {busy ? "Sending…" : "🔔 Test Notification"}
+      </button>
+    </div>
+  );
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-background p-6 shadow-2xl">
         <div className="mb-4 text-3xl">🔔</div>
