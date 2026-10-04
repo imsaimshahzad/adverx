@@ -9,8 +9,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "AdverX";
   const options = {
     body: payload.body || "You have a new admin notification.",
-    icon: "/adverx-logo.png",
-    badge: "/adverx-logo.png",
+    icon: "/favicon.svg",
+    badge: "/favicon.svg",
     data: payload.data || { url: "/admin/deposits" },
     tag: "adverx-admin-deposit",
     renotify: true,
