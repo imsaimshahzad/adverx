@@ -102,11 +102,27 @@ export function AdminPushNotifications() {
           if (busy) return;
           setBusy(true);
           try {
-            const { error } = await supabase.functions.invoke("admin-push", {
+            const { data, error } = await supabase.functions.invoke("admin-push", {
               body: { action: "test_notification" },
             });
-            if (error) throw error;
-            toast.success("Test notification sent 🔔");
+
+            if (error) {
+              let detail = error.message;
+              try {
+                if ("context" in error && error.context instanceof Response) {
+                  const payload = await error.context.json().catch(() => null);
+                  if (payload?.error) detail = payload.error;
+                }
+              } catch {}
+              throw new Error(detail);
+            }
+
+            const sent = Number(data?.sent ?? 0);
+            if (sent > 0) {
+              toast.success(`Push sent successfully 🔔 (${sent} device)`);
+            } else {
+              toast.error("Push service returned 0 devices. Subscription needs to be re-enabled.");
+            }
           } catch (error) {
             console.error("[AdverX] test push failed", error);
             toast.error(error instanceof Error ? error.message : "Failed to send test notification.");
