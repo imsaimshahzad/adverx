@@ -49,45 +49,6 @@ export function AdminPushNotifications() {
     toast.success("Deposit alerts enabled on this device");
   };
 
-  const enablePush = async () => {
-    if (busy) return;
-    setBusy(true);
-
-    try {
-      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-        toast.error("This browser does not support push notifications.");
-        return;
-      }
-
-      // Chrome Android can now use a lighter, non-blocking notification prompt.
-      // Keep the permission request directly inside this user gesture.
-      let permission = Notification.permission;
-
-      if (permission !== "granted") {
-        permission = await Notification.requestPermission();
-      }
-
-      console.info("[AdverX] notification permission:", permission);
-
-      if (permission === "granted") {
-        await subscribePush();
-        return;
-      }
-
-      if (permission === "default") {
-        toast.info("Chrome kept the notification request pending. Tap the site controls icon and allow notifications for AdverX.");
-        return;
-      }
-
-      toast.error("Chrome has blocked AdverX notifications. This browser must reset the site's notification permission before push can be enabled.");
-    } catch (error) {
-      console.error("[AdverX] admin push setup failed", error);
-      toast.error(error instanceof Error ? error.message : "Unable to enable deposit alerts.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   useEffect(() => {
     if (started.current) return;
     started.current = true;
@@ -158,25 +119,6 @@ export function AdminPushNotifications() {
       >
         {busy ? "Sending…" : "🔔 Test Notification"}
       </button>
-    </div>
-  );
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-background p-6 shadow-2xl">
-        <div className="mb-4 text-3xl">🔔</div>
-        <h2 className="text-xl font-bold">Enable Deposit Alerts</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Allow notifications on this admin device so AdverX can alert you when a new deposit is pending.
-        </p>
-
-        <button
-          type="button"
-          onClick={() => void enablePush()}
-          disabled={busy}
-          className="mt-6 w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {busy ? "Enabling alerts…" : "Allow Notifications"}
-        </button>
-      </div>
     </div>
   );
 }
