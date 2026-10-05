@@ -15,13 +15,30 @@ self.addEventListener("push", (event) => {
   }
 
   const title = payload.title || "AdverX";
+  const data = payload.data || { url: "/admin/deposits" };
+
   const options = {
     body: payload.body || "You have a new admin notification.",
     icon: "/notification-icon.svg",
     badge: "/notification-icon.svg",
-    data: payload.data || { url: "/admin/deposits" },
-    tag: "adverx-admin-notification",
+    data,
+    timestamp: Date.now(),
+    requireInteraction: true,
+    silent: false,
     renotify: true,
+    tag: data.ticketId
+      ? `adverx-support-${data.ticketId}`
+      : data.depositId
+        ? `adverx-deposit-${data.depositId}`
+        : data.withdrawalId
+          ? `adverx-withdrawal-${data.withdrawalId}`
+          : `adverx-${Date.now()}`,
+    actions: [
+      {
+        action: "open",
+        title: "Open AdverX",
+      },
+    ],
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -29,17 +46,23 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
   const target = event.notification?.data?.url || "/admin/deposits";
+  const destination = new URL(target, self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
       for (const client of windows) {
         if ("focus" in client) {
-          client.navigate(new URL(target, self.location.origin).href);
+          client.navigate(destination);
           return client.focus();
         }
       }
-      if (clients.openWindow) return clients.openWindow(new URL(target, self.location.origin).href);
+
+      if (clients.openWindow) {
+        return clients.openWindow(destination);
+      }
+
       return undefined;
     }),
   );
