@@ -28,20 +28,46 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     if (error) throw new Error(error.message || "Unable to reach push service");
     if (!data?.publicKey) throw new Error("Push key unavailable");
 
+    const applicationServerKey = decodeVapidKey(data.publicKey);
+    if (applicationServerKey.byteLength !== 65) {
+      throw new Error("Invalid VAPID public key");
+    }
+
     let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
+
+    const createSubscription = async () => {
       try {
-        subscription = await registration.pushManager.subscribe({
+        return await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: decodeVapidKey(data.publicKey),
+          applicationServerKey,
         });
       } catch (error) {
+        const name = error instanceof DOMException ? error.name : "";
+        if (name === "AbortError") {
+          // Chrome can keep a stale push-service registration after a service-worker
+          // update. Remove only this browser's local registration and retry once.
+          await registration.pushManager.getSubscription().then(async (current) => {
+            if (current) await current.unsubscribe().catch(() => undefined);
+          });
+          await registration.unregister().catch(() => undefined);
+          const freshRegistration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+          await navigator.serviceWorker.ready;
+          return await freshRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey,
+          });
+        }
+
         throw new Error(
           error instanceof DOMException
             ? `Browser push subscription failed: ${error.name}`
             : "Browser push subscription failed",
         );
       }
+    };
+
+    if (!subscription) {
+      subscription = await createSubscription();
     }
 
     if (!subscription) throw new Error("Browser did not create a push subscription");
