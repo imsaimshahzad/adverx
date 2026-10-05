@@ -26,13 +26,8 @@ self.addEventListener("push", (event) => {
     requireInteraction: true,
     silent: false,
     renotify: true,
-    tag: data.ticketId
-      ? `adverx-support-${data.ticketId}`
-      : data.depositId
-        ? `adverx-deposit-${data.depositId}`
-        : data.withdrawalId
-          ? `adverx-withdrawal-${data.withdrawalId}`
-          : `adverx-${Date.now()}`,
+    // Every push gets its own tag so a new notification never replaces an older one.
+    tag: `adverx-notification-${Date.now()}-${crypto.randomUUID()}`,
     actions: [
       {
         action: "open",
