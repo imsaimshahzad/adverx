@@ -2,8 +2,6 @@ import { Bell, BellOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const ADMIN_USER_ID = "dfe99973-80f9-480c-86e5-72519783df3";
-
 function decodeVapidKey(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
   const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -11,9 +9,8 @@ function decodeVapidKey(value: string) {
   return Uint8Array.from(raw, (char) => char.charCodeAt(0));
 }
 
-export function AdminPushNotifications() {
+export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
   const activeSubscription = useRef<PushSubscription | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [enabling, setEnabling] = useState(false);
 
@@ -53,28 +50,13 @@ export function AdminPushNotifications() {
     activeSubscription.current = subscription;
   };
 
-  const verifyAdmin = async (userId: string) => {
-    if (userId !== ADMIN_USER_ID) return false;
-
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (error || !profile || profile.id !== ADMIN_USER_ID || profile.role !== "admin") return false;
-
-    setIsAdmin(true);
-
-    if ("Notification" in window) {
-      const currentPermission = Notification.permission;
-      setPermission(currentPermission);
-      if (currentPermission === "granted") {
-        await subscribePush();
-      }
+  const syncPermission = async () => {
+    if (!("Notification" in window)) return;
+    const currentPermission = Notification.permission;
+    setPermission(currentPermission);
+    if (currentPermission === "granted") {
+      await subscribePush();
     }
-
-    return true;
   };
 
   const enableNotifications = async () => {
@@ -101,31 +83,9 @@ export function AdminPushNotifications() {
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    const handleSession = async (userId?: string) => {
-      const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
-      if (!id || !mounted) return;
-      try {
-        await verifyAdmin(id);
-      } catch (error) {
-        console.error("[AdVerX] admin push verification failed", error);
-      }
-    };
-
-    void handleSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
-        void handleSession(session?.user?.id);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+    if (!isAdmin) return;
+    void syncPermission();
+  }, [isAdmin]);
 
   if (!isAdmin) return null;
 
