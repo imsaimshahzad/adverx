@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/LoadingIndicator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/BrandLogo";
+import { UserPushNotifications } from "@/components/UserPushNotifications";
 import "@/dashboard-design.css";
 import "@/morphic-system.css";
 
@@ -173,6 +174,7 @@ export function AppShell({
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <select aria-label="Display currency" value={displayCurrency} onChange={(event) => changeCurrency(event.target.value as "PKR" | "USD")} className="h-9 rounded-md border border-border bg-background px-2 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-primary/20"><option value="PKR">PKR</option><option value="USD">USD</option></select>
             <Button asChild variant="ghost" size="icon" className="relative"><Link to="/notifications" aria-label="Notifications"><Bell />{unreadCount > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" /> : null}</Link></Button>
+            <UserPushNotifications userId={user?.id} />
             <button type="button" aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"} className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted" onClick={toggleDarkMode}>{darkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}</button>
             <Link to="/profile" aria-label="Profile"><Avatar className="size-9"><AvatarFallback className="bg-primary text-xs text-primary-foreground">{(user?.fullName ?? "G").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></Link>
           </div>
