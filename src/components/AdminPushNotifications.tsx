@@ -12,6 +12,8 @@ function decodeVapidKey(value: string) {
 
 export function AdminPushNotifications() {
   const activeSubscription = useRef<PushSubscription | null>(null);
+  const adminVerified = useRef(false);
+  const permissionRequested = useRef(false);
 
   const subscribePush = async () => {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -50,24 +52,38 @@ export function AdminPushNotifications() {
     activeSubscription.current = subscription;
   };
 
-  const initializeForAdmin = async (userId: string) => {
-    if (userId !== ADMIN_USER_ID) return;
+  const verifyAdmin = async (userId: string) => {
+    if (userId !== ADMIN_USER_ID) return false;
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from("profiles")
       .select("id, role")
       .eq("id", userId)
       .maybeSingle();
 
-    if (!profile || profile.id !== ADMIN_USER_ID || profile.role !== "admin") return;
+    if (error || !profile || profile.id !== ADMIN_USER_ID || profile.role !== "admin") return false;
 
-    if (Notification.permission === "default") {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") return;
-    }
+    adminVerified.current = true;
+    return true;
+  };
 
-    if (Notification.permission === "granted") {
-      await subscribePush();
+  const requestPermissionAndSubscribe = async () => {
+    if (!adminVerified.current || permissionRequested.current) return;
+    if (!("Notification" in window)) return;
+
+    permissionRequested.current = true;
+
+    try {
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
+      }
+
+      if (Notification.permission === "granted") {
+        await subscribePush();
+      }
+    } catch (error) {
+      console.error("[AdverX] admin push setup failed", error);
     }
   };
 
@@ -76,15 +92,17 @@ export function AdminPushNotifications() {
 
     const handleSession = async (userId?: string) => {
       if (!mounted) return;
-
       const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
       if (!id) return;
 
-      try {
-        await initializeForAdmin(id);
-      } catch (error) {
-        console.error("[AdverX] admin push initialization failed", error);
-      }
+      const isAdmin = await verifyAdmin(id);
+      if (!isAdmin) return;
+
+      // Let the browser finish the admin sign-in/navigation before requesting permission.
+      // This keeps the permission flow isolated to the verified admin session.
+      window.setTimeout(() => {
+        if (mounted) void requestPermissionAndSubscribe();
+      }, 250);
     };
 
     void handleSession();
