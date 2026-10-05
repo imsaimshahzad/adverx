@@ -18,8 +18,22 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
     if (Notification.permission !== "granted") return;
 
-    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-    await navigator.serviceWorker.ready;
+    let registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    registration = await navigator.serviceWorker.ready;
+    if (!registration.active) {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = window.setTimeout(() => reject(new Error("Service Worker did not become active")), 10000);
+        const check = () => {
+          if (registration.active) {
+            window.clearTimeout(timeout);
+            resolve();
+          } else {
+            registration.addEventListener("updatefound", check, { once: true });
+          }
+        };
+        check();
+      });
+    }
 
     const { data, error } = await supabase.functions.invoke("admin-push", {
       body: { action: "public_key" },
@@ -64,8 +78,9 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
           });
           await registration.unregister().catch(() => undefined);
           const freshRegistration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-          await navigator.serviceWorker.ready;
-          return await freshRegistration.pushManager.subscribe({
+          const activeRegistration = await navigator.serviceWorker.ready;
+          if (!activeRegistration.active) throw new Error("Service Worker did not become active after retry");
+          return await activeRegistration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey,
           });
