@@ -18,8 +18,8 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
     if (Notification.permission !== "granted") return;
 
-    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-    await navigator.serviceWorker.ready;
+    await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    const registration = await navigator.serviceWorker.ready;
     await registration.update();
 
     const { data, error } = await supabase.functions.invoke("admin-push", {
@@ -56,6 +56,7 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
         });
       } catch (error) {
         const name = error instanceof DOMException ? error.name : "";
+        const message = error instanceof Error ? error.message : String(error ?? "Unknown error");
         if (name === "AbortError") {
           // Chrome can keep a stale push-service registration after a service-worker
           // update. Remove only this browser's local registration and retry once.
@@ -63,8 +64,8 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
             if (current) await current.unsubscribe().catch(() => undefined);
           });
           await registration.unregister().catch(() => undefined);
-          const freshRegistration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-          await navigator.serviceWorker.ready;
+          await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+          const freshRegistration = await navigator.serviceWorker.ready;
           return await freshRegistration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey,
@@ -73,8 +74,8 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
 
         throw new Error(
           error instanceof DOMException
-            ? `Browser push subscription failed: ${error.name}`
-            : "Browser push subscription failed",
+            ? `Browser push subscription failed: ${error.name} — ${message}`
+            : `Browser push subscription failed: ${message}`,
         );
       }
     };
