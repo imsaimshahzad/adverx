@@ -1,3 +1,11 @@
+self.addEventListener("install", (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener("push", (event) => {
   let payload = {};
   try {
@@ -12,7 +20,7 @@ self.addEventListener("push", (event) => {
     icon: "/favicon.svg",
     badge: "/favicon.svg",
     data: payload.data || { url: "/admin/deposits" },
-    tag: "adverx-admin-deposit",
+    tag: "adverx-admin-notification",
     renotify: true,
   };
 
