@@ -25,15 +25,26 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     const { data, error } = await supabase.functions.invoke("admin-push", {
       body: { action: "public_key" },
     });
-    if (error || !data?.publicKey) throw error ?? new Error("Push key unavailable");
+    if (error) throw new Error(error.message || "Unable to reach push service");
+    if (!data?.publicKey) throw new Error("Push key unavailable");
 
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: decodeVapidKey(data.publicKey),
-      });
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: decodeVapidKey(data.publicKey),
+        });
+      } catch (error) {
+        throw new Error(
+          error instanceof DOMException
+            ? `Browser push subscription failed: ${error.name}`
+            : "Browser push subscription failed",
+        );
+      }
     }
+
+    if (!subscription) throw new Error("Browser did not create a push subscription");
 
     const currentJson = JSON.stringify(subscription.toJSON());
     const previousJson = activeSubscription.current
@@ -44,7 +55,7 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
       const { error: subscribeError } = await supabase.functions.invoke("admin-push", {
         body: { action: "subscribe", subscription: subscription.toJSON() },
       });
-      if (subscribeError) throw subscribeError;
+      if (subscribeError) throw new Error(subscribeError.message || "Unable to register this device");
     }
 
     activeSubscription.current = subscription;
@@ -84,6 +95,8 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     } catch (error) {
       console.error("[AdVerX] admin notification setup failed", error);
       setPermission(Notification.permission);
+      const message = error instanceof Error ? error.message : "Notification setup failed";
+      window.alert(message);
     } finally {
       setEnabling(false);
     }
