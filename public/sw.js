@@ -26,8 +26,6 @@ self.addEventListener("push", (event) => {
     requireInteraction: true,
     silent: false,
     renotify: true,
-    // Every push gets its own tag so a new notification never replaces an older one.
-    tag: `adverx-notification-${Date.now()}-${crypto.randomUUID()}`,
     actions: [
       {
         action: "open",
@@ -36,6 +34,7 @@ self.addEventListener("push", (event) => {
     ],
   };
 
+  // No tag: each push is a separate notification and cannot replace another notification.
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
