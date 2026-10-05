@@ -66,6 +66,11 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     try {
       let nextPermission = Notification.permission;
 
+      if (nextPermission === "denied") {
+        window.alert("Notifications are blocked for AdverX. Open Chrome site settings → Notifications → Allow, then click this button again.");
+        return;
+      }
+
       if (nextPermission === "default") {
         nextPermission = await Notification.requestPermission();
       }
@@ -98,9 +103,9 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     <button
       type="button"
       onClick={() => void enableNotifications()}
-      disabled={enabling || isBlocked}
+      disabled={enabling}
       aria-label={isGranted ? "Admin notifications enabled" : isBlocked ? "Admin notifications blocked" : "Enable admin notifications"}
-      title={isGranted ? "Notifications enabled" : isBlocked ? "Notifications are blocked in browser settings" : "Enable notifications"}
+      title={isGranted ? "Notifications enabled" : isBlocked ? "Notifications blocked — open browser site settings to allow" : "Enable notifications"}
       className="inline-flex size-9 items-center justify-center rounded-xl border border-border/70 bg-background/80 text-foreground shadow-sm backdrop-blur transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {isGranted ? <Bell className="size-4" /> : <BellOff className="size-4" />}
