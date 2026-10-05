@@ -919,7 +919,6 @@ export function AdminRoute() {
     );
   return (
     <div className="admin-shell min-h-screen text-foreground">
-      <AdminPushNotifications />
       {mobileMenuOpen ? (
         <div className="fixed inset-0 z-30 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin navigation">
           <button className="absolute inset-0 bg-foreground/30" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)} />
@@ -1019,6 +1018,7 @@ export function AdminRoute() {
               <span className="hidden sm:inline">Refresh</span>
             </Button>
             <ThemeToggle />
+            <AdminPushNotifications />
             <Link
               to="/profile"
               aria-label="Open admin profile and user account"
