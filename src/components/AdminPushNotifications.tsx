@@ -25,7 +25,20 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     const { data, error } = await supabase.functions.invoke("admin-push", {
       body: { action: "public_key" },
     });
-    if (error) throw new Error(error.message || "Unable to reach push service");
+    if (error) {
+      let detail = error.message || "Unable to reach push service";
+      try {
+        const context = (error as { context?: Response }).context;
+        if (context) {
+          const payload = await context.clone().json().catch(() => null);
+          if (payload?.error) detail = String(payload.error);
+          else if (payload?.message) detail = String(payload.message);
+        }
+      } catch {
+        // Keep the SDK error when the response body cannot be read.
+      }
+      throw new Error(detail);
+    }
     if (!data?.publicKey) throw new Error("Push key unavailable");
 
     const applicationServerKey = decodeVapidKey(data.publicKey);
@@ -81,7 +94,20 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
       const { error: subscribeError } = await supabase.functions.invoke("admin-push", {
         body: { action: "subscribe", subscription: subscription.toJSON() },
       });
-      if (subscribeError) throw new Error(subscribeError.message || "Unable to register this device");
+      if (subscribeError) {
+        let detail = subscribeError.message || "Unable to register this device";
+        try {
+          const context = (subscribeError as { context?: Response }).context;
+          if (context) {
+            const payload = await context.clone().json().catch(() => null);
+            if (payload?.error) detail = String(payload.error);
+            else if (payload?.message) detail = String(payload.message);
+          }
+        } catch {
+          // Keep the SDK error when the response body cannot be read.
+        }
+        throw new Error(detail);
+      }
     }
 
     activeSubscription.current = subscription;
