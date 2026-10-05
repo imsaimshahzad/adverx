@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="circle"><circle cx="512" cy="512" r="512"/></clipPath>
+  </defs>
+  <circle cx="512" cy="512" r="512" fill="#F4F8F9"/>
+  <image href="/favicon.svg" x="64" y="64" width="896" height="896" preserveAspectRatio="xMidYMid slice" clip-path="url(#circle)"/>
+</svg>
