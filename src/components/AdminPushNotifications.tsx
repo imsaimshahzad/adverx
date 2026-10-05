@@ -40,7 +40,7 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
       ? JSON.stringify(activeSubscription.current.toJSON())
       : null;
 
-    if (currentJson !== previousJson) {
+    if (currentJson !== previousJson || !activeSubscription.current) {
       const { error: subscribeError } = await supabase.functions.invoke("admin-push", {
         body: { action: "subscribe", subscription: subscription.toJSON() },
       });
@@ -74,9 +74,11 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
 
       if (nextPermission === "granted") {
         await subscribePush();
+        setPermission("granted");
       }
     } catch (error) {
       console.error("[AdVerX] admin notification setup failed", error);
+      setPermission(Notification.permission);
     } finally {
       setEnabling(false);
     }
