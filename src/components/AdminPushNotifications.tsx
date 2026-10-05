@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_USER_ID = "dfe99973-80f9-480c-86e5-72519783df3";
@@ -12,8 +12,9 @@ function decodeVapidKey(value: string) {
 
 export function AdminPushNotifications() {
   const activeSubscription = useRef<PushSubscription | null>(null);
-  const adminVerified = useRef(false);
-  const permissionRequested = useRef(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showEnableButton, setShowEnableButton] = useState(false);
+  const [enabling, setEnabling] = useState(false);
 
   const subscribePush = async () => {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -50,6 +51,7 @@ export function AdminPushNotifications() {
     }
 
     activeSubscription.current = subscription;
+    setShowEnableButton(false);
   };
 
   const verifyAdmin = async (userId: string) => {
@@ -63,27 +65,35 @@ export function AdminPushNotifications() {
 
     if (error || !profile || profile.id !== ADMIN_USER_ID || profile.role !== "admin") return false;
 
-    adminVerified.current = true;
+    setIsAdmin(true);
+
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        await subscribePush();
+      } else if (Notification.permission === "default") {
+        setShowEnableButton(true);
+      }
+    }
+
     return true;
   };
 
-  const requestPermissionAndSubscribe = async () => {
-    if (!adminVerified.current || permissionRequested.current) return;
-    if (!("Notification" in window)) return;
+  const enableNotifications = async () => {
+    if (!isAdmin || enabling || !("Notification" in window)) return;
 
-    permissionRequested.current = true;
-
+    setEnabling(true);
     try {
-      if (Notification.permission === "default") {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
-      }
+      const permission = await Notification.requestPermission();
 
-      if (Notification.permission === "granted") {
+      if (permission === "granted") {
         await subscribePush();
+      } else {
+        setShowEnableButton(false);
       }
     } catch (error) {
-      console.error("[AdverX] admin push setup failed", error);
+      console.error("[AdverX] admin notification permission failed", error);
+    } finally {
+      setEnabling(false);
     }
   };
 
@@ -95,14 +105,8 @@ export function AdminPushNotifications() {
       const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
       if (!id) return;
 
-      const isAdmin = await verifyAdmin(id);
-      if (!isAdmin) return;
-
-      // Let the browser finish the admin sign-in/navigation before requesting permission.
-      // This keeps the permission flow isolated to the verified admin session.
-      window.setTimeout(() => {
-        if (mounted) void requestPermissionAndSubscribe();
-      }, 250);
+      const verified = await verifyAdmin(id);
+      if (!verified || !mounted) return;
     };
 
     void handleSession();
@@ -119,5 +123,16 @@ export function AdminPushNotifications() {
     };
   }, []);
 
-  return null;
+  if (!isAdmin || !showEnableButton) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => void enableNotifications()}
+      disabled={enabling}
+      className="fixed bottom-5 right-5 z-[9999] rounded-lg px-4 py-3 text-sm font-medium shadow-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60"
+    >
+      {enabling ? "Enabling notifications..." : "Enable notifications"}
+    </button>
+  );
 }
