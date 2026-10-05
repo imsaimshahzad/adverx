@@ -1018,7 +1018,7 @@ export function AdminRoute() {
               <span className="hidden sm:inline">Refresh</span>
             </Button>
             <ThemeToggle />
-            <AdminPushNotifications />
+            <AdminPushNotifications isAdmin={authorization === "authorized"} />
             <Link
               to="/profile"
               aria-label="Open admin profile and user account"
