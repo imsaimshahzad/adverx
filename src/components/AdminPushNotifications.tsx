@@ -1,3 +1,4 @@
+import { Bell, BellOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +14,7 @@ function decodeVapidKey(value: string) {
 export function AdminPushNotifications() {
   const activeSubscription = useRef<PushSubscription | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showEnableButton, setShowEnableButton] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>("default");
   const [enabling, setEnabling] = useState(false);
 
   const subscribePush = async () => {
@@ -30,7 +31,6 @@ export function AdminPushNotifications() {
     if (error || !data?.publicKey) throw error ?? new Error("Push key unavailable");
 
     let subscription = await registration.pushManager.getSubscription();
-
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -51,7 +51,6 @@ export function AdminPushNotifications() {
     }
 
     activeSubscription.current = subscription;
-    setShowEnableButton(false);
   };
 
   const verifyAdmin = async (userId: string) => {
@@ -68,10 +67,10 @@ export function AdminPushNotifications() {
     setIsAdmin(true);
 
     if ("Notification" in window) {
-      if (Notification.permission === "granted") {
+      const currentPermission = Notification.permission;
+      setPermission(currentPermission);
+      if (currentPermission === "granted") {
         await subscribePush();
-      } else if (Notification.permission === "default") {
-        setShowEnableButton(true);
       }
     }
 
@@ -83,15 +82,19 @@ export function AdminPushNotifications() {
 
     setEnabling(true);
     try {
-      const permission = await Notification.requestPermission();
+      let nextPermission = Notification.permission;
 
-      if (permission === "granted") {
+      if (nextPermission === "default") {
+        nextPermission = await Notification.requestPermission();
+      }
+
+      setPermission(nextPermission);
+
+      if (nextPermission === "granted") {
         await subscribePush();
-      } else {
-        setShowEnableButton(false);
       }
     } catch (error) {
-      console.error("[AdverX] admin notification permission failed", error);
+      console.error("[AdVerX] admin notification setup failed", error);
     } finally {
       setEnabling(false);
     }
@@ -101,12 +104,13 @@ export function AdminPushNotifications() {
     let mounted = true;
 
     const handleSession = async (userId?: string) => {
-      if (!mounted) return;
       const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
-      if (!id) return;
-
-      const verified = await verifyAdmin(id);
-      if (!verified || !mounted) return;
+      if (!id || !mounted) return;
+      try {
+        await verifyAdmin(id);
+      } catch (error) {
+        console.error("[AdVerX] admin push verification failed", error);
+      }
     };
 
     void handleSession();
@@ -123,16 +127,21 @@ export function AdminPushNotifications() {
     };
   }, []);
 
-  if (!isAdmin || !showEnableButton) return null;
+  if (!isAdmin) return null;
+
+  const isGranted = permission === "granted";
+  const isBlocked = permission === "denied";
 
   return (
     <button
       type="button"
       onClick={() => void enableNotifications()}
-      disabled={enabling}
-      className="fixed bottom-5 right-5 z-[9999] rounded-lg px-4 py-3 text-sm font-medium shadow-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60"
+      disabled={enabling || isBlocked}
+      aria-label={isGranted ? "Admin notifications enabled" : isBlocked ? "Admin notifications blocked" : "Enable admin notifications"}
+      title={isGranted ? "Notifications enabled" : isBlocked ? "Notifications are blocked in browser settings" : "Enable notifications"}
+      className="inline-flex size-9 items-center justify-center rounded-xl border border-border/70 bg-background/80 text-foreground shadow-sm backdrop-blur transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {enabling ? "Enabling notifications..." : "Enable notifications"}
+      {isGranted ? <Bell className="size-4" /> : <BellOff className="size-4" />}
     </button>
   );
 }
