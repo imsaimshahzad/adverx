@@ -19,8 +19,8 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: payload.body || "You have a new admin notification.",
-    icon: "/favicon.svg",
-    badge: "/favicon.svg",
+    icon: "/favicon.png",
+    badge: "/favicon.png",
     data,
     timestamp: Date.now(),
     requireInteraction: true,
