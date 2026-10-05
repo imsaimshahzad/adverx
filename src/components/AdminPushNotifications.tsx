@@ -18,9 +18,8 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
     if (Notification.permission !== "granted") return;
 
-    await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-    const registration = await navigator.serviceWorker.ready;
-    await registration.update();
+    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
 
     const { data, error } = await supabase.functions.invoke("admin-push", {
       body: { action: "public_key" },
@@ -64,8 +63,8 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
             if (current) await current.unsubscribe().catch(() => undefined);
           });
           await registration.unregister().catch(() => undefined);
-          await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-          const freshRegistration = await navigator.serviceWorker.ready;
+          const freshRegistration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+          await navigator.serviceWorker.ready;
           return await freshRegistration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey,
