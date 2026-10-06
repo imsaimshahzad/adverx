@@ -51,7 +51,7 @@
 .dark .morphic-hero .morphic-orb-two { background:#99f6e4; opacity:.12; }
 .dark .morphic-icon-button { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); color:#fff; }
 .dark .morphic-icon-button:hover { background:rgba(255,255,255,.2); color:#fff; }
-.dark .morphic-action { color:#000000; background:#ffffff; border:1px solid rgba(255,255,255,.9); font-weight:600; opacity:1 !important; }
+.dark .morphic-action { color:#000000 !important; background:#ffffff !important; border:1px solid rgba(255,255,255,.9); font-weight:600; opacity:1 !important; -webkit-text-fill-color:#000000 !important; }
 .dark .morphic-action:hover { color:#000000; background:#ffffff; font-weight:600; opacity:1 !important; transform:translateY(-1px) scale(1.02); }
 .dark .morphic-action:active { color:#000000; background:#ffffff; transform:scale(.96); transition:transform .12s ease, background .12s ease; }
 
