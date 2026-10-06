@@ -20,9 +20,6 @@ import {
   Twitter,
   Facebook,
   Maximize2,
-  Search,
-  SlidersHorizontal,
-  Zap,
 } from "lucide-react";
 
 import { AppShell, StatTile } from "@/components/AppShell";
@@ -306,7 +303,6 @@ function Dashboard() {
   const pendingDeposit = state.deposits.find((d) => d.status === "pending");
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
 
   if (!ready) {
     return (
@@ -340,11 +336,6 @@ function Dashboard() {
         <div className={`morphic-detail ${expanded ? "is-visible" : ""}`} aria-hidden={!expanded}><div><p className="morphic-label">Momentum</p><p className="text-sm font-semibold">{activityLevel} · {activityScore}% active</p></div><div><p className="morphic-label">Next focus</p><p className="text-sm font-semibold">{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1 ? "" : "s"} remaining</p></div></div>
       </section>
 
-      <div className="morphic-tools mt-4">
-        <div className="flex items-center gap-2"><Zap className="size-4 text-primary" /><span className="text-sm font-medium">Adaptive focus</span><span className="text-xs text-muted-foreground">{focusMode ? "Prioritizing your active work" : "Tune your workspace"}</span></div>
-        <button type="button" className="morphic-tool-button" onClick={() => setFocusMode((value) => !value)}><SlidersHorizontal className="size-3.5" /> {focusMode ? "Focused" : "Personalize"}</button>
-      </div>
-
       {!plan && (
         <div className="surface mt-4 p-4">
           {pendingDeposit ? (
@@ -375,8 +366,7 @@ function Dashboard() {
         </div>
       )}
 
-      <div className={`morphic-stats mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 ${focusMode ? "is-focused" : ""}`}>
-        <div className="morphic-search col-span-2 flex items-center gap-2 sm:col-span-4"><Search className="size-4 text-muted-foreground" /><span>Search your workspace</span><kbd>⌘ K</kbd></div>
+      <div className="morphic-stats mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile
           label="Ads"
           value={`${adsCompletedToday} / ${dailyAdLimit || "—"}`}
