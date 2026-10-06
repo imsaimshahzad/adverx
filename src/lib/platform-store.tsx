@@ -558,7 +558,7 @@ async function loadState(user: {
         recoveryFundPct: num(activePlanConfig?.recovery_fund_pct),
         adBudgetPct: num(activePlanConfig?.ad_budget_pct),
         recoveryPerReferral: num(activePlanConfig?.recovery_per_referral_pkr),
-        minWithdrawal: num(activePlanRow.min_withdrawal),
+        minWithdrawal: PUBLIC_MIN_WITHDRAWAL ?? num(activePlanRow.min_withdrawal) ?? 0,
         networkEligible: true,
         highlight: Boolean(activePlanRow.highlight),
       }
