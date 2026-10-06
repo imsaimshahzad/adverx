@@ -106,7 +106,7 @@ function ProfilePage() {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+      <div className="mx-auto mt-5 flex w-full max-w-2xl flex-col gap-3">
         <div className="surface flex items-start gap-3 p-4">
           <ShieldCheck className="mt-0.5 size-5 text-success" />
           <div>
