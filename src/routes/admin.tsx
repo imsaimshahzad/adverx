@@ -113,11 +113,11 @@ export const Route = createFileRoute("/admin")({
   component: AdminRoute,
 });
 type Icon = typeof Users;
-type UserPartition = "all" | "paid" | "unpaid" | "starter" | "growth" | "pro";
+type UserPartition = "all" | "paid" | "unpaid" | "starter" | "growth" | "pro" | "elite";
 
 type UserClassification = {
   paid: boolean;
-  plan: "starter" | "growth" | "pro" | null;
+  plan: "starter" | "growth" | "pro" | "elite" | null;
   system: boolean;
 };
 
@@ -128,6 +128,7 @@ type UserCounts = {
   starter: number;
   growth: number;
   pro: number;
+  elite: number;
 };
 
 function friendlyAdminLabel(field: string) {
@@ -156,7 +157,7 @@ function classifyUser(row: AdminRow): UserClassification {
   const system = row.is_admin === true || row.is_system === true || ["admin", "super_admin", "moderator", "system"].includes(role) || ["admin", "system"].includes(accountType);
   const nestedPlan = row.plan && typeof row.plan === "object" ? row.plan as Record<string, unknown> : null;
   const planName = String(row.active_plan_name ?? row.plan_name ?? row.plan_title ?? row.plan_name_snapshot ?? nestedPlan?.name ?? "").toLowerCase();
-  const plan = planName.includes("starter") ? "starter" : planName.includes("growth") ? "growth" : planName.includes("pro") ? "pro" : null;
+  const plan = planName.includes("starter") ? "starter" : planName.includes("growth") ? "growth" : planName.includes("pro") ? "pro" : planName.includes("elite") ? "elite" : null;
   const planStatus = String(row.user_plan_status ?? row.plan_status ?? row.subscription_status ?? "").toLowerCase();
   const hasActivePlan = row.has_active_plan === true || row.active_plan === true || row.plan_active === true || planStatus === "active" || planStatus === "paid";
   return { paid: !system && hasActivePlan && Boolean(plan), plan: hasActivePlan ? plan : null, system };
@@ -346,7 +347,7 @@ export function AdminRoute() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [statusPartition, setStatusPartition] = useState<"pending" | "approved" | "rejected">("pending");
-  const [userPartition, setUserPartition] = useState<"all" | "paid" | "unpaid" | "starter" | "growth" | "pro">("all");
+  const [userPartition, setUserPartition] = useState<"all" | "paid" | "unpaid" | "starter" | "growth" | "pro" | "elite">("all");
   const [refreshing, setRefreshing] = useState(false);
   const [adsFilter, setAdsFilter] = useState<"active" | "archived" | "all">("active");
   const [receipt, setReceipt] = useState<{
@@ -2747,9 +2748,9 @@ function ModuleTable({
   actions: string[];
   statusPartition?: "pending" | "approved" | "rejected";
   userPartition?: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro";
-  onUserPartition?: (value: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro") => void;
+  onUserPartition?: (value: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro" | "elite") => void;
   onStatusPartition?: (value: "pending" | "approved" | "rejected") => void;
-  userCounts: { all: number; paid: number; unpaid: number; starter: number; growth: number; pro: number } | undefined;
+  userCounts: { all: number; paid: number; unpaid: number; starter: number; growth: number; pro: number; elite: number } | undefined;
   adsFilter?: "active" | "archived" | "all";
   onAdsFilter?: (value: "active" | "archived" | "all") => void;
   adsCounts?: { active: number; archived: number; all: number };
@@ -2996,7 +2997,7 @@ function ModuleTable({
         <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/70 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label={active + " filters"}>
             {active === "users" && userCounts && onUserPartition ? (
-              (["all", "paid", "unpaid", "starter", "growth", "pro"] as const).map((filter) => (
+              (["all", "paid", "unpaid", "starter", "growth", "pro", "elite"] as const).map((filter) => (
                 <Button
                   key={filter}
                   type="button"
