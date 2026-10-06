@@ -496,7 +496,7 @@ async function loadState(user: {
       recoveryFundPct: num(p.recovery_fund_pct),
       adBudgetPct: num(p.ad_budget_pct),
       recoveryPerReferral: num(p.recovery_per_referral_pkr),
-      minWithdrawal: p.min_withdrawal ?? 0,
+      minWithdrawal: PUBLIC_MIN_WITHDRAWAL ?? Math.min(...((withdrawalMethods ?? []).map((method: any) => num(method.min_withdrawal_pkr)).filter((value: number) => value > 0)), 0),
       networkEligible: true,
       highlight: p.highlight ?? false,
     })),
