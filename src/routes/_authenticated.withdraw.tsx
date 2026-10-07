@@ -193,10 +193,10 @@ function WithdrawPage() {
 
       <div className="surface mt-3 flex items-center justify-between gap-3 p-4">
         <div>
-          <p className="text-sm font-medium">Transaction history</p>
-          <p className="mt-1 text-xs text-muted-foreground">View withdrawals, deposits, rewards, referral commissions and plan purchases in one place.</p>
+          <p className="text-sm font-medium">Withdrawal history</p>
+          <p className="mt-1 text-xs text-muted-foreground">View your withdrawal requests, amounts and payment status.</p>
         </div>
-        <Button asChild variant="outline" size="sm"><a href="/transactions">View history</a></Button>
+        <Button asChild variant="outline" size="sm"><a href="/transactions?type=withdrawals">View withdrawal history</a></Button>
       </div>
     </AppShell>
   );
