@@ -55,171 +55,56 @@ export const Route = createFileRoute("/")({
 });
 
 function PublicHome() {
-  const { state } = usePlatform();
+  const { state, availableBalance, todaysEarnings, adsCompletedToday, dailyAdLimit, plan } = usePlatform();
   const plans = PLANS;
-  const hero = useHomepageHero();
-
-  const totalMembers = state.network.length;
   const activeMembers = state.network.filter((member) => member.active).length;
-  const activePlans = plans.length;
-
+  const tasksRemaining = Math.max((dailyAdLimit || 0) - adsCompletedToday, 0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const faqItems = [
+    ["How do tasks work?", "Available verified ad tasks are shown in your workspace when your account has an eligible plan. Completion and daily limits are tracked by the system."],
+    ["How are rewards calculated?", "Rewards are credited after a verified task is completed and are subject to the active plan limits and reward rules."],
+    ["When can I request a withdrawal?", "You can request a withdrawal when your account meets the current eligibility rules and has sufficient available wallet balance. The current minimum is " + (Number.isFinite(PUBLIC_MIN_WITHDRAWAL) ? money(PUBLIC_MIN_WITHDRAWAL) : "the configured threshold") + "."],
+    ["How do referrals work?", "Share your referral invite code. Direct commissions and eligible indirect network rewards are calculated according to the active plan and current referral rules."],
+    ["Are plans lifetime or time-limited?", "The plan cards below show the current duration configured for each available plan. Where no duration is configured, the plan is lifetime access."],
+    ["Where can I see my transaction history?", "Sign in to your AdverX workspace to view your wallet and transaction history with the latest account activity."],
+  ];
   return (
-    <main className="adverx-public-home min-h-screen overflow-x-hidden bg-[#faf8ff] text-[#131b2e]">
-      <header className="public-reference-header">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link to="/" aria-label="AdverX home" className="shrink-0">
-            <BrandLogo className="h-11 w-auto max-w-[11rem]" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Badge className="hidden rounded-full bg-[#00685f] px-2.5 py-1 text-[10px] font-extrabold tracking-[0.14em] text-white sm:inline-flex">PRO</Badge>
-            <span className="hidden text-sm font-semibold text-[#475569] md:inline">Dashboard</span>
-            <Button asChild size="sm" className="rounded-lg bg-[#00685f] px-4 font-bold hover:bg-[#00574f]">
-              <Link to="/signup">Sign Up</Link>
-            </Button>
-            <Button asChild variant="ghost" size="icon" className="rounded-lg">
-              <Link to="/login" aria-label="Log in"><Wallet className="size-5" /></Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-6 sm:pt-14 lg:pb-16 lg:pt-20">
-        <div className="grid items-center gap-10 lg:grid-cols-[.95fr_1.05fr]">
-          <div>
-            <p className="mb-4 text-xs font-extrabold tracking-[0.2em] text-[#00685f]">ADVERX REWARDS PLATFORM</p>
-            <h1 className="max-w-2xl font-[800] text-[2.2rem] leading-[1.05] tracking-[-0.045em] sm:text-5xl lg:text-6xl">
-              {hero.headline || "Complete tasks. Earn rewards. Track everything."}
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-[#5f6879] sm:text-lg">
-              {hero.subtext || "Complete verified tasks, monitor your rewards, and manage your account from one clear workspace."}
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="h-12 rounded-xl bg-[#00685f] px-6 font-extrabold shadow-[0_12px_30px_-14px_rgba(0,104,95,.7)] hover:bg-[#00574f]">
-                <Link to={hero.ctaLink || "/signup"}>{hero.ctaText || "Create Free Account"} <ArrowRight className="ml-1 size-4" /></Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="h-12 rounded-xl border-[#d8dde8] bg-white px-6 font-bold">
-                <Link to="/login">Log In</Link>
-              </Button>
+    <main className="flex flex-col relative w-full pt-16 bg-surface flex-1 adverx-reference-page">
+      <div className="flex flex-col w-full">
+        <section className="px-gutter pt-space-md pb-space-lg flex flex-col">
+          <div className="inline-flex items-center gap-1.5 self-start bg-surface-container-high px-space-xs py-1 rounded-full mb-space-sm"><span className="w-2 h-2 rounded-full bg-primary animate-pulse" /><span className="font-label-overline text-label-overline text-primary uppercase">AdverX Workspace</span></div>
+          <h1 className="font-display-hero-mobile text-display-hero-mobile text-on-surface font-extrabold mb-space-xs">Complete tasks.<br /><span className="text-primary">Earn rewards.</span><br />Track everything.</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-space-md leading-relaxed">A clean, high-clarity rewards workspace where you can execute verified ad tasks, monitor instantaneous earnings, expand your tier network, and safely withdraw cash.</p>
+          <div className="flex flex-col gap-space-xs w-full mb-space-lg"><Link className="w-full h-12 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform" to="/signup">Create Free Account <span className="material-symbols-outlined text-[18px]">arrow_forward</span></Link><Link className="w-full h-12 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg flex items-center justify-center active:bg-surface-container-high transition-colors" to="/login">Log In</Link></div>
+          <div className="relative w-full rounded-xl bg-surface-container-lowest p-space-md shadow-lg overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-36 h-36 bg-primary-fixed-dim/30 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between pb-space-sm mb-space-sm"><div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-secondary" /><span className="font-label-overline text-label-overline uppercase text-on-surface-variant">Live Overview</span></div><span className="font-label-md text-label-md text-primary font-semibold">{plan?.name ? plan.name + " Member" : "Active Member"}</span></div>
+            <div className="grid grid-cols-2 gap-space-xs mb-space-md">
+              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><span className="material-symbols-outlined text-[16px] text-primary">account_balance_wallet</span><span className="font-label-overline text-label-overline">Wallet balance</span></div><p className="font-metric-lg text-metric-lg text-on-surface font-bold tracking-tight">{money(availableBalance || 0)}</p></div>
+              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><span className="material-symbols-outlined text-[16px] text-secondary">paid</span><span className="font-label-overline text-label-overline">Today's rewards</span></div><p className="font-metric-lg text-metric-lg text-secondary font-bold tracking-tight">+{money(todaysEarnings || 0)}</p></div>
+              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><span className="material-symbols-outlined text-[16px] text-tertiary">check_circle</span><span className="font-label-overline text-label-overline">Tasks remaining</span></div><p className="font-metric-lg text-metric-lg text-on-surface font-bold">{tasksRemaining} tasks</p></div>
+              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><span className="material-symbols-outlined text-[16px] text-primary-container">stars</span><span className="font-label-overline text-label-overline">Active Plan</span></div><span className="bg-primary/10 text-primary font-label-overline text-label-overline px-2 py-0.5 rounded-full font-bold">{plan?.name || "No active plan"}</span></div>
             </div>
+            <div className="bg-surface-container-low p-space-sm rounded-lg mb-space-md"><div className="flex items-center justify-between mb-2"><span className="font-headline-sm text-headline-sm font-bold text-on-surface">Daily Missions</span><span className="font-label-md text-label-md text-primary font-semibold">{adsCompletedToday} of {dailyAdLimit || 0} complete</span></div><div className="w-full h-2 rounded-full bg-surface-container-high overflow-hidden mb-space-sm"><div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full" style={{width: (dailyAdLimit ? Math.min((adsCompletedToday / dailyAdLimit) * 100, 100) : 0) + "%"}} /></div><div className="flex flex-col gap-2"><div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest"><span className="font-body-sm text-body-sm font-medium text-on-surface">Verified ad task</span><span className="font-label-overline text-label-overline bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full">{adsCompletedToday > 0 ? "Completed" : "Available"}</span></div><div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest"><span className="font-body-sm text-body-sm font-medium text-on-surface">Daily reward task</span><Link to="/ads" className="font-label-overline text-label-overline bg-primary-container text-on-primary-container px-2.5 py-1 rounded-full">Open</Link></div><div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest"><span className="font-body-sm text-body-sm font-medium text-on-surface">Wallet activity</span><Link to="/wallet" className="font-label-overline text-label-overline text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Available</Link></div></div></div>
+            <div><p className="font-label-overline text-label-overline uppercase text-on-surface-variant mb-space-xs">Recent Ledger Activity</p><div className="flex flex-col gap-2"><div className="flex items-center justify-between py-1.5 px-2 rounded-lg"><span className="font-body-sm text-body-sm font-semibold text-on-surface">Reward activity</span><span className="font-label-md text-label-md font-bold text-secondary">+{money(todaysEarnings || 0)}</span></div><div className="flex items-center justify-between py-1.5 px-2 rounded-lg"><span className="font-body-sm text-body-sm font-semibold text-on-surface">Referral activity</span><span className="font-label-md text-label-md font-bold text-secondary">Tracked</span></div><div className="flex items-center justify-between py-1.5 px-2 rounded-lg"><span className="font-body-sm text-body-sm font-semibold text-on-surface">Withdrawal activity</span><span className="font-label-md text-label-md font-bold text-on-surface">Tracked</span></div></div></div>
           </div>
-
-          <div className="public-reference-dashboard surface overflow-hidden rounded-2xl bg-white p-4 shadow-[0_24px_60px_-30px_rgba(19,27,46,.35)] sm:p-5">
-            <div className="flex items-center justify-between border-b border-[#e8ebf2] pb-4">
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-[#16a34a]" />
-                <span className="text-xs font-bold text-[#475569]">Live dashboard preview</span>
-              </div>
-              <span className="text-xs text-[#7a8495]">AdverX</span>
-            </div>
-            <div className="grid gap-3 py-4 sm:grid-cols-2">
-              <PreviewMetric icon={Wallet} label="Wallet balance" value="Your live balance" />
-              <PreviewMetric icon={CircleDollarSign} label="Today rewards" value="Tracked instantly" />
-              <PreviewMetric icon={ListChecks} label="Tasks" value="Plan-based limits" />
-              <PreviewMetric icon={ShieldCheck} label="Active plan" value="Account verified" />
-            </div>
-            <div className="grid gap-3 lg:grid-cols-[1.1fr_.9fr]">
-              <div className="rounded-xl bg-[#f5f7fa] p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold">Daily missions</p>
-                  <span className="text-xs text-[#7a8495]">Live account data</span>
-                </div>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dfe5ea]"><div className="h-full w-2/5 rounded-full bg-[#008378]" /></div>
-                <div className="mt-4 space-y-3">
-                  <TaskRow label="Verified ad task" status="Tracked" done />
-                  <TaskRow label="Reward credit" status="Instant" />
-                  <TaskRow label="Wallet history" status="Visible" />
-                </div>
-              </div>
-              <div className="rounded-xl border border-[#e8ebf2] p-4">
-                <p className="text-sm font-bold">Recent ledger activity</p>
-                <div className="mt-4 space-y-3">
-                  <ActivityRow label="Reward activity" detail="Tracked by system" amount="Live" positive />
-                  <ActivityRow label="Referral activity" detail="When eligible" amount="Live" positive />
-                  <ActivityRow label="Withdrawals" detail="Status tracked" amount="Live" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-[#e7e9f0] bg-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-8 sm:px-6 md:grid-cols-4">
-          <PublicStat value={String(totalMembers)} label="Network members" />
-          <PublicStat value={String(activeMembers)} label="Active members" />
-          <PublicStat value={String(activePlans)} label="Available plans" />
-          <PublicStat value="24/7" label="Account tracking" />
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-2xl bg-[#e8f7f4] p-7 sm:p-10">
-            <p className="text-xs font-extrabold tracking-[0.18em] text-[#00685f]">VISUAL PROOF</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">See the workspace clearly.</h2>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-[#5f6879]">Tasks, rewards, plans, referrals, wallet activity and withdrawals are organized inside one account experience.</p>
-            <div className="mt-7 rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="h-24 rounded-xl bg-[#f1f4f7]" />
-                <div className="h-24 rounded-xl bg-[#e3f2ef]" />
-                <div className="h-24 rounded-xl bg-[#f1f4f7]" />
-              </div>
-              <div className="mt-3 h-3 w-2/3 rounded-full bg-[#e3e8ee]" />
-              <div className="mt-2 h-3 w-1/2 rounded-full bg-[#eef1f5]" />
-            </div>
-          </div>
-          <div className="rounded-2xl bg-white p-7 shadow-sm sm:p-10">
-            <p className="text-xs font-extrabold tracking-[0.18em] text-[#00685f]">TRUST PILLARS</p>
-            <div className="mt-6 space-y-5">
-              {[[CheckCircle2, "Verified task tracking"], [ReceiptText, "Transparent reward history"], [LockKeyhole, "Protected account access"], [CreditCard, "Tracked withdrawals"]].map(([Icon, label]) => (
-                <div key={label as string} className="flex items-center gap-4">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-[#e8f7f4]"><Icon className="size-5 text-[#00685f]" /></span>
-                  <span className="text-sm font-bold">{label as string}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-[#e7e9f0] bg-[#f4f5fb]">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
-          <p className="text-center text-xs font-extrabold tracking-[0.18em] text-[#00685f]">CUSTOMER STORIES</p>
-          <h2 className="mx-auto mt-3 max-w-2xl text-center text-3xl font-extrabold tracking-tight sm:text-4xl">A clearer experience for everyday users.</h2>
-          <Testimonials value={hero.testimonials} />
-        </div>
-      </section>
-
-      <HowItWorks />
-
-      <section id="plans" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
-        <p className="text-xs font-extrabold tracking-[0.18em] text-[#00685f]">PLANS</p>
-        <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Choose your plan</h2>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-[#5f6879]">Review the plans currently available in your account system.</p>
-        <PlansPreview plans={plans} />
-      </section>
-
-      <WhyAdNet />
-      <Faq />
-
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:pb-20">
-        <div className="rounded-2xl bg-[#00685f] px-6 py-10 text-white shadow-[0_24px_55px_-30px_rgba(0,104,95,.8)] sm:px-10 lg:flex lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Ready to get started?</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Create your AdverX account and explore your available tasks.</p>
-          </div>
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:mt-0">
-            <Button asChild size="lg" variant="secondary" className="rounded-xl font-extrabold"><Link to="/signup">Create Free Account</Link></Button>
-            <Button asChild size="lg" variant="outline" className="rounded-xl border-white/30 bg-transparent font-bold text-white hover:bg-white/10 hover:text-white"><Link to="/login">Log In</Link></Button>
-          </div>
-        </div>
-      </section>
-
-      <PublicFooter />
+        </section>
+        <section className="px-gutter mb-space-lg"><div className="rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest"><div className="relative h-44 w-full"><img className="w-full h-full object-cover" alt="AdverX rewards workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcP_KH61siqururzgatw1Nmk6Oqw_qcJ66jhWbcJksm1XFQbtXmP4-v9jolhd1saWjJ01WMx2Jto9qCx8gzmwoDN-XtqtghFf1JrgRN2ZExxjbIVWdGt5SR1dPgaVRm_PBFU1TDhh4LquMpALSW9VPFeOlvRFvkhDXuMWpcsa8_3J3Th1o7hT15e-79Pv-JRmoI1gxeN11KNSJkGA0Kvpx5eKYRm57Z2w8ele6zg" /><div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex items-end p-space-md"><p className="font-label-lg text-label-lg text-inverse-on-surface">Empowering micro-earners nationwide with verified payouts.</p></div></div></div></section>
+        <section className="px-gutter pb-space-lg"><div className="bg-surface-container-low rounded-xl p-space-md shadow-sm"><div className="grid grid-cols-3 gap-2 text-center pb-space-md"><div><p className="font-metric-xl text-metric-xl font-extrabold text-on-surface">{activeMembers}</p><p className="font-label-overline text-label-overline text-on-surface-variant">Active Members</p></div><div><p className="font-metric-xl text-metric-xl font-extrabold text-secondary">{money(0)}</p><p className="font-label-overline text-label-overline text-on-surface-variant">Platform Payouts</p></div><div><p className="font-headline-sm text-headline-sm font-extrabold text-on-surface">Instant</p><p className="font-label-overline text-label-overline text-on-surface-variant">Approval Time</p></div></div><div className="grid grid-cols-2 gap-space-xs pt-space-sm">{[["verified_user","Verified Tasks","text-primary"],["history_edu","Transparent Ledger","text-tertiary"],["lock","Secure Vault","text-secondary"],["receipt_long","Tracked Payouts","text-primary-container"]].map(([icon,label,color])=><div key={label} className="flex items-center gap-2 p-2 rounded-lg bg-surface-container-lowest"><span className={"material-symbols-outlined text-[20px] " + color}>{icon}</span><span className="font-label-md text-label-md text-on-surface">{label}</span></div>)}</div></div></section>
+        <section className="px-gutter pb-space-lg flex flex-col"><div className="mb-space-sm"><span className="font-label-overline text-label-overline text-primary uppercase">Customer Stories</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Built for confidence</h2><p className="font-body-md text-body-md text-on-surface-variant">A clearer workspace helps members stay focused on what matters.</p></div><div className="flex flex-col gap-space-sm">
+          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm"><div className="flex items-center gap-1 text-secondary mb-2">★★★★★</div><blockquote className="font-body-md text-body-md text-on-surface mb-space-sm italic">“The dashboard makes every reward easy to understand. Within 15 minutes of joining, my task credits reflect instantly.”</blockquote><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container"><img className="w-full h-full object-cover" alt="Ayesha Khan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV7vb7xbwBvHXJhh_8m8k8eHze7bRCaofPi8r9iwUN8Y1IlH93MMSb1vELdQGmwSRFZXwvdhblJ36QlYbVcwt_xpR24d4lEbzK8srSTQDgGjhX0zfu3DvOMzWMnWpwBdgyWqIrtHrf9CK_7aply1SCXWF7EPUwin4tURyxBXoN7edBdir7qKZxjlxbw_eSa-WYKEwa0X_aIH_H_IDCkKIOGStnhuElRNtLOWuBaQ" /></div><div><p className="font-label-lg text-label-lg font-bold text-on-surface">Ayesha Khan</p><p className="font-body-sm text-body-sm text-on-surface-variant">Tier Member • Karachi</p></div></div></div>
+          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm"><div className="flex items-center gap-1 text-secondary mb-2">★★★★★</div><blockquote className="font-body-md text-body-md text-on-surface mb-space-sm italic">“I can track daily ad limits and withdrawals without any confusion or hidden fees. Everything is clearly documented.”</blockquote><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container"><img className="w-full h-full object-cover" alt="Bilal Ahmed" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfow_qTXO_rZfkycDVFP0G5uzxgWTeyIYc2doxAI3TRGAvLRmuOgduF_wJlkec48LllZG1Jz_DNaV3OcO0fQ6gLhnO7j6U4tXn8xoXb1rE78aA11syWTM6qi1OE9eSQjJKpVeifhTiG1KNhWXGkA5brVpIXahxGGly7IGNhynGem5qo0kNFuskhcZgNO14lUh7fT_MZX-Oa24T7yIJp1fDovw_2heEIifg0Z3KRQ" /></div><div><p className="font-label-lg text-label-lg font-bold text-on-surface">Bilal Ahmed</p><p className="font-body-sm text-body-sm text-on-surface-variant">Growth Plan Member • Islamabad</p></div></div></div>
+        </div></section>
+        <section className="px-gutter pb-space-lg flex flex-col"><div className="mb-space-md"><span className="font-label-overline text-label-overline text-primary uppercase">How It Works</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">A straightforward way to earn</h2><p className="font-body-md text-body-md text-on-surface-variant">The important steps stay visible, so you can execute tasks seamlessly.</p></div><div className="flex flex-col gap-space-xs">{[["01","Choose a plan","Select an available plan that matches your daily schedule and goals.","bg-primary-container text-on-primary-container"],["02","Complete tasks","Execute verified ad missions according to your available plan limits.","bg-secondary-container text-on-secondary-container"],["03","Track & withdraw","Monitor credited rewards live in your wallet and request payouts when your account meets the current eligibility rules.","bg-tertiary-fixed text-on-tertiary-fixed"]].map(([n,t,d,tone])=><div key={n} className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm"><span className={"w-10 h-10 rounded-full " + tone + " font-headline-sm text-headline-sm font-bold flex items-center justify-center flex-shrink-0"}>{n}</span><div className="flex-1 min-w-0"><h3 className="font-headline-sm text-headline-sm font-bold text-on-surface mb-1">{t}</h3><p className="font-body-md text-body-md text-on-surface-variant">{d}</p></div></div>)}</div></section>
+        <section className="px-gutter pb-space-lg flex flex-col" id="plans-section"><div className="mb-space-md"><span className="font-label-overline text-label-overline text-primary uppercase">Transparent Pricing</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Choose your plan</h2><p className="font-body-md text-body-md text-on-surface-variant">One-time enrollment. No recurring monthly deductions. Review the plans currently available.</p></div><div className="flex flex-col gap-space-md">{plans.map((item)=>{const isPro=item.name.toLowerCase().includes("pro");const isGrowth=item.name.toLowerCase().includes("growth");return <div key={item.id||item.name} className={"bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col relative overflow-hidden " + (isPro ? "shadow-xl" : "")}>{isPro&&<div className="absolute top-0 right-0 bg-primary text-on-primary font-label-overline text-label-overline px-4 py-1 rounded-bl-lg uppercase tracking-wider font-bold">Recommended</div>}<div className="flex items-center justify-between mb-space-xs"><span className="font-headline-sm text-headline-sm font-bold text-on-surface">{item.name}</span><span className="font-label-overline text-label-overline bg-surface-container text-on-surface-variant px-2.5 py-1 rounded-full uppercase">{isPro?"VIP":isGrowth?"Popular Value":"Entry Level"}</span></div><div className="flex items-baseline gap-1 mb-1"><span className={"font-metric-xl text-metric-xl font-extrabold " + (isPro?"text-primary":"text-on-surface") + " tracking-tight"}>{money(item.price)}</span><span className="font-body-sm text-body-sm text-on-surface-variant">one-time</span></div><p className="font-body-sm text-body-sm text-on-surface-variant mb-space-md">{item.description}</p><div className="flex flex-col gap-2.5 mb-space-lg"><div className="flex items-center gap-2.5"><span className="material-symbols-outlined text-[20px] text-primary">check_circle</span><span className="font-body-md text-body-md text-on-surface font-medium">{item.dailyAdLimit} ad tasks per day</span></div><div className="flex items-center gap-2.5"><span className="material-symbols-outlined text-[20px] text-primary">check_circle</span><span className="font-body-md text-body-md text-on-surface font-medium">{item.durationDays ? item.durationDays + " days validity" : "Lifetime access guarantee"}</span></div><div className="flex items-center gap-2.5"><span className="material-symbols-outlined text-[20px] text-primary">check_circle</span><span className="font-body-md text-body-md text-on-surface font-medium">Direct referral: {item.referrerCommissionPct}% bonus</span></div><div className="flex items-center gap-2.5"><span className="material-symbols-outlined text-[20px] text-primary">{item.indirectReferralPct > 0 ? "stars" : "cancel"}</span><span className={"font-body-md text-body-md " + (item.indirectReferralPct > 0 ? "text-on-surface font-bold" : "text-on-surface-variant line-through")}>{item.indirectReferralPct > 0 ? "Indirect referral: " + item.indirectReferralPct + "% · Up to Level 6 earnings" : "Indirect multi-level referrals"}</span></div><div className="flex items-center gap-2.5"><span className="material-symbols-outlined text-[20px] text-primary">check_circle</span><span className="font-body-md text-body-md text-on-surface font-medium">Minimum withdrawal {Number.isFinite(PUBLIC_MIN_WITHDRAWAL)?money(PUBLIC_MIN_WITHDRAWAL):"Not set"}</span></div><div className="flex items-center gap-2.5"><span className="material-symbols-outlined text-[20px] text-primary">check_circle</span><span className="font-body-md text-body-md text-on-surface font-medium">{item.networkEligible?(isPro?"Priority network payouts enabled":"Network rewards enabled"):"No network rewards"}</span></div></div><Link to="/plans" className={"w-full h-12 rounded-lg " + (isPro?"bg-primary text-on-primary shadow-md":"bg-surface-container text-on-surface") + " font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"}>{isPro?"Activate "+item.name+" Plan":"Select "+item.name+" Plan"}<span className="material-symbols-outlined text-[18px]">{isPro?"arrow_forward":"chevron_right"}</span></Link></div>})}</div></section>
+        <section className="px-gutter pb-space-lg"><div className="bg-surface-container-low rounded-xl p-space-md"><div className="mb-space-sm"><span className="font-label-overline text-label-overline text-primary uppercase">Why AdverX</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Built around clarity</h2><p className="font-body-md text-body-md text-on-surface-variant">A structured account experience makes it effortless to know what is available and what has already happened.</p></div><div className="flex flex-col gap-2">{[["fact_check","Clear task eligibility without ambiguity"],["trending_up","Visible and verifiable reward history"],["receipt","Itemized wallet transaction ledger"],["sync_alt","Automated, structured withdrawal flow"],["shield","Protected member account access"]].map(([icon,label])=><div key={label} className="p-3 rounded-lg bg-surface-container-lowest flex items-center gap-3"><span className="material-symbols-outlined text-[22px] text-primary">{icon}</span><span className="font-label-lg text-label-lg text-on-surface">{label}</span></div>)}</div></div></section>
+        <section className="px-gutter pb-space-xl flex flex-col"><div className="mb-space-sm"><span className="font-label-overline text-label-overline text-primary uppercase">FAQ</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Common questions</h2><p className="font-body-md text-body-md text-on-surface-variant">Straight answers about using the AdverX workspace.</p></div><div className="flex flex-col gap-space-xs" id="faq-container">{faqItems.map(([q,a],i)=>{const open=openFaq===i;return <div key={q} className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden"><button className="w-full p-space-md flex items-center justify-between text-left focus:outline-none" onClick={()=>setOpenFaq(open?null:i)}><span className="font-label-lg text-label-lg font-semibold text-on-surface">{q}</span><span className={"material-symbols-outlined text-on-surface-variant transform transition-transform duration-200 " + (open?"rotate-180":"")}>expand_more</span></button>{open&&<div className="px-space-md pb-space-md font-body-md text-body-md text-on-surface-variant">{a}</div>}</div>})}</div></section>
+        <section className="px-gutter pb-space-xl"><div className="bg-gradient-to-br from-primary via-primary-container to-tertiary text-on-primary rounded-xl p-space-lg shadow-xl relative overflow-hidden flex flex-col items-center text-center"><div className="w-14 h-14 rounded-full bg-surface-container-lowest/20 flex items-center justify-center mb-space-sm backdrop-blur-md"><span className="material-symbols-outlined text-[32px] text-white">rocket_launch</span></div><h2 className="font-headline-lg text-headline-lg font-extrabold mb-space-xs text-white">Ready to get started?</h2><p className="font-body-md text-body-md text-on-primary-container mb-space-lg max-w-xs">Create your AdverX account in less than two minutes and explore your daily reward queue.</p><div className="flex flex-col gap-space-xs w-full max-w-xs"><Link className="w-full h-12 rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg flex items-center justify-center font-bold shadow-md active:scale-95 transition-transform" to="/signup">Create Free Account</Link><Link className="w-full h-12 rounded-lg bg-white/10 text-white font-label-lg text-label-lg flex items-center justify-center active:bg-white/20 transition-colors" to="/login">Log In</Link></div></div></section>
+        <footer className="px-gutter pb-space-2xl pt-space-md border-t-0 bg-surface-container-low flex flex-col items-center text-center"><div className="flex items-center gap-1.5 mb-2"><BrandLogo compact className="h-6 w-auto object-contain" /><span className="bg-secondary-container text-on-secondary-container font-label-overline text-label-overline px-2 py-0.5 rounded-full font-bold">PRO</span></div><p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs mb-space-md">A transparent rewards workspace for verified tasks, structured network bonuses, and secure micro-finances.</p><div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-space-md"><Link className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" to="/">Home</Link><Link className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" to="/plans">Plans</Link><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="#privacy">Privacy Policy</a><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="#terms">Terms of Service</a><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="mailto:support@adverx.online">Contact</a><Link className="font-label-md text-label-md text-primary font-bold" to="/login">Log In</Link></div><div className="flex items-center gap-3 text-on-surface-variant mb-space-md"><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><span className="material-symbols-outlined text-[18px]">public</span></span><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><span className="material-symbols-outlined text-[18px]">forum</span></span><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><span className="material-symbols-outlined text-[18px]">send</span></span></div><p className="font-body-sm text-[11px] text-on-surface-variant/70">© 2025 AdverX Inc. All rights reserved. Registered Rewards Platform.</p></footer>
+      </div>
     </main>
   );
 }
-
 function PublicStat({ value, label }: { value: string; label: string }) {
   return <div className="text-center"><p className="text-2xl font-extrabold tracking-tight sm:text-3xl">{value}</p><p className="mt-1 text-xs font-semibold text-[#6b7280]">{label}</p></div>;
 }
