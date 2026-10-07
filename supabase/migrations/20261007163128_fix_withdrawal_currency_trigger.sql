@@ -49,3 +49,6 @@ begin
   return new;
 end;
 $function$;
+
+-- Keep all wallet transaction currency defaults aligned with the PKR platform.
+alter table public.wallet_transactions alter column currency set default 'PKR';
