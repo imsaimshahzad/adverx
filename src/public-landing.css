@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 :root {
   --ref-primary:#00685f; --ref-primary-container:#008378; --ref-secondary:#006c49; --ref-secondary-container:#6cf8bb;
@@ -15,7 +14,11 @@
 }
 .adverx-reference-page h1,.adverx-reference-page h2,.adverx-reference-page h3,
 .adverx-reference-page button,.adverx-reference-page a { font-family:"Plus Jakarta Sans",sans-serif; }
-.material-symbols-outlined { font-family:'Material Symbols Outlined'; font-weight:400; font-style:normal; font-size:24px; line-height:1; letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap; word-wrap:normal; direction:ltr; -webkit-font-feature-settings:'liga'; -webkit-font-smoothing:antialiased; font-feature-settings:'liga'; }
+.material-symbols-outlined { font-family:Arial,sans-serif; font-weight:700; font-style:normal; font-size:0; line-height:1; letter-spacing:normal; text-transform:none; display:inline-flex; align-items:center; justify-content:center; width:1em; height:1em; white-space:nowrap; direction:ltr; -webkit-font-smoothing:antialiased; }
+.material-symbols-outlined::before { font-size:18px; line-height:1; }
+.material-symbols-outlined:empty::before { content:""; }
+.material-symbols-outlined { color:inherit; }
+
 .adverx-reference-page .font-display-hero-mobile,.adverx-reference-page .text-display-hero-mobile { font-family:"Plus Jakarta Sans",sans-serif; font-size:32px; line-height:38px; letter-spacing:-.025em; font-weight:800; }
 .adverx-reference-page .font-headline-lg,.adverx-reference-page .text-headline-lg { font-family:"Plus Jakarta Sans",sans-serif; font-size:28px; line-height:34px; letter-spacing:-.02em; font-weight:700; }
 .adverx-reference-page .font-headline-md,.adverx-reference-page .text-headline-md { font-family:"Plus Jakarta Sans",sans-serif; font-size:22px; line-height:28px; letter-spacing:-.015em; font-weight:700; }
