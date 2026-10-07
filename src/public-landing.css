@@ -99,3 +99,109 @@ body:has(.adverx-reference-page) > header .bg-outline-variant\/40 { background:r
 /* Prevent FOUC: keep the public landing markup invisible until React has painted the styled shell. */
 .adverx-reference-page { visibility:hidden; opacity:0; }
 .adverx-reference-page.is-ready { visibility:visible; opacity:1; transition:opacity 120ms ease-out; }
+
+/* Mobile-first polish */
+html, body { max-width:100%; overflow-x:hidden; }
+.adverx-reference-page { width:100%; min-width:0; overflow-x:hidden; }
+.adverx-reference-page img { max-width:100%; }
+
+@media (max-width: 767px) {
+  .adverx-reference-page .px-gutter { padding-left:14px; padding-right:14px; }
+  .adverx-reference-page section { max-width:100%; }
+  .adverx-reference-page h1 { overflow-wrap:anywhere; }
+  .adverx-reference-page p { overflow-wrap:anywhere; }
+
+  /* Compact mobile header */
+  body:has(.adverx-reference-page) > header .h-16 {
+    height:60px;
+    min-height:60px;
+    padding-left:14px;
+    padding-right:14px;
+  }
+  body:has(.adverx-reference-page) > header .h-11 {
+    height:38px;
+  }
+  body:has(.adverx-reference-page) > header .max-w-\[110px\] {
+    max-width:72px;
+    font-size:10px;
+  }
+  body:has(.adverx-reference-page) > header .w-8.h-8 {
+    width:34px;
+    height:34px;
+    flex:0 0 34px;
+  }
+  body:has(.adverx-reference-page) > header .gap-space-xs {
+    gap:6px;
+  }
+  body:has(.adverx-reference-page) > header .text-label-md {
+    font-size:10px;
+    line-height:14px;
+  }
+  body:has(.adverx-reference-page) > header .text-label-overline {
+    font-size:9px;
+    line-height:12px;
+  }
+
+  /* Hero */
+  .adverx-reference-page .font-display-hero-mobile,
+  .adverx-reference-page .text-display-hero-mobile {
+    font-size:29px;
+    line-height:35px;
+    letter-spacing:-.03em;
+  }
+  .adverx-reference-page .font-body-md,
+  .adverx-reference-page .text-body-md {
+    font-size:13px;
+    line-height:19px;
+  }
+
+  /* Dashboard preview cards */
+  .adverx-reference-page .grid-cols-2 {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .adverx-reference-page .font-metric-lg,
+  .adverx-reference-page .text-metric-lg {
+    font-size:18px;
+    line-height:24px;
+  }
+  .adverx-reference-page .font-headline-sm,
+  .adverx-reference-page .text-headline-sm {
+    font-size:16px;
+    line-height:21px;
+  }
+
+  /* Prevent long labels/buttons from forcing horizontal scroll */
+  .adverx-reference-page a,
+  .adverx-reference-page button {
+    max-width:100%;
+  }
+
+  /* Images and media stay within the viewport */
+  .adverx-reference-page .h-44 {
+    height:160px;
+  }
+
+  /* Tables / comparison-style blocks can scroll instead of breaking the page */
+  .adverx-reference-page table,
+  .adverx-reference-page pre {
+    max-width:100%;
+    overflow-x:auto;
+    display:block;
+  }
+}
+
+@media (max-width:380px) {
+  .adverx-reference-page .px-gutter { padding-left:12px; padding-right:12px; }
+  .adverx-reference-page .font-display-hero-mobile,
+  .adverx-reference-page .text-display-hero-mobile {
+    font-size:27px;
+    line-height:33px;
+  }
+  body:has(.adverx-reference-page) > header .h-16 {
+    padding-left:12px;
+    padding-right:12px;
+  }
+  body:has(.adverx-reference-page) > header .max-w-\[110px\] {
+    display:none;
+  }
+}
