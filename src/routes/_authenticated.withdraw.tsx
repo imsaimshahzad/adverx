@@ -238,7 +238,7 @@ function WithdrawPage() {
               return (
                 <div key={item.id} className="flex items-center justify-between gap-4 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="num text-sm font-semibold">{formatMoney(item.amount, "PKR")}</p>
+                    <p className="num text-sm font-semibold">{formatMoney(item.amount, "PKR").replace(/^\+/, "")}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
                       {new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}
                     </p>
