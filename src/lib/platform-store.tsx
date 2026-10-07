@@ -1313,8 +1313,12 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       p_amount: input.amount,
       p_method: input.method,
       p_account: input.account,
+      p_request_key: input.requestKey ?? crypto.randomUUID(),
     });
-    if (error) { console.error("[AdverX] withdrawal request failed", error); throw new Error("Unable to submit the withdrawal request."); }
+    if (error) {
+      console.error("[AdverX] withdrawal request failed", error);
+      throw new Error(error.message || "Unable to submit the withdrawal request.");
+    }
     const { data } = await supabase.auth.getUser();
     if (data.user) await refresh(data.user);
   }, [refresh]);
