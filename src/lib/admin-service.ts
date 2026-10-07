@@ -4,6 +4,7 @@ export type AdminRow = Record<string, unknown>;
 export type AdminModule =
   | "overview"
   | "cash-payments"
+  | "funds-reserves"
   | "users"
   | "plans"
   | "tasks"
