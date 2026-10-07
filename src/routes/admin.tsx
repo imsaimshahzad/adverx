@@ -269,6 +269,7 @@ function userSearchText(row: AdminRow) {
 
 const menu: Array<[AdminModule, string, Icon]> = [
   ["overview", "Overview", LayoutDashboard],
+  ["cash-payments", "Cash & Payments", WalletCards],
   ["users", "Users", Users],
   ["plans", "Plans", BookOpen],
   ["tasks", "Tasks / Ads", BarChart3],
@@ -464,9 +465,9 @@ export function AdminRoute() {
       // The old implementation fetched ~20 tables on every module change,
       // making one slow table block the whole Admin screen.
       const loadModuleData = async () => {
-        if (active === "overview") {
+        if (active === "overview" || active === "cash-payments") {
           const [summary, operational] = await Promise.all([
-            getReserveSummary(),
+            active === "overview" ? getReserveSummary() : Promise.resolve([]),
             getOperationsOverview(),
           ]);
           if (requestVersion !== loadVersion.current) return;
@@ -1070,6 +1071,8 @@ export function AdminRoute() {
             })(); }} />
           ) : active === "overview" ? (
             <Overview metrics={metrics} overview={overview} reserveSummary={reserveSummary} onRefresh={load} />
+          ) : active === "cash-payments" ? (
+            <CashPaymentsDashboard overview={overview} onRefresh={load} />
           ) : active === "settings" ? (
             <HomepageHeroSettings />
           ) : active === "support" ? (
