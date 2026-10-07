@@ -1,5 +1,4 @@
-/* AdverX public landing page — UI only. No data, auth, or business logic changes. */
-
+/* Exact visual reference implementation requested by user. UI styling only; data/auth/reward logic untouched. */
 .adverx-public-home {
   --landing-shadow: 0 24px 70px -38px hsl(var(--foreground) / .38);
   background:
@@ -57,13 +56,13 @@
   scroll-margin-top: 6rem;
 }
 
-/* Trust row */
+
 .adverx-public-home > section:nth-of-type(2) {
   background: hsl(var(--card) / .72);
   backdrop-filter: blur(10px);
 }
 
-/* Section headings */
+
 .adverx-public-home h2 {
   font-weight: 750;
   letter-spacing: -.04em;
@@ -73,7 +72,7 @@
   transition: color .2s ease;
 }
 
-/* Workspace preview */
+
 .adverx-public-home #workspace > .surface,
 .adverx-public-home #workspace > div:last-child {
   border-radius: 1.5rem;
@@ -82,7 +81,7 @@
   box-shadow: 0 35px 90px -50px hsl(var(--foreground) / .5);
 }
 
-/* Cards */
+
 .adverx-public-home .surface,
 .adverx-public-home figure,
 .adverx-public-home details,
@@ -101,7 +100,7 @@
   box-shadow: 0 28px 65px -38px hsl(var(--foreground) / .48);
 }
 
-/* Plans */
+
 .adverx-public-home #plans {
   background:
     radial-gradient(circle at 50% 40%, hsl(var(--primary) / .045), transparent 34rem);
@@ -125,7 +124,7 @@
   letter-spacing: -.055em;
 }
 
-/* FAQ */
+
 .adverx-public-home #faq details {
   background: hsl(var(--card) / .9);
 }
@@ -138,18 +137,18 @@
   min-height: 2rem;
 }
 
-/* CTA */
+
 .adverx-public-home section:last-of-type > div {
   border-radius: 1.75rem;
   box-shadow: 0 35px 90px -48px hsl(var(--foreground) / .7);
 }
 
-/* Footer */
+
 .adverx-public-home footer {
   background: hsl(var(--muted) / .24);
 }
 
-/* Better mobile rhythm */
+
 @media (max-width: 767px) {
   .adverx-public-home > section:first-of-type {
     min-height: auto;
@@ -167,7 +166,7 @@
   }
 }
 
-/* Respect reduced-motion preferences */
+
 @media (prefers-reduced-motion: reduce) {
   .adverx-public-home *,
   .adverx-public-home *::before,
@@ -176,4 +175,86 @@
     transition: none !important;
     animation: none !important;
   }
+}
+
+.adverx-public-home {
+  font-family: Inter, sans-serif !important;
+  background: #faf8ff !important;
+  color: #131b2e !important;
+}
+.adverx-public-home h1,
+.adverx-public-home h2,
+.adverx-public-home h3,
+.adverx-public-home button,
+.adverx-public-home a {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+.adverx-public-home > header {
+  position: fixed !important;
+  top: 0;
+  width: 100%;
+  z-index: 50;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: rgba(250,248,255,.85) !important;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 1px 8px rgba(0,0,0,.04);
+}
+.adverx-public-home > header > div { height: 4rem; max-width: none; padding: 0 1rem; }
+.adverx-public-home > section:first-of-type {
+  padding: 1rem 1rem 1.5rem;
+  min-height: auto;
+  background: #faf8ff;
+}
+.adverx-public-home > section:first-of-type h1 {
+  font-family: "Plus Jakarta Sans",sans-serif;
+  font-size: 32px;
+  line-height: 38px;
+  letter-spacing: -.025em;
+  font-weight: 800;
+  text-shadow: none;
+}
+.adverx-public-home .surface,
+.adverx-public-home figure,
+.adverx-public-home #plans > div > div {
+  border-radius: .75rem;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05);
+}
+.adverx-public-home section:not(:first-of-type) { scroll-margin-top: 4rem; }
+.adverx-public-home #workspace > .surface,
+.adverx-public-home #workspace > div:last-child {
+  border-radius: .75rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,.08);
+}
+.adverx-public-home #plans > div > div {
+  border-radius: .75rem;
+  background: #fff;
+}
+.adverx-public-home #plans > div > div:hover,
+.adverx-public-home figure:hover {
+  transform: none;
+  box-shadow: 0 4px 18px rgba(0,0,0,.08);
+}
+.adverx-public-home #plans > div > div[class*="ring"] {
+  border-color: transparent;
+  box-shadow: 0 8px 24px rgba(0,0,0,.10);
+}
+.adverx-public-home #faq details,
+.adverx-public-home #faq-container > div {
+  border-radius: .75rem;
+  background: #fff;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05);
+}
+.adverx-public-home section:last-of-type > div {
+  border-radius: .75rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.adverx-public-home footer { background: #f2f3ff; }
+@media (max-width: 767px) {
+  .adverx-public-home > section:first-of-type h1 {
+    font-size: 32px;
+    line-height: 38px;
+  }
+  .adverx-public-home .surface,
+  .adverx-public-home figure,
+  .adverx-public-home #plans > div > div { border-radius: .75rem; }
 }
