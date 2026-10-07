@@ -2,23 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   CheckCircle2,
-  UserPlus,
-  User,
-  WalletCards,
-  Sparkles,
-  BadgeCheck,
-  History,
-  Lock,
-  Receipt,
-  FileCheck2,
-  ArrowLeftRight,
-  Shield,
-  Rocket,
-  Globe,
-  MessageCircle,
-  Send,
-  XCircle,
-  ChevronRight,
   Clock,
   TrendingUp,
   ShieldCheck,
@@ -37,6 +20,9 @@ import {
   Twitter,
   Facebook,
   Maximize2,
+  Search,
+  SlidersHorizontal,
+  Zap,
 } from "lucide-react";
 
 import { AppShell, StatTile } from "@/components/AppShell";
@@ -47,9 +33,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { money, PLANS, PUBLIC_MIN_WITHDRAWAL, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "@/morphic-dashboard.css";
-import "@/public-landing.css";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -71,107 +56,62 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function PublicIcon({ name, className = "" }: { name: string; className?: string }) {
-  const props = { className };
-  switch (name) {
-    case "person_add": return <UserPlus {...props} />;
-    case "person": return <User {...props} />;
-    case "arrow_forward": return <ArrowRight {...props} />;
-    case "account_balance_wallet": return <WalletCards {...props} />;
-    case "paid": return <CircleDollarSign {...props} />;
-    case "check_circle": return <CheckCircle2 {...props} />;
-    case "stars": return <Sparkles {...props} />;
-    case "cancel": return <XCircle {...props} />;
-    case "verified_user": return <BadgeCheck {...props} />;
-    case "history_edu": return <History {...props} />;
-    case "lock": return <Lock {...props} />;
-    case "receipt_long": return <Receipt {...props} />;
-    case "fact_check": return <FileCheck2 {...props} />;
-    case "trending_up": return <TrendingUp {...props} />;
-    case "receipt": return <Receipt {...props} />;
-    case "sync_alt": return <ArrowLeftRight {...props} />;
-    case "shield": return <Shield {...props} />;
-    case "expand_more": return <ChevronDown {...props} />;
-    case "rocket_launch": return <Rocket {...props} />;
-    case "public": return <Globe {...props} />;
-    case "forum": return <MessageCircle {...props} />;
-    case "send": return <Send {...props} />;
-    case "chevron_right": return <ChevronRight {...props} />;
-    default: return null;
-  }
-}
-
 function PublicHome() {
-  const [pageReady, setPageReady] = useState(false);
-  const { state, availableBalance, todaysEarnings, adsCompletedToday, dailyAdLimit, plan } = usePlatform();
+  const { state } = usePlatform();
   const plans = PLANS;
-  const activeMembers = state.network.filter((member) => member.active).length;
-  const tasksRemaining = Math.max((dailyAdLimit || 0) - adsCompletedToday, 0);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setPageReady(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
+  const hero = useHomepageHero();
 
-  const faqItems = [
-    ["How do tasks work?", "Available verified ad tasks are shown in your workspace when your account has an eligible plan. Completion and daily limits are tracked by the system."],
-    ["How are rewards calculated?", "Rewards are credited after a verified task is completed and are subject to the active plan limits and reward rules."],
-    ["When can I request a withdrawal?", "You can request a withdrawal when your account meets the current eligibility rules and has sufficient available wallet balance. The current minimum is " + (Number.isFinite(PUBLIC_MIN_WITHDRAWAL) ? money(PUBLIC_MIN_WITHDRAWAL) : "the configured threshold") + "."],
-    ["How do referrals work?", "Share your referral invite code. Direct commissions and eligible indirect network rewards are calculated according to the active plan and current referral rules."],
-    ["Are plans lifetime or time-limited?", "The plan cards below show the current duration configured for each available plan. Where no duration is configured, the plan is lifetime access."],
-    ["Where can I see my transaction history?", "Sign in to your AdverX workspace to view your wallet and transaction history with the latest account activity."],
-  ];
   return (
-    <div
-      style={{ visibility: pageReady ? "visible" : "hidden" }}
-      aria-hidden={!pageReady}
-    >
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-16 px-gutter flex items-center justify-between">
-          <div className="flex items-center gap-space-xs"><div className="flex items-center gap-1.5"><BrandLogo className="h-7 w-auto object-contain" /><span className="bg-secondary-container text-on-secondary-container font-label-overline text-label-overline px-space-2xs py-0.5 rounded-full">PRO</span></div><div className="h-4 w-px bg-outline-variant/40 ml-space-2xs" /><span className="font-label-md text-label-md text-on-surface-variant truncate max-w-[110px]">Dashboard</span></div>
-          <div className="flex items-center gap-space-xs"><Link aria-label="Sign Up" to="/signup" className="h-11 px-space-sm rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md flex items-center justify-center hover:bg-primary transition-colors"><PublicIcon name="person_add" className="size-[18px] mr-1" />Sign Up</Link><Link to="/login" aria-label="Log in" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><PublicIcon name="person" className="size-[18px] text-on-primary" /></Link></div>
-        </div>
-      </header>
-      <main className={`flex flex-col relative w-full pt-16 bg-surface flex-1 adverx-reference-page ${pageReady ? "is-ready" : ""}`} aria-busy={!pageReady}>
-      <div className="flex flex-col w-full">
-        <section className="px-gutter pt-space-md pb-space-lg flex flex-col">
-          <div className="inline-flex items-center gap-1.5 self-start bg-surface-container-high px-space-xs py-1 rounded-full mb-space-sm"><span className="w-2 h-2 rounded-full bg-primary animate-pulse" /><span className="font-label-overline text-label-overline text-primary uppercase">AdverX Workspace</span></div>
-          <h1 className="font-display-hero-mobile text-display-hero-mobile text-on-surface font-extrabold mb-space-xs">Complete tasks.<br /><span className="text-primary">Earn rewards.</span><br />Track everything.</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-space-md leading-relaxed">A clean, high-clarity rewards workspace where you can execute verified ad tasks, monitor instantaneous earnings, expand your tier network, and safely withdraw cash.</p>
-          <div className="flex flex-col gap-space-xs w-full mb-space-lg"><Link className="w-full h-12 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform" to="/signup">Create Free Account <PublicIcon name="arrow_forward" className="size-[18px]" /></Link><Link className="w-full h-12 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg flex items-center justify-center active:bg-surface-container-high transition-colors" to="/login">Log In</Link></div>
-          <div className="relative w-full rounded-xl bg-surface-container-lowest p-space-md shadow-lg overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-36 h-36 bg-primary-fixed-dim/30 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between pb-space-sm mb-space-sm"><div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-secondary" /><span className="font-label-overline text-label-overline uppercase text-on-surface-variant">Live Overview</span></div><span className="font-label-md text-label-md text-primary font-semibold">{plan?.name ? plan.name + " Member" : "Active Member"}</span></div>
-            <div className="grid grid-cols-2 gap-space-xs mb-space-md">
-              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><PublicIcon name="account_balance_wallet" className="size-4 text-primary" /><span className="font-label-overline text-label-overline">Wallet balance</span></div><p className="font-metric-lg text-metric-lg text-on-surface font-bold tracking-tight">{money(availableBalance || 0)}</p></div>
-              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><PublicIcon name="paid" className="size-4 text-secondary" /><span className="font-label-overline text-label-overline">Today's rewards</span></div><p className="font-metric-lg text-metric-lg text-secondary font-bold tracking-tight">+{money(todaysEarnings || 0)}</p></div>
-              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><PublicIcon name="check_circle" className="size-4 text-tertiary" /><span className="font-label-overline text-label-overline">Tasks remaining</span></div><p className="font-metric-lg text-metric-lg text-on-surface font-bold">{tasksRemaining} tasks</p></div>
-              <div className="bg-surface-container-low p-space-xs rounded-lg"><div className="flex items-center gap-1.5 text-on-surface-variant mb-1"><PublicIcon name="stars" className="size-4 text-primary-container" /><span className="font-label-overline text-label-overline">Active Plan</span></div><span className="bg-primary/10 text-primary font-label-overline text-label-overline px-2 py-0.5 rounded-full font-bold">{plan?.name || "No active plan"}</span></div>
+    <main className="min-h-screen overflow-hidden bg-background text-foreground">
+      <PublicHeader />
+      <section className="relative border-b border-border/70 bg-gradient-to-br from-primary/[0.07] via-background to-violet-500/[0.06]">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 pb-10 pt-7 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-14 lg:pt-10">
+          <div>
+            <p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-primary">
+              <span className="size-2 rounded-full bg-primary" /> ADVERX
+            </p>
+            <h1 className="max-w-2xl text-balance text-5xl font-bold leading-[0.96] tracking-[-0.055em] sm:text-6xl lg:text-[4.35rem]">
+              {hero.headline}
+            </h1>
+            <p className="mt-5 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
+              {hero.subtext}
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg" className="shadow-sm transition-transform hover:-translate-y-0.5">
+                <Link to={hero.ctaLink}>{hero.ctaText} <ArrowRight className="size-4" /></Link>
+              </Button>
+              <Button asChild variant="outline" size="lg"><Link to="/login">Sign In</Link></Button>
             </div>
-            <div className="bg-surface-container-low p-space-sm rounded-lg mb-space-md"><div className="flex items-center justify-between mb-2"><span className="font-headline-sm text-headline-sm font-bold text-on-surface">Daily Missions</span><span className="font-label-md text-label-md text-primary font-semibold">{adsCompletedToday} of {dailyAdLimit || 0} complete</span></div><div className="w-full h-2 rounded-full bg-surface-container-high overflow-hidden mb-space-sm"><div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full" style={{width: (dailyAdLimit ? Math.min((adsCompletedToday / dailyAdLimit) * 100, 100) : 0) + "%"}} /></div><div className="flex flex-col gap-2"><div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest"><span className="font-body-sm text-body-sm font-medium text-on-surface">Verified ad task</span><span className="font-label-overline text-label-overline bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full">{adsCompletedToday > 0 ? "Completed" : "Available"}</span></div><div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest"><span className="font-body-sm text-body-sm font-medium text-on-surface">Daily reward task</span><Link to="/ads" className="font-label-overline text-label-overline bg-primary-container text-on-primary-container px-2.5 py-1 rounded-full">Open</Link></div><div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest"><span className="font-body-sm text-body-sm font-medium text-on-surface">Wallet activity</span><Link to="/wallet" className="font-label-overline text-label-overline text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Available</Link></div></div></div>
-            <div><p className="font-label-overline text-label-overline uppercase text-on-surface-variant mb-space-xs">Recent Ledger Activity</p><div className="flex flex-col gap-2"><div className="flex items-center justify-between py-1.5 px-2 rounded-lg"><span className="font-body-sm text-body-sm font-semibold text-on-surface">Reward activity</span><span className="font-label-md text-label-md font-bold text-secondary">+{money(todaysEarnings || 0)}</span></div><div className="flex items-center justify-between py-1.5 px-2 rounded-lg"><span className="font-body-sm text-body-sm font-semibold text-on-surface">Referral activity</span><span className="font-label-md text-label-md font-bold text-secondary">Tracked</span></div><div className="flex items-center justify-between py-1.5 px-2 rounded-lg"><span className="font-body-sm text-body-sm font-semibold text-on-surface">Withdrawal activity</span><span className="font-label-md text-label-md font-bold text-on-surface">Tracked</span></div></div></div>
           </div>
-        </section>
-        <section className="px-gutter mb-space-lg"><div className="rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest"><div className="relative h-44 w-full"><img className="w-full h-full object-cover" alt="AdverX rewards workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcP_KH61siqururzgatw1Nmk6Oqw_qcJ66jhWbcJksm1XFQbtXmP4-v9jolhd1saWjJ01WMx2Jto9qCx8gzmwoDN-XtqtghFf1JrgRN2ZExxjbIVWdGt5SR1dPgaVRm_PBFU1TDhh4LquMpALSW9VPFeOlvRFvkhDXuMWpcsa8_3J3Th1o7hT15e-79Pv-JRmoI1gxeN11KNSJkGA0Kvpx5eKYRm57Z2w8ele6zg" /><div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex items-end p-space-md"><p className="font-label-lg text-label-lg text-inverse-on-surface">Empowering micro-earners nationwide with verified payouts.</p></div></div></div></section>
-        <section className="px-gutter pb-space-lg"><div className="bg-surface-container-low rounded-xl p-space-md shadow-sm"><div className="grid grid-cols-3 gap-2 text-center pb-space-md"><div><p className="font-metric-xl text-metric-xl font-extrabold text-on-surface">{activeMembers}</p><p className="font-label-overline text-label-overline text-on-surface-variant">Active Members</p></div><div><p className="font-metric-xl text-metric-xl font-extrabold text-secondary">{money(0)}</p><p className="font-label-overline text-label-overline text-on-surface-variant">Platform Payouts</p></div><div><p className="font-headline-sm text-headline-sm font-extrabold text-on-surface">Instant</p><p className="font-label-overline text-label-overline text-on-surface-variant">Approval Time</p></div></div><div className="grid grid-cols-2 gap-space-xs pt-space-sm">{[["verified_user","Verified Tasks","text-primary"],["history_edu","Transparent Ledger","text-tertiary"],["lock","Secure Vault","text-secondary"],["receipt_long","Tracked Payouts","text-primary-container"]].map(([icon,label,color])=><div key={label} className="flex items-center gap-2 p-2 rounded-lg bg-surface-container-lowest"><PublicIcon name={icon} className={"size-5 " + color} /><span className="font-label-md text-label-md text-on-surface">{label}</span></div>)}</div></div></section>
-        <section className="px-gutter pb-space-lg flex flex-col"><div className="mb-space-sm"><span className="font-label-overline text-label-overline text-primary uppercase">Customer Stories</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Built for confidence</h2><p className="font-body-md text-body-md text-on-surface-variant">A clearer workspace helps members stay focused on what matters.</p></div><div className="flex flex-col gap-space-sm">
-          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm"><div className="flex items-center gap-1 text-secondary mb-2">★★★★★</div><blockquote className="font-body-md text-body-md text-on-surface mb-space-sm italic">“The dashboard makes every reward easy to understand. Within 15 minutes of joining, my task credits reflect instantly.”</blockquote><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container"><img className="w-full h-full object-cover" alt="Ayesha Khan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV7vb7xbwBvHXJhh_8m8k8eHze7bRCaofPi8r9iwUN8Y1IlH93MMSb1vELdQGmwSRFZXwvdhblJ36QlYbVcwt_xpR24d4lEbzK8srSTQDgGjhX0zfu3DvOMzWMnWpwBdgyWqIrtHrf9CK_7aply1SCXWF7EPUwin4tURyxBXoN7edBdir7qKZxjlxbw_eSa-WYKEwa0X_aIH_H_IDCkKIOGStnhuElRNtLOWuBaQ" /></div><div><p className="font-label-lg text-label-lg font-bold text-on-surface">Ayesha Khan</p><p className="font-body-sm text-body-sm text-on-surface-variant">Tier Member • Karachi</p></div></div></div>
-          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm"><div className="flex items-center gap-1 text-secondary mb-2">★★★★★</div><blockquote className="font-body-md text-body-md text-on-surface mb-space-sm italic">“I can track daily ad limits and withdrawals without any confusion or hidden fees. Everything is clearly documented.”</blockquote><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container"><img className="w-full h-full object-cover" alt="Bilal Ahmed" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfow_qTXO_rZfkycDVFP0G5uzxgWTeyIYc2doxAI3TRGAvLRmuOgduF_wJlkec48LllZG1Jz_DNaV3OcO0fQ6gLhnO7j6U4tXn8xoXb1rE78aA11syWTM6qi1OE9eSQjJKpVeifhTiG1KNhWXGkA5brVpIXahxGGly7IGNhynGem5qo0kNFuskhcZgNO14lUh7fT_MZX-Oa24T7yIJp1fDovw_2heEIifg0Z3KRQ" /></div><div><p className="font-label-lg text-label-lg font-bold text-on-surface">Bilal Ahmed</p><p className="font-body-sm text-body-sm text-on-surface-variant">Growth Plan Member • Islamabad</p></div></div></div>
-        </div></section>
-        <section className="px-gutter pb-space-lg flex flex-col"><div className="mb-space-md"><span className="font-label-overline text-label-overline text-primary uppercase">How It Works</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">A straightforward way to earn</h2><p className="font-body-md text-body-md text-on-surface-variant">The important steps stay visible, so you can execute tasks seamlessly.</p></div><div className="flex flex-col gap-space-xs">{[["01","Choose a plan","Select an available plan that matches your daily schedule and goals.","bg-primary-container text-on-primary-container"],["02","Complete tasks","Execute verified ad missions according to your available plan limits.","bg-secondary-container text-on-secondary-container"],["03","Track & withdraw","Monitor credited rewards live in your wallet and request payouts when your account meets the current eligibility rules.","bg-tertiary-fixed text-on-tertiary-fixed"]].map(([n,t,d,tone])=><div key={n} className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm"><span className={"w-10 h-10 rounded-full " + tone + " font-headline-sm text-headline-sm font-bold flex items-center justify-center flex-shrink-0"}>{n}</span><div className="flex-1 min-w-0"><h3 className="font-headline-sm text-headline-sm font-bold text-on-surface mb-1">{t}</h3><p className="font-body-md text-body-md text-on-surface-variant">{d}</p></div></div>)}</div></section>
-        <section className="px-gutter pb-space-lg flex flex-col" id="plans-section"><div className="mb-space-md"><span className="font-label-overline text-label-overline text-primary uppercase">Transparent Pricing</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Choose your plan</h2><p className="font-body-md text-body-md text-on-surface-variant">One-time enrollment. No recurring monthly deductions. Review the plans currently available.</p></div><div className="flex flex-col gap-space-md">{plans.map((item)=>{const isPro=item.name.toLowerCase().includes("pro");const isGrowth=item.name.toLowerCase().includes("growth");return <div key={item.id||item.name} className={"bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col relative overflow-hidden " + (isPro ? "shadow-xl" : "")}>{isPro&&<div className="absolute top-0 right-0 bg-primary text-on-primary font-label-overline text-label-overline px-4 py-1 rounded-bl-lg uppercase tracking-wider font-bold">Recommended</div>}<div className="flex items-center justify-between mb-space-xs"><span className="font-headline-sm text-headline-sm font-bold text-on-surface">{item.name}</span><span className="font-label-overline text-label-overline bg-surface-container text-on-surface-variant px-2.5 py-1 rounded-full uppercase">{isPro?"VIP":isGrowth?"Popular Value":"Entry Level"}</span></div><div className="flex items-baseline gap-1 mb-1"><span className={"font-metric-xl text-metric-xl font-extrabold " + (isPro?"text-primary":"text-on-surface") + " tracking-tight"}>{money(item.price)}</span><span className="font-body-sm text-body-sm text-on-surface-variant">one-time</span></div><p className="font-body-sm text-body-sm text-on-surface-variant mb-space-md">{item.description}</p><div className="flex flex-col gap-2.5 mb-space-lg"><div className="flex items-center gap-2.5"><PublicIcon name="check_circle" className="size-5 text-primary" /><span className="font-body-md text-body-md text-on-surface font-medium">{item.dailyAdLimit} ad tasks per day</span></div><div className="flex items-center gap-2.5"><PublicIcon name="check_circle" className="size-5 text-primary" /><span className="font-body-md text-body-md text-on-surface font-medium">{item.durationDays ? item.durationDays + " days validity" : "Lifetime access guarantee"}</span></div><div className="flex items-center gap-2.5"><PublicIcon name="check_circle" className="size-5 text-primary" /><span className="font-body-md text-body-md text-on-surface font-medium">Direct referral: {item.referrerCommissionPct}% bonus</span></div><div className="flex items-center gap-2.5"><span className="material-symbols-outlined text-[20px] text-primary">{item.indirectReferralPct > 0 ? "stars" : "cancel"}</span><span className={"font-body-md text-body-md " + (item.indirectReferralPct > 0 ? "text-on-surface font-bold" : "text-on-surface-variant line-through")}>{item.indirectReferralPct > 0 ? "Indirect referral: " + item.indirectReferralPct + "% · Up to Level 6 earnings" : "Indirect multi-level referrals"}</span></div><div className="flex items-center gap-2.5"><PublicIcon name="check_circle" className="size-5 text-primary" /><span className="font-body-md text-body-md text-on-surface font-medium">Minimum withdrawal {Number.isFinite(PUBLIC_MIN_WITHDRAWAL)?money(PUBLIC_MIN_WITHDRAWAL):"Not set"}</span></div><div className="flex items-center gap-2.5"><PublicIcon name="check_circle" className="size-5 text-primary" /><span className="font-body-md text-body-md text-on-surface font-medium">{item.networkEligible?(isPro?"Priority network payouts enabled":"Network rewards enabled"):"No network rewards"}</span></div></div><Link to="/plans" className={"w-full h-12 rounded-lg " + (isPro?"bg-primary text-on-primary shadow-md":"bg-surface-container text-on-surface") + " font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"}>{isPro?"Activate "+item.name+" Plan":"Select "+item.name+" Plan"}<PublicIcon name={isPro ? "arrow_forward" : "chevron_right"} className="size-[18px]" /></Link></div>})}</div></section>
-        <section className="px-gutter pb-space-lg"><div className="bg-surface-container-low rounded-xl p-space-md"><div className="mb-space-sm"><span className="font-label-overline text-label-overline text-primary uppercase">Why AdverX</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Built around clarity</h2><p className="font-body-md text-body-md text-on-surface-variant">A structured account experience makes it effortless to know what is available and what has already happened.</p></div><div className="flex flex-col gap-2">{[["fact_check","Clear task eligibility without ambiguity"],["trending_up","Visible and verifiable reward history"],["receipt","Itemized wallet transaction ledger"],["sync_alt","Automated, structured withdrawal flow"],["shield","Protected member account access"]].map(([icon,label])=><div key={label} className="p-3 rounded-lg bg-surface-container-lowest flex items-center gap-3"><span className="material-symbols-outlined text-[22px] text-primary">{icon}</span><span className="font-label-lg text-label-lg text-on-surface">{label}</span></div>)}</div></div></section>
-        <section className="px-gutter pb-space-xl flex flex-col"><div className="mb-space-sm"><span className="font-label-overline text-label-overline text-primary uppercase">FAQ</span><h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Common questions</h2><p className="font-body-md text-body-md text-on-surface-variant">Straight answers about using the AdverX workspace.</p></div><div className="flex flex-col gap-space-xs" id="faq-container">{faqItems.map(([q,a],i)=>{const open=openFaq===i;return <div key={q} className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden"><button className="w-full p-space-md flex items-center justify-between text-left focus:outline-none" onClick={()=>setOpenFaq(open?null:i)}><span className="font-label-lg text-label-lg font-semibold text-on-surface">{q}</span><PublicIcon name="expand_more" className={"size-6 text-on-surface-variant transform transition-transform duration-200 " + (open ? "rotate-180" : "")} /></button>{open&&<div className="px-space-md pb-space-md font-body-md text-body-md text-on-surface-variant">{a}</div>}</div>})}</div></section>
-        <section className="px-gutter pb-space-xl"><div className="bg-gradient-to-br from-primary via-primary-container to-tertiary text-on-primary rounded-xl p-space-lg shadow-xl relative overflow-hidden flex flex-col items-center text-center"><div className="w-14 h-14 rounded-full bg-surface-container-lowest/20 flex items-center justify-center mb-space-sm backdrop-blur-md"><span className="material-symbols-outlined text-[32px] text-white">rocket_launch</span></div><h2 className="font-headline-lg text-headline-lg font-extrabold mb-space-xs text-white">Ready to get started?</h2><p className="font-body-md text-body-md text-on-primary-container mb-space-lg max-w-xs">Create your AdverX account in less than two minutes and explore your daily reward queue.</p><div className="flex flex-col gap-space-xs w-full max-w-xs"><Link className="w-full h-12 rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg flex items-center justify-center font-bold shadow-md active:scale-95 transition-transform" to="/signup">Create Free Account</Link><Link className="w-full h-12 rounded-lg bg-white/10 text-white font-label-lg text-label-lg flex items-center justify-center active:bg-white/20 transition-colors" to="/login">Log In</Link></div></div></section>
-        <footer className="px-gutter pb-space-2xl pt-space-md border-t-0 bg-surface-container-low flex flex-col items-center text-center"><div className="flex items-center gap-1.5 mb-2"><BrandLogo compact className="h-6 w-auto object-contain" /><span className="bg-secondary-container text-on-secondary-container font-label-overline text-label-overline px-2 py-0.5 rounded-full font-bold">PRO</span></div><p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs mb-space-md">A transparent rewards workspace for verified tasks, structured network bonuses, and secure micro-finances.</p><div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-space-md"><Link className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" to="/">Home</Link><Link className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" to="/plans">Plans</Link><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="#privacy">Privacy Policy</a><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="#terms">Terms of Service</a><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="mailto:support@adverx.online">Contact</a><Link className="font-label-md text-label-md text-primary font-bold" to="/login">Log In</Link></div><div className="flex items-center gap-3 text-on-surface-variant mb-space-md"><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><PublicIcon name="public" className="size-[18px]" /></span><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><PublicIcon name="forum" className="size-[18px]" /></span><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><PublicIcon name="send" className="size-[18px]" /></span></div><p className="font-body-sm text-[11px] text-on-surface-variant/70">© 2025 AdverX Inc. All rights reserved. Registered Rewards Platform.</p></footer>
-      </div>
+          <div className="relative lg:translate-y-1">
+            <div className="pointer-events-none absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-primary/20 via-violet-500/10 to-cyan-400/10 blur-3xl" />
+            <DashboardPreview compact />
+          </div>
+        </div>
+      </section>
+      <HeroTrustStrip />
+      <TrustStrip />
+      <Testimonials value={hero.testimonials} />
+      <HowItWorks />
+      <section id="workspace" className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+        <SectionIntro eyebrow="THE WORKSPACE" title="Everything in one workspace" text="A clear view of the information that matters: tasks, rewards, plans, network activity, and transaction history." />
+        <DashboardPreview />
+      </section>
+      <FeatureSection />
+      <PlansPreview plans={plans} />
+      <WhyAdNet />
+      <Faq />
+      <section className="mx-auto max-w-7xl px-5 pb-16 lg:px-8 lg:pb-20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-violet-600 to-primary px-6 py-10 text-primary-foreground shadow-[0_24px_70px_-30px_hsl(var(--primary)/0.65)] sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14 lg:py-11">
+          <div><p className="text-3xl font-semibold tracking-tight sm:text-4xl">Ready to get started?</p><p className="mt-3 max-w-xl text-primary-foreground/75">Create your AdverX account and explore your available tasks.</p></div>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0"><Button asChild variant="secondary" size="lg"><Link to="/signup">Create Account</Link></Button><Button asChild variant="outline" size="lg" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/login">Sign In</Link></Button></div>
+        </div>
+      </section>
+      <PublicFooter />
     </main>
-    </div>
   );
 }
-function PublicStat({ value, label }: { value: string; label: string }) {
-  return <div className="text-center"><p className="text-2xl font-extrabold tracking-tight sm:text-3xl">{value}</p><p className="mt-1 text-xs font-semibold text-[#6b7280]">{label}</p></div>;
-}
+
 function PublicHeader() {
   return (
     <header className="mx-auto flex min-h-[4rem] w-full max-w-7xl items-center justify-between gap-4 px-5 py-2 lg:px-8">
@@ -366,6 +306,7 @@ function Dashboard() {
   const pendingDeposit = state.deposits.find((d) => d.status === "pending");
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
 
   if (!ready) {
     return (
@@ -399,6 +340,11 @@ function Dashboard() {
         <div className={`morphic-detail ${expanded ? "is-visible" : ""}`} aria-hidden={!expanded}><div><p className="morphic-label">Momentum</p><p className="text-sm font-semibold">{activityLevel} · {activityScore}% active</p></div><div><p className="morphic-label">Next focus</p><p className="text-sm font-semibold">{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1 ? "" : "s"} remaining</p></div></div>
       </section>
 
+      <div className="morphic-tools mt-4">
+        <div className="flex items-center gap-2"><Zap className="size-4 text-primary" /><span className="text-sm font-medium">Adaptive focus</span><span className="text-xs text-muted-foreground">{focusMode ? "Prioritizing your active work" : "Tune your workspace"}</span></div>
+        <button type="button" className="morphic-tool-button" onClick={() => setFocusMode((value) => !value)}><SlidersHorizontal className="size-3.5" /> {focusMode ? "Focused" : "Personalize"}</button>
+      </div>
+
       {!plan && (
         <div className="surface mt-4 p-4">
           {pendingDeposit ? (
@@ -429,7 +375,8 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="morphic-stats mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className={`morphic-stats mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 ${focusMode ? "is-focused" : ""}`}>
+        <div className="morphic-search col-span-2 flex items-center gap-2 sm:col-span-4"><Search className="size-4 text-muted-foreground" /><span>Search your workspace</span><kbd>⌘ K</kbd></div>
         <StatTile
           label="Ads"
           value={`${adsCompletedToday} / ${dailyAdLimit || "—"}`}
