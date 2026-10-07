@@ -397,6 +397,14 @@ export type OperationsOverview = {
   platform_profit_total?: number;
   unassigned_referral_total?: number;
   retained_reward_budget_total?: number;
+  user_wallet_payable?: number;
+  reward_reserve_payable?: number;
+  profile_recovery_reserve_payable?: number;
+  admin_payable_balance?: number;
+  total_payable_liability?: number;
+  actual_cash_available?: number;
+  cash_surplus_shortfall?: number;
+  cash_coverage_pct?: number;
 };
 
 export type AdminProfitSummary = AdminRow & {
@@ -429,6 +437,17 @@ export async function getOperationsOverview() {
   const { data, error } = await db.rpc("admin_operations_overview");
   if (error) throw new Error("Unable to load operations metrics.");
   return (data ?? {}) as OperationsOverview;
+}
+
+export async function setAdminCashBalance(amountPkr: number) {
+  if (!Number.isFinite(amountPkr) || amountPkr < 0) {
+    throw new Error("Cash balance must be zero or greater.");
+  }
+  const { data, error } = await db.rpc("admin_set_cash_balance", {
+    p_amount: amountPkr,
+  });
+  if (error) throw new Error(error.message || "Unable to update actual cash balance.");
+  return Number(data ?? amountPkr);
 }
 
 export async function getAdminProfitSummary() {
