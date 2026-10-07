@@ -191,7 +191,8 @@ function WithdrawPage() {
               setAmount("");
               setDetails({});
               requestKeyRef.current = null;
-              toast.success("Withdrawal request submitted");\n              void loadWithdrawalHistory();
+              toast.success("Withdrawal request submitted");
+              void loadWithdrawalHistory();
             } catch (error) {
               toast.error(
                 error instanceof Error
