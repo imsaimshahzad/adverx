@@ -32,6 +32,7 @@ import { Progress } from "@/components/ui/progress";
 import { money, PLANS, PUBLIC_MIN_WITHDRAWAL, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
 import { useState } from "react";
 import "@/morphic-dashboard.css";
+import "@/public-landing.css";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,7 +60,7 @@ function PublicHome() {
   const hero = useHomepageHero();
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="adverx-public-home min-h-screen overflow-hidden bg-background text-foreground">
       <PublicHeader />
       <section className="relative border-b border-border/70 bg-gradient-to-br from-primary/[0.07] via-background to-violet-500/[0.06]">
         <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 pb-10 pt-7 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-14 lg:pt-10">
