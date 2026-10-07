@@ -46,6 +46,7 @@ function TransactionsPage() {
   const [copied, setCopied] = useState(false);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [activityFilter, setActivityFilter] = useState<"all" | "deposits" | "withdrawals" | "rewards" | "referrals">("all");
+  const withdrawalsOnly = activityFilter === "withdrawals";
 
   const lastLiveRefreshRef = useRef(0);
   const loadVersionRef = useRef(0);
@@ -101,6 +102,11 @@ function TransactionsPage() {
   }, []);
 
   useEffect(() => {
+    const requestedFilter = new URLSearchParams(window.location.search).get("type");
+    if (requestedFilter === "withdrawals") setActivityFilter("withdrawals");
+  }, []);
+
+  useEffect(() => {
     void load();
     const refreshIfDue = () => {
       const now = Date.now();
@@ -144,13 +150,13 @@ function TransactionsPage() {
   const selectedType = selected ? typeLabel(selected.kind, selected.metadata) : null;
 
   return (
-    <AppShell title="Transactions" subtitle={accountUid ? `Wallet activity · ${accountUid}` : "Wallet activity"}>
+    <AppShell title={withdrawalsOnly ? "Withdrawal History" : "Transactions"} subtitle={accountUid ? (withdrawalsOnly ? `Your withdrawal requests · ${accountUid}` : `Wallet activity · ${accountUid}`) : (withdrawalsOnly ? "Your withdrawal requests" : "Wallet activity")}>
       <div className="surface mt-4 overflow-hidden">
         <div className="flex items-start gap-3 border-b border-border/60 p-4 sm:p-5">
           <ReceiptText className="mt-0.5 size-5 text-primary" />
           <div>
-            <p className="text-sm font-semibold">Activity</p>
-            <p className="mt-1 text-xs text-muted-foreground">Your deposits, withdrawals, rewards and referral activity.</p>
+            <p className="text-sm font-semibold">{withdrawalsOnly ? "Withdrawal history" : "Activity"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{withdrawalsOnly ? "Your withdrawal requests, amounts and payment status." : "Your deposits, withdrawals, rewards and referral activity."}</p>
           </div>
         </div>
 
