@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -62,7 +62,27 @@ function WithdrawPage() {
     });
   }, [methodId, state.user]);
   const [details, setDetails] = useState<Record<string, string>>({});
+  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{ id: string; amount: number | null; status: string | null; created_at: string }>>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const selectedMethod = WITHDRAWAL_METHODS.find((method) => method.id === methodId);
+
+  const loadWithdrawalHistory = useCallback(async () => {
+    if (!state.user?.id) return;
+    setHistoryLoading(true);
+    const { data } = await userDb
+      .from("withdrawals")
+      .select("id, amount, status, created_at")
+      .eq("user_id", state.user.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    setWithdrawalHistory(
+      (data ?? []).map((row: { id: string; amount: number | null; status: string | null; created_at: string }) => ({
+        ...row,
+        amount: row.amount == null ? null : Number(row.amount),
+      })),
+    );
+    setHistoryLoading(false);
+  }, [state.user?.id]);
   useEffect(() => {
     if (!methodId && WITHDRAWAL_METHODS[0]) setMethodId(WITHDRAWAL_METHODS[0].id);
   }, [methodId]);
@@ -171,7 +191,7 @@ function WithdrawPage() {
               setAmount("");
               setDetails({});
               requestKeyRef.current = null;
-              toast.success("Withdrawal request submitted");
+              toast.success("Withdrawal request submitted");\n              void loadWithdrawalHistory();
             } catch (error) {
               toast.error(
                 error instanceof Error
@@ -191,12 +211,42 @@ function WithdrawPage() {
         </p>
       </div>
 
-      <div className="surface mt-3 flex items-center justify-between gap-3 p-4">
-        <div>
-          <p className="text-sm font-medium">Withdrawal history</p>
-          <p className="mt-1 text-xs text-muted-foreground">View your withdrawal requests, amounts and payment status.</p>
+      <div className="surface mt-3 overflow-hidden">
+        <div className="border-b border-border/60 p-4">
+          <p className="text-sm font-semibold">Withdrawal history</p>
+          <p className="mt-1 text-xs text-muted-foreground">Your recent withdrawal requests and their current status.</p>
         </div>
-        <Button asChild variant="outline" size="sm"><a href="/transactions?type=withdrawals">View withdrawal history</a></Button>
+        {historyLoading ? (
+          <div className="p-5 text-center text-xs text-muted-foreground">Loading withdrawal history…</div>
+        ) : withdrawalHistory.length === 0 ? (
+          <div className="p-5 text-center text-xs text-muted-foreground">No withdrawals yet.</div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {withdrawalHistory.map((item) => {
+              const status = String(item.status ?? "pending").toLowerCase();
+              const statusLabel = STATUS_LABEL[status] ?? status.replaceAll("_", " ");
+              const statusClass =
+                status === "approved" || status === "paid"
+                  ? "bg-success/10 text-success"
+                  : status === "rejected"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-muted text-muted-foreground";
+              return (
+                <div key={item.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="num text-sm font-semibold">{formatMoney(item.amount, "PKR")}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <Badge className={`shrink-0 rounded-full border-0 px-2.5 py-1 text-[11px] font-medium ${statusClass}`}>
+                    {statusLabel}
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </AppShell>
   );
