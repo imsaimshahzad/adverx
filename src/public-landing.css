@@ -95,3 +95,7 @@ body:has(.adverx-reference-page) > header .bg-surface\/85 { background:rgba(250,
 body:has(.adverx-reference-page) > header .bg-outline-variant\/40 { background:rgba(188,201,198,.4); }
 .pt-safe { padding-top:env(safe-area-inset-top,0px); }
 @media (min-width:768px) { body:has(.adverx-reference-page) > header .px-gutter { padding-left:1rem; padding-right:1rem; } }
+
+/* Prevent FOUC: keep the public landing markup invisible until React has painted the styled shell. */
+.adverx-reference-page { visibility:hidden; opacity:0; }
+.adverx-reference-page.is-ready { visibility:visible; opacity:1; transition:opacity 120ms ease-out; }
