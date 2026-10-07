@@ -1613,42 +1613,30 @@ function Overview({
   metrics: Array<{ label: string; value: number; suffix?: string }>;
   overview: Record<string, number>;
 }) {
-  const payable = Number(overview.total_payable_liability ?? 0);
-  const actualCash = Number(overview.actual_cash_available ?? 0);
-  const coverageDelta = Number(overview.cash_surplus_shortfall ?? actualCash - payable);
-  const coveragePct = Number(overview.cash_coverage_pct ?? (payable > 0 ? (actualCash / payable) * 100 : 100));
-  const money = (value: number) => value.toLocaleString("en-PK", { maximumFractionDigits: 2 });
-
   return (
     <>
       <div>
         <h2 className="text-2xl font-semibold">Overview</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Quick view of users, sales, payments, cash and alerts.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Quick view of users, sales, payments and alerts.
+        </p>
       </div>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
           <Card key={metric.label}>
             <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{metric.label}</p>
-              <p className="mt-2 text-2xl font-semibold tabular-nums">
-                {metric.suffix ? `${metric.value.toLocaleString("en-PK", { maximumFractionDigits: 1 })}${metric.suffix}` : money(metric.value)}
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {metric.label}
               </p>
-              {metric.label === "Surplus / Shortfall" ? <p className={`mt-1 text-xs ${coverageDelta >= 0 ? "text-emerald-600" : "text-destructive"}`}>{coverageDelta >= 0 ? "Surplus" : "Shortfall"}</p> : null}
+              <p className="mt-2 text-2xl font-semibold tabular-nums">
+                {metric.suffix
+                  ? `${metric.value.toLocaleString("en-PK", { maximumFractionDigits: 1 })}${metric.suffix}`
+                  : metric.value.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
+              </p>
             </CardContent>
           </Card>
         ))}
       </section>
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Safety</CardTitle>
-          <p className="text-sm text-muted-foreground">Can AdverX currently cover the money it still owes?</p>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Actual Cash</p><p className="mt-1 text-xl font-semibold tabular-nums">PKR {money(actualCash)}</p></div>
-          <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Still Payable</p><p className="mt-1 text-xl font-semibold tabular-nums">PKR {money(payable)}</p></div>
-          <div className={`rounded-xl border p-4 ${coverageDelta >= 0 ? "bg-emerald-500/10" : "bg-destructive/10"}`}><p className="text-xs uppercase tracking-wide text-muted-foreground">{coverageDelta >= 0 ? "Cash Surplus" : "Cash Shortfall"}</p><p className={`mt-1 text-xl font-semibold tabular-nums ${coverageDelta >= 0 ? "text-emerald-700" : "text-destructive"}`}>PKR {money(Math.abs(coverageDelta))}</p></div>
-        </CardContent>
-      </Card>
       <Card>
         <CardHeader><CardTitle>Live Queues</CardTitle></CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1658,7 +1646,10 @@ function Overview({
             ["Open Fraud Flags", Number(overview.risk_alerts ?? 0)],
             ["Open Support", Number(overview.pending_support_tickets ?? 0)],
           ].map(([label, value]) => (
-            <div key={String(label)} className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-semibold">{Number(value)}</p></div>
+            <div key={String(label)} className="rounded-lg border p-4">
+              <p className="text-sm text-muted-foreground">{label}</p>
+              <p className="mt-1 text-2xl font-semibold">{Number(value)}</p>
+            </div>
           ))}
         </CardContent>
       </Card>
