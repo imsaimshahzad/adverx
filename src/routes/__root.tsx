@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
-import "../styles.css";
+import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlatformProvider } from "@/lib/platform-store";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
@@ -94,8 +94,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://adverx.online" },
-      { property: "og:image", content: "/adverx-logo.png" },
-      { property: "og:site_name", content: "AdverX" },
+  { property: "og:image", content: "/adverx-logo.png" },
+  { property: "og:site_name", content: "AdverX" },
       { name: "twitter:title", content: "AdverX" },
       { name: "twitter:description", content: "Complete verified daily ad tasks, grow your network and withdraw earnings." },
       { name: "twitter:card", content: "summary_large_image" },
@@ -109,6 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.svg?v=2", type: "image/svg+xml" },
       { rel: "shortcut icon", href: "/favicon.svg?v=2", type: "image/svg+xml" },
       { rel: "manifest", href: "/manifest.webmanifest" },
+
     ],
   }),
   shellComponent: RootShell,
@@ -122,13 +123,6 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
-        {/* Prevent the unstyled server HTML from flashing before route CSS/chunks paint. */}
-        <style
-          dangerouslySetInnerHTML={{
-            __html:
-              'html:not([data-adverx-ready]) body{visibility:hidden!important}html:not([data-adverx-ready]){background:#faf8ff}',
-          }}
-        />
       </head>
       <body>
         {children}
@@ -150,13 +144,6 @@ function RootComponent() {
     }
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
-
-    // Reveal the fully styled app only after React has mounted and applied theme state.
-    document.documentElement.setAttribute("data-adverx-ready", "true");
-
-    return () => {
-      document.documentElement.removeAttribute("data-adverx-ready");
-    };
   }, []);
 
   return (
@@ -170,3 +157,4 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
+
