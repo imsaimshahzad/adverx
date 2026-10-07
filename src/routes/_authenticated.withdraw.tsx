@@ -86,6 +86,9 @@ function WithdrawPage() {
   useEffect(() => {
     if (!methodId && WITHDRAWAL_METHODS[0]) setMethodId(WITHDRAWAL_METHODS[0].id);
   }, [methodId]);
+  useEffect(() => {
+    void loadWithdrawalHistory();
+  }, [loadWithdrawalHistory]);
   const [submitting, setSubmitting] = useState(false);
   const requestKeyRef = useRef<string | null>(null);
   const value = Number(amount) || 0;
