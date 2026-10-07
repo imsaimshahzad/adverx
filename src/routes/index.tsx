@@ -59,57 +59,170 @@ function PublicHome() {
   const plans = PLANS;
   const hero = useHomepageHero();
 
+  const totalMembers = state.network.length;
+  const activeMembers = state.network.filter((member) => member.active).length;
+  const activePlans = plans.length;
+
   return (
-    <main className="adverx-public-home min-h-screen overflow-hidden bg-background text-foreground">
-      <PublicHeader />
-      <section className="relative border-b border-border/70 bg-gradient-to-br from-primary/[0.07] via-background to-violet-500/[0.06]">
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 pb-10 pt-7 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-14 lg:pt-10">
+    <main className="adverx-public-home min-h-screen overflow-x-hidden bg-[#faf8ff] text-[#131b2e]">
+      <header className="public-reference-header">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" aria-label="AdverX home" className="shrink-0">
+            <BrandLogo className="h-11 w-auto max-w-[11rem]" />
+          </Link>
+          <div className="flex items-center gap-2">
+            <Badge className="hidden rounded-full bg-[#00685f] px-2.5 py-1 text-[10px] font-extrabold tracking-[0.14em] text-white sm:inline-flex">PRO</Badge>
+            <span className="hidden text-sm font-semibold text-[#475569] md:inline">Dashboard</span>
+            <Button asChild size="sm" className="rounded-lg bg-[#00685f] px-4 font-bold hover:bg-[#00574f]">
+              <Link to="/signup">Sign Up</Link>
+            </Button>
+            <Button asChild variant="ghost" size="icon" className="rounded-lg">
+              <Link to="/login" aria-label="Log in"><Wallet className="size-5" /></Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-6 sm:pt-14 lg:pb-16 lg:pt-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[.95fr_1.05fr]">
           <div>
-            <p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-primary">
-              <span className="size-2 rounded-full bg-primary" /> ADVERX
-            </p>
-            <h1 className="max-w-2xl text-balance text-5xl font-bold leading-[0.96] tracking-[-0.055em] sm:text-6xl lg:text-[4.35rem]">
-              {hero.headline}
+            <p className="mb-4 text-xs font-extrabold tracking-[0.2em] text-[#00685f]">ADVERX REWARDS PLATFORM</p>
+            <h1 className="max-w-2xl font-[800] text-[2.2rem] leading-[1.05] tracking-[-0.045em] sm:text-5xl lg:text-6xl">
+              {hero.headline || "Complete tasks. Earn rewards. Track everything."}
             </h1>
-            <p className="mt-5 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
-              {hero.subtext}
+            <p className="mt-5 max-w-xl text-base leading-7 text-[#5f6879] sm:text-lg">
+              {hero.subtext || "Complete verified tasks, monitor your rewards, and manage your account from one clear workspace."}
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="shadow-sm transition-transform hover:-translate-y-0.5">
-                <Link to={hero.ctaLink}>{hero.ctaText} <ArrowRight className="size-4" /></Link>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg" className="h-12 rounded-xl bg-[#00685f] px-6 font-extrabold shadow-[0_12px_30px_-14px_rgba(0,104,95,.7)] hover:bg-[#00574f]">
+                <Link to={hero.ctaLink || "/signup"}>{hero.ctaText || "Create Free Account"} <ArrowRight className="ml-1 size-4" /></Link>
               </Button>
-              <Button asChild variant="outline" size="lg"><Link to="/login">Sign In</Link></Button>
+              <Button asChild variant="outline" size="lg" className="h-12 rounded-xl border-[#d8dde8] bg-white px-6 font-bold">
+                <Link to="/login">Log In</Link>
+              </Button>
             </div>
           </div>
-          <div className="relative lg:translate-y-1">
-            <div className="pointer-events-none absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-primary/20 via-violet-500/10 to-cyan-400/10 blur-3xl" />
-            <DashboardPreview compact />
+
+          <div className="public-reference-dashboard surface overflow-hidden rounded-2xl bg-white p-4 shadow-[0_24px_60px_-30px_rgba(19,27,46,.35)] sm:p-5">
+            <div className="flex items-center justify-between border-b border-[#e8ebf2] pb-4">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-[#16a34a]" />
+                <span className="text-xs font-bold text-[#475569]">Live dashboard preview</span>
+              </div>
+              <span className="text-xs text-[#7a8495]">AdverX</span>
+            </div>
+            <div className="grid gap-3 py-4 sm:grid-cols-2">
+              <PreviewMetric icon={Wallet} label="Wallet balance" value="Your live balance" />
+              <PreviewMetric icon={CircleDollarSign} label="Today rewards" value="Tracked instantly" />
+              <PreviewMetric icon={ListChecks} label="Tasks" value="Plan-based limits" />
+              <PreviewMetric icon={ShieldCheck} label="Active plan" value="Account verified" />
+            </div>
+            <div className="grid gap-3 lg:grid-cols-[1.1fr_.9fr]">
+              <div className="rounded-xl bg-[#f5f7fa] p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold">Daily missions</p>
+                  <span className="text-xs text-[#7a8495]">Live account data</span>
+                </div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dfe5ea]"><div className="h-full w-2/5 rounded-full bg-[#008378]" /></div>
+                <div className="mt-4 space-y-3">
+                  <TaskRow label="Verified ad task" status="Tracked" done />
+                  <TaskRow label="Reward credit" status="Instant" />
+                  <TaskRow label="Wallet history" status="Visible" />
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#e8ebf2] p-4">
+                <p className="text-sm font-bold">Recent ledger activity</p>
+                <div className="mt-4 space-y-3">
+                  <ActivityRow label="Reward activity" detail="Tracked by system" amount="Live" positive />
+                  <ActivityRow label="Referral activity" detail="When eligible" amount="Live" positive />
+                  <ActivityRow label="Withdrawals" detail="Status tracked" amount="Live" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
-      <HeroTrustStrip />
-      <TrustStrip />
-      <Testimonials value={hero.testimonials} />
-      <HowItWorks />
-      <section id="workspace" className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
-        <SectionIntro eyebrow="THE WORKSPACE" title="Everything in one workspace" text="A clear view of the information that matters: tasks, rewards, plans, network activity, and transaction history." />
-        <DashboardPreview />
-      </section>
-      <FeatureSection />
-      <PlansPreview plans={plans} />
-      <WhyAdNet />
-      <Faq />
-      <section className="mx-auto max-w-7xl px-5 pb-16 lg:px-8 lg:pb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-violet-600 to-primary px-6 py-10 text-primary-foreground shadow-[0_24px_70px_-30px_hsl(var(--primary)/0.65)] sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14 lg:py-11">
-          <div><p className="text-3xl font-semibold tracking-tight sm:text-4xl">Ready to get started?</p><p className="mt-3 max-w-xl text-primary-foreground/75">Create your AdverX account and explore your available tasks.</p></div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0"><Button asChild variant="secondary" size="lg"><Link to="/signup">Create Account</Link></Button><Button asChild variant="outline" size="lg" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/login">Sign In</Link></Button></div>
+
+      <section className="border-y border-[#e7e9f0] bg-white">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-8 sm:px-6 md:grid-cols-4">
+          <PublicStat value={String(totalMembers)} label="Network members" />
+          <PublicStat value={String(activeMembers)} label="Active members" />
+          <PublicStat value={String(activePlans)} label="Available plans" />
+          <PublicStat value="24/7" label="Account tracking" />
         </div>
       </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="overflow-hidden rounded-2xl bg-[#e8f7f4] p-7 sm:p-10">
+            <p className="text-xs font-extrabold tracking-[0.18em] text-[#00685f]">VISUAL PROOF</p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">See the workspace clearly.</h2>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-[#5f6879]">Tasks, rewards, plans, referrals, wallet activity and withdrawals are organized inside one account experience.</p>
+            <div className="mt-7 rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-24 rounded-xl bg-[#f1f4f7]" />
+                <div className="h-24 rounded-xl bg-[#e3f2ef]" />
+                <div className="h-24 rounded-xl bg-[#f1f4f7]" />
+              </div>
+              <div className="mt-3 h-3 w-2/3 rounded-full bg-[#e3e8ee]" />
+              <div className="mt-2 h-3 w-1/2 rounded-full bg-[#eef1f5]" />
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white p-7 shadow-sm sm:p-10">
+            <p className="text-xs font-extrabold tracking-[0.18em] text-[#00685f]">TRUST PILLARS</p>
+            <div className="mt-6 space-y-5">
+              {[[CheckCircle2, "Verified task tracking"], [ReceiptText, "Transparent reward history"], [LockKeyhole, "Protected account access"], [CreditCard, "Tracked withdrawals"]].map(([Icon, label]) => (
+                <div key={label as string} className="flex items-center gap-4">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-[#e8f7f4]"><Icon className="size-5 text-[#00685f]" /></span>
+                  <span className="text-sm font-bold">{label as string}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-[#e7e9f0] bg-[#f4f5fb]">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
+          <p className="text-center text-xs font-extrabold tracking-[0.18em] text-[#00685f]">CUSTOMER STORIES</p>
+          <h2 className="mx-auto mt-3 max-w-2xl text-center text-3xl font-extrabold tracking-tight sm:text-4xl">A clearer experience for everyday users.</h2>
+          <Testimonials value={hero.testimonials} />
+        </div>
+      </section>
+
+      <HowItWorks />
+
+      <section id="plans" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
+        <p className="text-xs font-extrabold tracking-[0.18em] text-[#00685f]">PLANS</p>
+        <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Choose your plan</h2>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-[#5f6879]">Review the plans currently available in your account system.</p>
+        <PlansPreview plans={plans} />
+      </section>
+
+      <WhyAdNet />
+      <Faq />
+
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:pb-20">
+        <div className="rounded-2xl bg-[#00685f] px-6 py-10 text-white shadow-[0_24px_55px_-30px_rgba(0,104,95,.8)] sm:px-10 lg:flex lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Ready to get started?</h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Create your AdverX account and explore your available tasks.</p>
+          </div>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:mt-0">
+            <Button asChild size="lg" variant="secondary" className="rounded-xl font-extrabold"><Link to="/signup">Create Free Account</Link></Button>
+            <Button asChild size="lg" variant="outline" className="rounded-xl border-white/30 bg-transparent font-bold text-white hover:bg-white/10 hover:text-white"><Link to="/login">Log In</Link></Button>
+          </div>
+        </div>
+      </section>
+
       <PublicFooter />
     </main>
   );
 }
 
+function PublicStat({ value, label }: { value: string; label: string }) {
+  return <div className="text-center"><p className="text-2xl font-extrabold tracking-tight sm:text-3xl">{value}</p><p className="mt-1 text-xs font-semibold text-[#6b7280]">{label}</p></div>;
+}
 function PublicHeader() {
   return (
     <header className="mx-auto flex min-h-[4rem] w-full max-w-7xl items-center justify-between gap-4 px-5 py-2 lg:px-8">
