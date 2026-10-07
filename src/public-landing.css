@@ -83,3 +83,15 @@ body:has(.adverx-reference-page)::-webkit-scrollbar { display:none; }
 @media (min-width:768px) {
   .adverx-reference-page .px-gutter { padding-left:2rem; padding-right:2rem; }
 }
+
+/* Reference shell utilities used by the fixed header outside the main page wrapper. */
+body:has(.adverx-reference-page) > header {
+  position:fixed; top:0; width:100%; z-index:50; padding-top:env(safe-area-inset-top,0px);
+  background:rgba(250,248,255,.85); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 1px 8px rgba(0,0,0,.04);
+}
+body:has(.adverx-reference-page) > header .px-gutter { padding-left:1rem; padding-right:1rem; }
+body:has(.adverx-reference-page) > header .bg-surface\/85 { background:rgba(250,248,255,.85); }
+body:has(.adverx-reference-page) > header .bg-outline-variant\/40 { background:rgba(188,201,198,.4); }
+.pt-safe { padding-top:env(safe-area-inset-top,0px); }
+@media (min-width:768px) { body:has(.adverx-reference-page) > header .px-gutter { padding-left:1rem; padding-right:1rem; } }
