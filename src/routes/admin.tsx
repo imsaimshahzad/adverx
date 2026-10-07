@@ -467,15 +467,20 @@ export function AdminRoute() {
       // making one slow table block the whole Admin screen.
       const loadModuleData = async () => {
         if (active === "overview" || active === "cash-payments" || active === "funds-reserves") {
-          const [summary, operational, funds] = await Promise.all([
-            active === "overview" || active === "funds-reserves" ? getReserveSummary() : Promise.resolve([]),
-            getOperationsOverview(),
-            active === "funds-reserves" ? getAdminProfitSummary() : Promise.resolve({}),
+          const operationalPromise = getOperationsOverview();
+          const summaryPromise = active === "funds-reserves" ? getReserveSummary() : Promise.resolve([]);
+          const fundsPromise = active === "funds-reserves" ? getAdminProfitSummary() : Promise.resolve({});
+          const [operational, summary, funds] = await Promise.all([
+            operationalPromise,
+            summaryPromise,
+            fundsPromise,
           ]);
           if (requestVersion !== loadVersion.current) return;
-          setReserveSummary(summary);
           setOverview(operational as Record<string, number>);
-          if (active === "funds-reserves") setProfitSummary(funds as AdminRow);
+          if (active === "funds-reserves") {
+            setReserveSummary(summary as AdminRow[]);
+            setProfitSummary(funds as AdminRow);
+          }
           return;
         }
 
