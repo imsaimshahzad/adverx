@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type AdminRow = Record<string, unknown>;
 export type AdminModule =
   | "overview"
+  | "cash-payments"
   | "users"
   | "plans"
   | "tasks"
