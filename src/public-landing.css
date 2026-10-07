@@ -223,3 +223,32 @@ body:has(.adverx-reference-page) {
   height: auto !important;
   overflow: visible !important;
 }
+
+
+/* Final public-page scroll fix: keep the document itself as the scroll container. */
+html:has(.adverx-reference-page) {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100%;
+  touch-action: pan-y !important;
+}
+body:has(.adverx-reference-page) {
+  overflow-y: visible !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100vh;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: auto !important;
+}
+body:has(.adverx-reference-page) > #root {
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+}
+.adverx-reference-page {
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+  touch-action: pan-y !important;
+}
