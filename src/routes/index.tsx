@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { money, PLANS, PUBLIC_MIN_WITHDRAWAL, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "@/morphic-dashboard.css";
 import "@/public-landing.css";
 
@@ -55,11 +55,17 @@ export const Route = createFileRoute("/")({
 });
 
 function PublicHome() {
+  const [pageReady, setPageReady] = useState(false);
   const { state, availableBalance, todaysEarnings, adsCompletedToday, dailyAdLimit, plan } = usePlatform();
   const plans = PLANS;
   const activeMembers = state.network.filter((member) => member.active).length;
   const tasksRemaining = Math.max((dailyAdLimit || 0) - adsCompletedToday, 0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setPageReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   const faqItems = [
     ["How do tasks work?", "Available verified ad tasks are shown in your workspace when your account has an eligible plan. Completion and daily limits are tracked by the system."],
     ["How are rewards calculated?", "Rewards are credited after a verified task is completed and are subject to the active plan limits and reward rules."],
@@ -76,7 +82,7 @@ function PublicHome() {
           <div className="flex items-center gap-space-xs"><Link aria-label="Sign Up" to="/signup" className="h-11 px-space-sm rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md flex items-center justify-center hover:bg-primary transition-colors"><span className="material-symbols-outlined text-[18px] mr-1">person_add</span>Sign Up</Link><Link to="/login" aria-label="Log in" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><span className="material-symbols-outlined text-on-primary text-[18px]">person</span></Link></div>
         </div>
       </header>
-      <main className="flex flex-col relative w-full pt-16 bg-surface flex-1 adverx-reference-page">
+      <main className={`flex flex-col relative w-full pt-16 bg-surface flex-1 adverx-reference-page ${pageReady ? "is-ready" : ""}`} aria-busy={!pageReady}>
       <div className="flex flex-col w-full">
         <section className="px-gutter pt-space-md pb-space-lg flex flex-col">
           <div className="inline-flex items-center gap-1.5 self-start bg-surface-container-high px-space-xs py-1 rounded-full mb-space-sm"><span className="w-2 h-2 rounded-full bg-primary animate-pulse" /><span className="font-label-overline text-label-overline text-primary uppercase">AdverX Workspace</span></div>
