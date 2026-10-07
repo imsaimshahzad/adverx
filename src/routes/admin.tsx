@@ -270,6 +270,7 @@ function userSearchText(row: AdminRow) {
 const menu: Array<[AdminModule, string, Icon]> = [
   ["overview", "Overview", LayoutDashboard],
   ["cash-payments", "Cash & Payments", WalletCards],
+  ["funds-reserves", "Funds & Reserves", CircleDollarSign],
   ["users", "Users", Users],
   ["plans", "Plans", BookOpen],
   ["tasks", "Tasks / Ads", BarChart3],
@@ -465,9 +466,9 @@ export function AdminRoute() {
       // The old implementation fetched ~20 tables on every module change,
       // making one slow table block the whole Admin screen.
       const loadModuleData = async () => {
-        if (active === "overview" || active === "cash-payments") {
+        if (active === "overview" || active === "cash-payments" || active === "funds-reserves") {
           const [summary, operational] = await Promise.all([
-            active === "overview" ? getReserveSummary() : Promise.resolve([]),
+            active === "overview" || active === "funds-reserves" ? getReserveSummary() : Promise.resolve([]),
             getOperationsOverview(),
           ]);
           if (requestVersion !== loadVersion.current) return;
@@ -717,28 +718,19 @@ export function AdminRoute() {
   }, [active, adsFilter, currentRows, query, statusPartition, userPartition]);
   const metrics = useMemo(
     () => [
-      { label: "Total users", value: Number(overview.total_users ?? 0) },
-      { label: "Active users", value: Number(overview.active_users ?? 0) },
-      { label: "All-time total sales", value: Number(overview.gross_plan_sales ?? 0) },
-      { label: "Today’s plan sales", value: Number(overview.today_plan_sales ?? 0) },
-      { label: "All-time referral commission", value: Number(overview.total_referral_commissions ?? 0) },
-      { label: "All-time withdrawals paid", value: Number(overview.total_withdrawals_paid ?? 0) },
-      { label: "Tracked cash retained", value: Number(overview.tracked_cash_retained ?? 0) },
-      { label: "Rewards issued", value: Number(overview.total_rewards_issued ?? 0) },
-      { label: "Remaining reserves", value: Number(overview.total_remaining_user_reward_reserves ?? 0) },
-      {
-        label: "Total allocated reward capacity",
-        value: reserveSummary.reduce(
-          (total, summary) => total + Number(summary.total_original_reserve ?? 0),
-          0,
-        ),
-      },
-  { label: "Recovery fund collected", value: Number(overview.total_recovery_fund_collected ?? 0) },
-  { label: "Recovery fund remaining", value: Number(overview.remaining_recovery_fund ?? 0) },
-  { label: "Pending support", value: Number(overview.pending_support_tickets ?? 0) },
-      { label: "Risk alerts", value: Number(overview.risk_alerts ?? 0) },
+      { label: "Total Users", value: Number(overview.total_users ?? 0) },
+      { label: "Active Users", value: Number(overview.active_users ?? 0) },
+      { label: "Total Sales", value: Number(overview.gross_plan_sales ?? 0) },
+      { label: "Today’s Sales", value: Number(overview.today_plan_sales ?? 0) },
+      { label: "Withdrawals Paid", value: Number(overview.total_withdrawals_paid ?? 0) },
+      { label: "Actual Cash", value: Number(overview.actual_cash_available ?? 0) },
+      { label: "Remaining Payment", value: Number(overview.total_payable_liability ?? 0) },
+      { label: "Surplus / Shortfall", value: Math.abs(Number(overview.cash_surplus_shortfall ?? 0)) },
+      { label: "Coverage", value: Number(overview.cash_coverage_pct ?? 0), suffix: "%" },
+      { label: "Pending Support", value: Number(overview.pending_support_tickets ?? 0) },
+      { label: "Risk Alerts", value: Number(overview.risk_alerts ?? 0) },
     ],
-    [overview, reserveSummary],
+    [overview],
   );
   async function openReceipt(row: AdminRow) {
     const path = typeof row.proof_url === "string" ? row.proof_url.trim() : "";
@@ -1070,9 +1062,11 @@ export function AdminRoute() {
               } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Unable to login as user."); }
             })(); }} />
           ) : active === "overview" ? (
-            <Overview metrics={metrics} overview={overview} reserveSummary={reserveSummary} onRefresh={load} />
+            <Overview metrics={metrics} overview={overview} />
           ) : active === "cash-payments" ? (
             <CashPaymentsDashboard overview={overview} onRefresh={load} />
+          ) : active === "funds-reserves" ? (
+            <FundsReservesDashboard overview={overview} reserveSummary={reserveSummary} summary={profitSummary} onRefresh={load} />
           ) : active === "settings" ? (
             <HomepageHeroSettings />
           ) : active === "support" ? (
@@ -1356,11 +1350,7 @@ function CashPaymentsDashboard({ overview, onRefresh }: { overview: Record<strin
 }
 function RevenueDashboard({
   summary,
-  overview,
   ledger,
-  plans,
-  referrerRecoveryReserve,
-  onRefresh,
 }: {
   summary: AdminRow;
   overview: Record<string, number>;
@@ -1369,153 +1359,69 @@ function RevenueDashboard({
   referrerRecoveryReserve: number;
   onRefresh: () => Promise<void>;
 }) {
-  const metric = (value: unknown) =>
-    value === undefined || value === null ? "—" : Number(value).toLocaleString();
-  const cards: Array<[string, unknown]> = [
-    ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit],
-    ["Today", summary.today_admin_earnings ?? summary.today_profit],
-    ["This month", summary.month_profit],
-    ["Available Withdrawable Balance", summary.available_balance],
-    ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral],
-    ["Bonus & Promotion Fund", summary.unallocated_recovery],
-    ["Retained Reward Budget", summary.retained_reward_budget],
-    ["User Reward Reserve", referrerRecoveryReserve],
-    ["Admin Own Balance", summary.admin_own_balance],
+  const metric = (value: unknown) => value === undefined || value === null ? "—" : Number(value).toLocaleString("en-PK", { maximumFractionDigits: 2 });
+  const cards: Array<[string, unknown, string]> = [
+    ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit, "Total profit generated by the platform."],
+    ["Today’s Profit", summary.today_admin_earnings ?? summary.today_profit, "Profit recorded today."],
+    ["This Month", summary.month_profit, "Profit recorded during the current month."],
+    ["Withdrawable Balance", summary.available_balance, "Balance currently available for platform withdrawal."],
   ];
-  const cardDescription = (label: string) => {
-    if (label === "Unassigned Referral") return "Referral commission from a purchase where no eligible referrer existed. This amount is automatically assigned to Admin.";
-    if (label === "Bonus & Promotion Fund") return "Separate platform fund available for admin bonuses, promotions, incentives, and approved platform expenses. This is not part of user reward reserves.";
-    if (label === "User Reward Reserve") return "Reserved for eligible referrers/users. This is not an admin bonus fund and should not be used for admin bonuses.";
-    if (label === "Available Withdrawable Balance") return "Admin/platform balance currently available for withdrawal.";
-    if (label === "Admin Own Balance") return "Admin-owned balance shown separately from platform profit.";
-    return undefined;
-  };
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h2 className="text-2xl font-semibold">Platform Wallet</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Unassigned Referral is available to the admin/platform under existing accounting logic, but is not Platform Profit.</p>
-      </div>
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <WalletCards className="size-5" />
-            Payout Coverage
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Minimum cash that should be maintained against current user reserves, wallets and admin payable balance.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border bg-muted/30 p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Required Cash</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{payable.toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p>
-            </div>
-            <div className="rounded-xl border bg-muted/30 p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Actual Cash</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{actualCash.toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p>
-            </div>
-            <div className={`rounded-xl border p-4 ${covered ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">{covered ? "Surplus" : "Shortfall"}</p>
-              <p className={`mt-1 text-2xl font-semibold tabular-nums ${covered ? "text-emerald-700" : "text-destructive"}`}>
-                {Math.abs(coverageDelta).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div>
-              <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Cash coverage</span>
-                <span className="font-medium tabular-nums">{coveragePct.toLocaleString("en-PK", { maximumFractionDigits: 1 })}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div className={`h-full rounded-full ${covered ? "bg-emerald-500" : "bg-destructive"}`} style={{ width: `${Math.min(100, Math.max(0, coveragePct))}%` }} />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={cashInput}
-                onChange={(event) => setCashInput(event.target.value)}
-                className="w-40"
-                aria-label="Actual cash available"
-              />
-              <Button onClick={() => void saveCashBalance()} disabled={cashSaving}>
-                {cashSaving ? "Saving…" : "Update Cash"}
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-2 border-t pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-            <div><span className="text-muted-foreground">User wallets: </span><span className="font-medium tabular-nums">{Number(overview.user_wallet_payable ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
-            <div><span className="text-muted-foreground">Reward reserves: </span><span className="font-medium tabular-nums">{Number(overview.reward_reserve_payable ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
-            <div><span className="text-muted-foreground">Recovery reserves: </span><span className="font-medium tabular-nums">{Number(overview.profile_recovery_reserve_payable ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
-            <div><span className="text-muted-foreground">Admin payable: </span><span className="font-medium tabular-nums">{Number(overview.admin_payable_balance ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
-          </div>
-        </CardContent>
-      </Card>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, key]) => <Card key={label}><CardContent className="flex h-full flex-col p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="This is the referral allocation, not Platform Profit." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{label === "Bonus & Promotion Fund" ? <Badge variant="outline" className="mt-3 w-fit border-destructive/30 text-destructive">NOT WITHDRAWABLE</Badge> : null}{label === "User Reward Reserve" ? <Badge variant="outline" className="mt-3 w-fit border-primary/30 text-primary">Not Admin Funds</Badge> : null}{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}{label === "Bonus & Promotion Fund" ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Used only for campaigns, promotions, incentives and approved platform expenses.</p> : null}</CardContent></Card>)}
+      <div><h2 className="text-2xl font-semibold">Profit</h2><p className="mt-1 text-sm text-muted-foreground">Profit only. Money held for rewards, referrals or promotions is shown in Funds & Reserves.</p></div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map(([label, value, description]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(value)} PKR</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{description}</p></CardContent></Card>)}
       </section>
       <Card>
-        <CardHeader>
-          <CardTitle>Platform Wallet Activity</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Each entry identifies its accounting category and source. Historical rows are not reclassified automatically.
-          </p>
-        </CardHeader>
+        <CardHeader><CardTitle>Profit Activity</CardTitle><p className="text-sm text-muted-foreground">Detailed profit/accounting entries. Held funds are kept separate from this view.</p></CardHeader>
         <CardContent className="overflow-x-auto p-0">
           <table className="w-full min-w-[900px] table-fixed text-sm">
-            <colgroup>
-              <col className="w-[13%]" />
-              <col className="w-[15%]" />
-              <col className="w-[11%]" />
-              <col className="w-[13%]" />
-              <col className="w-[17%]" />
-              <col className="w-[12%]" />
-              <col className="w-[26%]" />
-            </colgroup>
-            <thead className="bg-slate-50/95">
-              <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                <th scope="col" className="p-4 font-medium">Date</th>
-                <th scope="col" className="p-4 font-medium">Tracking ID</th>
-                <th scope="col" className="p-4 font-medium">User</th>
-                <th scope="col" className="p-4 font-medium">Plan</th>
-                <th scope="col" className="p-4 font-medium">Category</th>
-                <th scope="col" className="p-4 text-right font-medium">Amount</th>
-                <th scope="col" className="p-4 font-medium">Source / Reason</th>
-              </tr>
-            </thead>
+            <thead className="bg-slate-50/95"><tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500"><th className="p-4 font-medium">Date</th><th className="p-4 font-medium">Tracking ID</th><th className="p-4 font-medium">User</th><th className="p-4 font-medium">Plan</th><th className="p-4 font-medium">Category</th><th className="p-4 text-right font-medium">Amount</th><th className="p-4 font-medium">Source / Reason</th></tr></thead>
             <tbody>
-              {ledger.length ? ledger.map((row, index) => {
-                const purchaseId = String(row.deposit_id ?? row.purchase_id ?? row.id ?? "—");
-                const category = String(row.category ?? row.status ?? "—");
-                const categoryLabel = category.replaceAll("_", " ");
-                return (
-                  <tr key={String(row.id ?? index)} className="border-b border-slate-100 align-middle transition-colors last:border-0 hover:bg-slate-50">
-                    <td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td>
-                    <td className="p-4 whitespace-nowrap font-mono text-xs font-semibold text-primary">{shortId(purchaseId)}</td>
-                    <td className="max-w-0 p-4"><span className="block truncate" title={String(row.user_display ?? "User")}>{formatValue(row.user_display ?? "User")}</span></td>
-                    <td className="max-w-0 p-4"><span className="block truncate" title={String(row.plan_name ?? row.plan_id ?? "—")}>{formatValue(row.plan_name ?? row.plan_id)}</span></td>
-                    <td className="p-4"><Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/5 capitalize">{categoryLabel}</Badge></td>
-                    <td className="p-4 text-right font-medium tabular-nums whitespace-nowrap">{formatValue(row.amount ?? row.profit_amount ?? row.admin_profit)} PKR</td>
-                    <td className="max-w-0 p-4"><span className="block truncate text-muted-foreground" title={String(row.source ?? "No eligible referrer")}>{category.toLowerCase().includes("unassigned") ? "No eligible referrer" : formatValue(row.source)}</span></td>
-                  </tr>
-                );
-              }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No accounting ledger entries available.</td></tr>}
+              {ledger.length ? ledger.map((row, index) => { const purchaseId=String(row.deposit_id ?? row.purchase_id ?? row.id ?? "—"); const category=String(row.category ?? row.status ?? "—"); return <tr key={String(row.id ?? index)} className="border-b border-slate-100 align-middle transition-colors last:border-0 hover:bg-slate-50"><td className="p-4 whitespace-nowrap text-muted-foreground">{formatValue(row.created_at)}</td><td className="p-4 whitespace-nowrap font-mono text-xs font-semibold text-primary">{shortId(purchaseId)}</td><td className="max-w-0 p-4"><span className="block truncate" title={String(row.user_display ?? "User")}>{formatValue(row.user_display ?? "User")}</span></td><td className="max-w-0 p-4"><span className="block truncate">{formatValue(row.plan_name ?? row.plan_id)}</span></td><td className="p-4"><Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/5 capitalize">{category.replaceAll("_", " ")}</Badge></td><td className="p-4 text-right font-medium tabular-nums whitespace-nowrap">{formatValue(row.amount ?? row.profit_amount ?? row.admin_profit)} PKR</td><td className="max-w-0 p-4"><span className="block truncate text-muted-foreground">{category.toLowerCase().includes("unassigned") ? "No eligible referrer" : formatValue(row.source)}</span></td></tr>; }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No profit entries available.</td></tr>}
             </tbody>
           </table>
         </CardContent>
       </Card>
-      <RecoveryFundPanel remaining={Number(summary.unallocated_recovery ?? 0)} onRefresh={onRefresh} />
     </div>
   );
 }
 
+function FundsReservesDashboard({
+  overview,
+  reserveSummary,
+  summary,
+  onRefresh,
+}: {
+  overview: Record<string, number>;
+  reserveSummary: AdminRow[];
+  summary: AdminRow;
+  onRefresh: () => Promise<void>;
+}) {
+  const allocated = reserveSummary.reduce((total, row) => total + Number(row.total_original_reserve ?? 0), 0);
+  const money = (value: unknown) => Number(value ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 });
+  const cards: Array<[string, unknown, string]> = [
+    ["Rewards Issued", overview.total_rewards_issued, "Rewards already issued to users."],
+    ["Reward Money Left", overview.total_remaining_user_reward_reserves, "Remaining funded reward capacity."],
+    ["Total Reward Budget", allocated, "Total reward capacity allocated to active plans."],
+    ["Recovery Fund", overview.total_recovery_fund_collected, "Recovery money collected so far."],
+    ["Recovery Fund Left", overview.remaining_recovery_fund, "Recovery money still available."],
+    ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral, "Referral money with no eligible referrer."],
+    ["Bonus & Promotion Fund", summary.unallocated_recovery, "Money held for bonuses, promotions and approved platform expenses."],
+    ["Retained Reward Budget", summary.retained_reward_budget, "Reward budget retained for platform accounting."],
+    ["Admin Own Balance", summary.admin_own_balance, "Admin-owned money shown separately from platform profit."],
+  ];
+  return (
+    <div className="flex flex-col gap-5">
+      <div><h2 className="text-2xl font-semibold">Funds & Reserves</h2><p className="mt-1 text-sm text-muted-foreground">Money held for rewards, referrals, recovery and other purposes. These are not automatically profit.</p></div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {cards.map(([label, value, description]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tabular-nums">PKR {money(value)}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{description}</p></CardContent></Card>)}
+      </section>
+      {reserveSummary.length ? <Card><CardHeader><CardTitle>Reward Reserves by Plan</CardTitle><p className="text-sm text-muted-foreground">Detailed funded capacity for each active plan.</p></CardHeader><CardContent className="grid gap-3 md:grid-cols-3">{reserveSummary.map((row) => <div key={String(row.plan_name)} className="rounded-lg border p-4"><p className="font-medium">{String(row.plan_name)}</p><p className="mt-2 text-xs text-muted-foreground">Users {String(row.total_users)} · Allocated {money(row.total_original_reserve)} PKR</p><p className="text-xs text-muted-foreground">Used {money(row.total_reserve_used)} PKR · Remaining {money(row.total_reserve_remaining)} PKR</p><p className="mt-1 text-sm font-semibold">Rewards issued {money(row.total_rewards_issued)} PKR</p></div>)}</CardContent></Card> : null}
+      <RecoveryFundPanel remaining={Number(summary.unallocated_recovery ?? 0)} onRefresh={onRefresh} />
+    </div>
+  );
+}
 function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefresh: () => Promise<void> }) {
   const [activity, setActivity] = useState<AdminRow[]>([]);
   const [amount, setAmount] = useState("");
@@ -1701,102 +1607,56 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
 function Overview({
   metrics,
   overview,
-  reserveSummary,
-  onRefresh,
 }: {
-  metrics: Array<{ label: string; value: number }>;
+  metrics: Array<{ label: string; value: number; suffix?: string }>;
   overview: Record<string, number>;
-  reserveSummary: AdminRow[];
-  onRefresh: () => Promise<void>;
 }) {
-  const [cashInput, setCashInput] = useState("");
-  const [cashSaving, setCashSaving] = useState(false);
-
-  useEffect(() => {
-    if (overview.actual_cash_available !== undefined) {
-      setCashInput(String(Number(overview.actual_cash_available ?? 0)));
-    }
-  }, [overview.actual_cash_available]);
-
   const payable = Number(overview.total_payable_liability ?? 0);
   const actualCash = Number(overview.actual_cash_available ?? 0);
   const coverageDelta = Number(overview.cash_surplus_shortfall ?? actualCash - payable);
   const coveragePct = Number(overview.cash_coverage_pct ?? (payable > 0 ? (actualCash / payable) * 100 : 100));
-  const covered = coverageDelta >= 0;
-
-  async function saveCashBalance() {
-    const value = Number(cashInput);
-    if (!Number.isFinite(value) || value < 0) {
-      toast.error("Enter a valid cash balance.");
-      return;
-    }
-    setCashSaving(true);
-    try {
-      await setAdminCashBalance(value);
-      await onRefresh();
-      toast.success("Actual cash balance updated.");
-    } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Unable to update cash balance.");
-    } finally {
-      setCashSaving(false);
-    }
-  }
+  const money = (value: number) => value.toLocaleString("en-PK", { maximumFractionDigits: 2 });
 
   return (
     <>
       <div>
-        <h2 className="text-2xl font-semibold">Financial control center</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Live Supabase data with independent query recovery.
-        </p>
+        <h2 className="text-2xl font-semibold">Overview</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Quick view of users, sales, payments, cash and alerts.</p>
       </div>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
           <Card key={metric.label}>
             <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {metric.label}
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{metric.label}</p>
+              <p className="mt-2 text-2xl font-semibold tabular-nums">
+                {metric.suffix ? `${metric.value.toLocaleString("en-PK", { maximumFractionDigits: 1 })}${metric.suffix}` : money(metric.value)}
               </p>
-              <p className="mt-2 text-2xl font-semibold">
-                {metric.value.toLocaleString()}
-              </p>
+              {metric.label === "Surplus / Shortfall" ? <p className={`mt-1 text-xs ${coverageDelta >= 0 ? "text-emerald-600" : "text-destructive"}`}>{coverageDelta >= 0 ? "Surplus" : "Shortfall"}</p> : null}
             </CardContent>
           </Card>
         ))}
       </section>
-      {reserveSummary.length ? <Card>
-        <CardHeader><CardTitle>User reward reserve summary</CardTitle><p className="text-sm text-muted-foreground">Plan budget plus referral-funded reward reserve, grouped by the user’s active plan. Reserves are funded capacity, not guaranteed earnings.</p></CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
-          {reserveSummary.map((summary) => <div key={String(summary.plan_name)} className="rounded-lg border p-4"><p className="font-medium">{String(summary.plan_name)}</p><p className="mt-2 text-xs text-muted-foreground">Users {String(summary.total_users)} · Total allocated {Number(summary.total_original_reserve ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p><p className="text-xs text-muted-foreground">Used {Number(summary.total_reserve_used ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR · Remaining {Number(summary.total_reserve_remaining ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p><p className="mt-1 text-sm font-semibold">Rewards issued {Number(summary.total_rewards_issued ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p></div>)}
-        </CardContent>
-      </Card> : null}
       <Card>
         <CardHeader>
-          <CardTitle>Live operational queues</CardTitle>
+          <CardTitle>Payment Safety</CardTitle>
+          <p className="text-sm text-muted-foreground">Can AdverX currently cover the money it still owes?</p>
         </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Actual Cash</p><p className="mt-1 text-xl font-semibold tabular-nums">PKR {money(actualCash)}</p></div>
+          <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Still Payable</p><p className="mt-1 text-xl font-semibold tabular-nums">PKR {money(payable)}</p></div>
+          <div className={`rounded-xl border p-4 ${coverageDelta >= 0 ? "bg-emerald-500/10" : "bg-destructive/10"}`}><p className="text-xs uppercase tracking-wide text-muted-foreground">{coverageDelta >= 0 ? "Cash Surplus" : "Cash Shortfall"}</p><p className={`mt-1 text-xl font-semibold tabular-nums ${coverageDelta >= 0 ? "text-emerald-700" : "text-destructive"}`}>PKR {money(Math.abs(coverageDelta))}</p></div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle>Live Queues</CardTitle></CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            [
-              "Pending Deposits",
-              Number(overview.pending_deposits ?? 0),
-            ],
-            [
-              "Pending Withdrawals",
-              Number(overview.pending_withdrawals ?? 0),
-            ],
-            [
-              "Open fraud flags",
-              Number(overview.risk_alerts ?? 0),
-            ],
-            [
-              "Open support",
-              Number(overview.pending_support_tickets ?? 0),
-            ],
+            ["Pending Deposits", Number(overview.pending_deposits ?? 0)],
+            ["Pending Withdrawals", Number(overview.pending_withdrawals ?? 0)],
+            ["Open Fraud Flags", Number(overview.risk_alerts ?? 0)],
+            ["Open Support", Number(overview.pending_support_tickets ?? 0)],
           ].map(([label, value]) => (
-            <div key={String(label)} className="rounded-lg border p-4">
-              <p className="text-sm text-muted-foreground">{label}</p>
-              <p className="mt-1 text-2xl font-semibold">{value}</p>
-            </div>
+            <div key={String(label)} className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-semibold">{Number(value)}</p></div>
           ))}
         </CardContent>
       </Card>
