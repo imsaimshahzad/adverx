@@ -93,6 +93,7 @@ import {
   reviewWithdrawal,
   replySupportTicket,
   setUserStatus,
+  setAdminCashBalance,
 } from "@/lib/admin-service";
 
 const db = supabase as any;
@@ -1068,7 +1069,7 @@ export function AdminRoute() {
               } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Unable to login as user."); }
             })(); }} />
           ) : active === "overview" ? (
-            <Overview metrics={metrics} overview={overview} reserveSummary={reserveSummary} />
+            <Overview metrics={metrics} overview={overview} reserveSummary={reserveSummary} onRefresh={load} />
           ) : active === "settings" ? (
             <HomepageHeroSettings />
           ) : active === "support" ? (
@@ -1354,6 +1355,68 @@ function RevenueDashboard({
         <h2 className="text-2xl font-semibold">Platform Wallet</h2>
         <p className="mt-1 text-sm text-muted-foreground">Accounting categories are kept separate. Unassigned Referral is available to the admin/platform under existing accounting logic, but is not Platform Profit.</p>
       </div>
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <WalletCards className="size-5" />
+            Payout Coverage
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Minimum cash that should be maintained against current user reserves, wallets and admin payable balance.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border bg-muted/30 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Required Cash</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{payable.toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p>
+            </div>
+            <div className="rounded-xl border bg-muted/30 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Actual Cash</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{actualCash.toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</p>
+            </div>
+            <div className={`rounded-xl border p-4 ${covered ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{covered ? "Surplus" : "Shortfall"}</p>
+              <p className={`mt-1 text-2xl font-semibold tabular-nums ${covered ? "text-emerald-700" : "text-destructive"}`}>
+                {Math.abs(coverageDelta).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Cash coverage</span>
+                <span className="font-medium tabular-nums">{coveragePct.toLocaleString("en-PK", { maximumFractionDigits: 1 })}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div className={`h-full rounded-full ${covered ? "bg-emerald-500" : "bg-destructive"}`} style={{ width: `${Math.min(100, Math.max(0, coveragePct))}%` }} />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={cashInput}
+                onChange={(event) => setCashInput(event.target.value)}
+                className="w-40"
+                aria-label="Actual cash available"
+              />
+              <Button onClick={() => void saveCashBalance()} disabled={cashSaving}>
+                {cashSaving ? "Saving…" : "Update Cash"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-2 border-t pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div><span className="text-muted-foreground">User wallets: </span><span className="font-medium tabular-nums">{Number(overview.user_wallet_payable ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
+            <div><span className="text-muted-foreground">Reward reserves: </span><span className="font-medium tabular-nums">{Number(overview.reward_reserve_payable ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
+            <div><span className="text-muted-foreground">Recovery reserves: </span><span className="font-medium tabular-nums">{Number(overview.profile_recovery_reserve_payable ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
+            <div><span className="text-muted-foreground">Admin payable: </span><span className="font-medium tabular-nums">{Number(overview.admin_payable_balance ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })} PKR</span></div>
+          </div>
+        </CardContent>
+      </Card>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map(([label, key]) => <Card key={label}><CardContent className="flex h-full flex-col p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>{label === "Unassigned Referral" ? <span className="cursor-help text-muted-foreground" title="This is the referral allocation, not Platform Profit." aria-label="About Unassigned Referral">ⓘ</span> : null}</div><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(key)}</p><p className="mt-1 text-xs text-muted-foreground">PKR</p>{label === "Bonus & Promotion Fund" ? <Badge variant="outline" className="mt-3 w-fit border-destructive/30 text-destructive">NOT WITHDRAWABLE</Badge> : null}{label === "User Reward Reserve" ? <Badge variant="outline" className="mt-3 w-fit border-primary/30 text-primary">Not Admin Funds</Badge> : null}{cardDescription(label) ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{cardDescription(label)}</p> : null}{label === "Bonus & Promotion Fund" ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Used only for campaigns, promotions, incentives and approved platform expenses.</p> : null}</CardContent></Card>)}
       </section>
@@ -1598,11 +1661,46 @@ function Overview({
   metrics,
   overview,
   reserveSummary,
+  onRefresh,
 }: {
   metrics: Array<{ label: string; value: number }>;
   overview: Record<string, number>;
   reserveSummary: AdminRow[];
+  onRefresh: () => Promise<void>;
 }) {
+  const [cashInput, setCashInput] = useState("");
+  const [cashSaving, setCashSaving] = useState(false);
+
+  useEffect(() => {
+    if (overview.actual_cash_available !== undefined) {
+      setCashInput(String(Number(overview.actual_cash_available ?? 0)));
+    }
+  }, [overview.actual_cash_available]);
+
+  const payable = Number(overview.total_payable_liability ?? 0);
+  const actualCash = Number(overview.actual_cash_available ?? 0);
+  const coverageDelta = Number(overview.cash_surplus_shortfall ?? actualCash - payable);
+  const coveragePct = Number(overview.cash_coverage_pct ?? (payable > 0 ? (actualCash / payable) * 100 : 100));
+  const covered = coverageDelta >= 0;
+
+  async function saveCashBalance() {
+    const value = Number(cashInput);
+    if (!Number.isFinite(value) || value < 0) {
+      toast.error("Enter a valid cash balance.");
+      return;
+    }
+    setCashSaving(true);
+    try {
+      await setAdminCashBalance(value);
+      await onRefresh();
+      toast.success("Actual cash balance updated.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Unable to update cash balance.");
+    } finally {
+      setCashSaving(false);
+    }
+  }
+
   return (
     <>
       <div>
