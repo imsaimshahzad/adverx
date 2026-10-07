@@ -69,7 +69,14 @@ function PublicHome() {
     ["Where can I see my transaction history?", "Sign in to your AdverX workspace to view your wallet and transaction history with the latest account activity."],
   ];
   return (
-    <main className="flex flex-col relative w-full pt-16 bg-surface flex-1 adverx-reference-page">
+    <>
+      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+        <div className="h-16 px-gutter flex items-center justify-between">
+          <div className="flex items-center gap-space-xs"><div className="flex items-center gap-1.5"><BrandLogo className="h-7 w-auto object-contain" /><span className="bg-secondary-container text-on-secondary-container font-label-overline text-label-overline px-space-2xs py-0.5 rounded-full">PRO</span></div><div className="h-4 w-px bg-outline-variant/40 ml-space-2xs" /><span className="font-label-md text-label-md text-on-surface-variant truncate max-w-[110px]">Dashboard</span></div>
+          <div className="flex items-center gap-space-xs"><Link aria-label="Sign Up" to="/signup" className="h-11 px-space-sm rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md flex items-center justify-center hover:bg-primary transition-colors"><span className="material-symbols-outlined text-[18px] mr-1">person_add</span>Sign Up</Link><Link to="/login" aria-label="Log in" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><span className="material-symbols-outlined text-on-primary text-[18px]">person</span></Link></div>
+        </div>
+      </header>
+      <main className="flex flex-col relative w-full pt-16 bg-surface flex-1 adverx-reference-page">
       <div className="flex flex-col w-full">
         <section className="px-gutter pt-space-md pb-space-lg flex flex-col">
           <div className="inline-flex items-center gap-1.5 self-start bg-surface-container-high px-space-xs py-1 rounded-full mb-space-sm"><span className="w-2 h-2 rounded-full bg-primary animate-pulse" /><span className="font-label-overline text-label-overline text-primary uppercase">AdverX Workspace</span></div>
@@ -103,6 +110,7 @@ function PublicHome() {
         <footer className="px-gutter pb-space-2xl pt-space-md border-t-0 bg-surface-container-low flex flex-col items-center text-center"><div className="flex items-center gap-1.5 mb-2"><BrandLogo compact className="h-6 w-auto object-contain" /><span className="bg-secondary-container text-on-secondary-container font-label-overline text-label-overline px-2 py-0.5 rounded-full font-bold">PRO</span></div><p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs mb-space-md">A transparent rewards workspace for verified tasks, structured network bonuses, and secure micro-finances.</p><div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-space-md"><Link className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" to="/">Home</Link><Link className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" to="/plans">Plans</Link><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="#privacy">Privacy Policy</a><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="#terms">Terms of Service</a><a className="font-label-md text-label-md text-on-surface hover:text-primary transition-colors" href="mailto:support@adverx.online">Contact</a><Link className="font-label-md text-label-md text-primary font-bold" to="/login">Log In</Link></div><div className="flex items-center gap-3 text-on-surface-variant mb-space-md"><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><span className="material-symbols-outlined text-[18px]">public</span></span><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><span className="material-symbols-outlined text-[18px]">forum</span></span><span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><span className="material-symbols-outlined text-[18px]">send</span></span></div><p className="font-body-sm text-[11px] text-on-surface-variant/70">© 2025 AdverX Inc. All rights reserved. Registered Rewards Platform.</p></footer>
       </div>
     </main>
+    </>
   );
 }
 function PublicStat({ value, label }: { value: string; label: string }) {
