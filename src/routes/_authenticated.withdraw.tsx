@@ -64,9 +64,9 @@ function WithdrawPage() {
     });
   }, [methodId, state.user]);
   const [details, setDetails] = useState<Record<string, string>>({});
-  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null; rejectionReason?: string | null }>>([]);
-  const [reasonRow, setReasonRow] = useState<{ id: string; amount: number | null; rejectionReason?: string | null } | null>(null);
-  const [receiptRow, setReceiptRow] = useState<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null } | null>(null);
+  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{ id: string; reference_code?: string | null; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null; rejectionReason?: string | null }>>([]);
+  const [reasonRow, setReasonRow] = useState<{ id: string; reference_code?: string | null; amount: number | null; rejectionReason?: string | null } | null>(null);
+  const [receiptRow, setReceiptRow] = useState<{ id: string; reference_code?: string | null; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null } | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const selectedMethod = WITHDRAWAL_METHODS.find((method) => method.id === methodId);
 
@@ -75,7 +75,7 @@ function WithdrawPage() {
     setHistoryLoading(true);
     const { data, error } = await userDb
       .from("withdrawals")
-      .select("id, amount, status, created_at, method, account, fee, rejection_reason")
+      .select("id, reference_code, amount, status, created_at, method, account, fee, rejection_reason")
       .eq("user_id", state.user.id)
       .order("created_at", { ascending: false })
       .limit(10);
@@ -84,7 +84,7 @@ function WithdrawPage() {
       setHistoryLoading(false);
       return;
     }
-    const rows = (data ?? []) as Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null; rejection_reason?: string | null }>;
+    const rows = (data ?? []) as Array<{ id: string; reference_code?: string | null; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null; rejection_reason?: string | null }>;
     setWithdrawalHistory(rows.map((row) => ({
       ...row,
       fee: row.fee == null ? 0 : Number(row.fee),
@@ -122,7 +122,7 @@ function WithdrawPage() {
     const holder = String(details.holder ?? "—");
     const accountNumber = String(details.number ?? details.accountNumber ?? details.iban ?? "—");
     return {
-      receiptNo: `ADX-WD-${row.id.replaceAll("-", "").slice(0, 12).toUpperCase()}`,
+      receiptNo: row.reference_code || `WD-${row.id.replaceAll("-", "").slice(0, 10).toUpperCase()}`,
       date: row.created_at ? new Date(row.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" }) : "—",
       holder,
       method: row.method || "—",
