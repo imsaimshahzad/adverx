@@ -351,7 +351,7 @@ function WithdrawPage() {
                   ? { icon: "bg-red-500/10 text-red-600", badge: "bg-red-500/10 text-red-700 dark:text-red-300" }
                   : { icon: "bg-amber-500/10 text-amber-700", badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300" };
               return (
-                <div key={item.id} className="grid grid-cols-[2rem_minmax(0,1fr)_auto_auto] items-center gap-x-2 px-3 py-3 transition-colors hover:bg-muted/20 sm:grid-cols-[2.75rem_minmax(0,1fr)_minmax(7rem,0.8fr)_minmax(9rem,auto)] sm:gap-4 sm:px-6 sm:py-5">
+                <div key={item.id} className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(4.5rem,auto)_auto] items-center gap-x-2 px-3 py-3 transition-colors hover:bg-muted/20 sm:grid-cols-[2.75rem_minmax(0,1fr)_minmax(7rem,0.8fr)_minmax(9rem,auto)] sm:gap-4 sm:px-6 sm:py-5">
                   <div className={`grid h-8 w-8 place-items-center rounded-lg ${tone.icon} sm:h-11 sm:w-11`}>
                     {isPaid ? <ArrowUpRight className="h-5 w-5" /> : isRejected ? <CircleX className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
                   </div>
