@@ -2769,7 +2769,7 @@ function ReportsPanel() {
           <Button variant="outline" onClick={exportCsv} disabled={loading || !filtered.length}>Export CSV</Button>
         </div>
         <div className="grid gap-3 border-t border-slate-100 bg-slate-50/70 p-4 md:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr_1fr]">
-          <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search user, UID, amount or record..." className="h-10 rounded-lg border-slate-200 bg-white pl-9 shadow-none" /></div>
+          <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" /><Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search user, UID, amount or record..." className="h-10 rounded-lg border-slate-200 bg-white !pl-11 pr-3 shadow-none" /></div>
           <select value={reportType} onChange={(event) => { setReportType(event.target.value as ReportType); setPage(1); }} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200" aria-label="Report type">
             <option value="all">All activity</option><option value="deposits">Deposits</option><option value="withdrawals">Withdrawals</option><option value="rewards">Ad rewards</option><option value="referrals">Referral commissions</option><option value="plans">Plan purchases</option>
           </select>
@@ -3166,7 +3166,7 @@ function ModuleTable({
             <div className="relative w-full lg:w-72">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <Input
-                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 pr-3 text-sm shadow-none placeholder:text-slate-400 focus-visible:ring-blue-500"
+                className="h-10 w-full rounded-lg border-slate-200 bg-white !pl-11 pr-3 text-sm shadow-none placeholder:text-slate-400 focus-visible:ring-blue-500"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={"Search " + active.replaceAll("-", " ") + "..."}
