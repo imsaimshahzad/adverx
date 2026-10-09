@@ -896,12 +896,15 @@ export function AdminRoute() {
       } else if (
         currentTable === "withdrawals" &&
         ["approved", "processing", "paid", "rejected"].includes(status)
-      )
+      ) {
+        if (status === "rejected" && !rejectionReason.trim())
+          throw new Error("Enter a rejection reason.");
         await reviewWithdrawal(
           String(row.id),
           status as "approved" | "processing" | "paid" | "rejected",
+          status === "rejected" ? rejectionReason.trim() : undefined,
         );
-      else if (
+      } else if (
         currentTable === "deposits" &&
         (status === "approved" || status === "rejected")
       ) {
