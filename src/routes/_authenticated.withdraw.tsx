@@ -146,25 +146,7 @@ function WithdrawPage() {
     return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
   }
 
-  function saveReceiptPdf() {
-    if (!receiptRow || String(receiptRow.status).toLowerCase() !== "paid") return;
-    const receipt = getReceiptDetails(receiptRow);
-    const popup = window.open("", "_blank", "popup,width=520,height=760");
-    if (!popup) {
-      toast.error("Please allow pop-ups to save the receipt as PDF.");
-      return;
-    }
-    const rows = [
-      ["Receipt No.", receipt.receiptNo],
-      ["Date", receipt.date],
-      ["Account Holder", receipt.holder],
-      ["Payout Method", receipt.method],
-      ["Account Number", receipt.accountNumber],
-      ["Amount Sent", formatMoney(receipt.amount, "PKR")],
-    ];
-    popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>AdverX Withdrawal Receipt</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#16302e;padding:clamp(8px,4vw,24px);margin:0}.receipt{width:100%;max-width:440px;margin:0 auto;border:1px solid #d9e6e4;border-radius:14px;overflow:hidden}.head{background:#0d8a80;color:white;padding:clamp(16px,4vw,22px);font-size:clamp(21px,5vw,24px);font-weight:bold}.head span{color:#f28c00}.paid{text-align:center;padding:clamp(18px,5vw,22px);color:#0d8a80}.amount{font-size:clamp(24px,7vw,30px);font-weight:bold;margin-top:8px;overflow-wrap:anywhere}.row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px clamp(14px,4vw,20px);border-top:1px solid #d9e6e4;font-size:13px;line-height:1.45}.row span{flex:0 0 42%;color:#526966}.row b{flex:1;min-width:0;text-align:right;overflow-wrap:anywhere;word-break:break-word}.foot{text-align:center;padding:16px;background:#f8fbfa;font-size:12px;color:#6b7f7d}@media(max-width:360px){.row{flex-direction:column;gap:4px}.row span{flex-basis:auto}.row b{text-align:left;width:100%}}@media print{body{padding:0;background:#fff}.receipt{max-width:100%;border-radius:0;break-inside:avoid}.row{break-inside:avoid}}</style></head><body><div class="receipt"><div class="head">ADVER<span>X</span></div><div class="paid">Withdrawal Paid<div class="amount">${escapeReceiptText(formatMoney(receipt.amount, "PKR"))}</div></div>${rows.map(([label, value]) => `<div class="row"><span>${escapeReceiptText(label)}</span><b>${escapeReceiptText(value)}</b></div>`).join("")}<div class="foot">Computer-generated receipt · adverx.online</div></div><script>window.onload=()=>window.print()</script></body></html>`);
-    popup.document.close();
-  }
+
 
   function saveReceiptImage() {
     if (!receiptRow || String(receiptRow.status).toLowerCase() !== "paid") return;
@@ -443,7 +425,6 @@ function WithdrawPage() {
           })() : null}
           <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
             <Button type="button" variant="outline" size="sm" className="h-8 w-full px-1.5 text-[11px] sm:text-xs" onClick={saveReceiptImage}><Download className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Save Image</Button>
-            <Button type="button" size="sm" className="h-8 w-full px-1.5 text-[11px] sm:text-xs" onClick={saveReceiptPdf}>Save as PDF</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
