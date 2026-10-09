@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ReceiptText, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -62,7 +64,8 @@ function WithdrawPage() {
     });
   }, [methodId, state.user]);
   const [details, setDetails] = useState<Record<string, string>>({});
-  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{ id: string; amount: number | null; status: string | null; created_at: string }>>([]);
+  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null }>>([]);
+  const [receiptRow, setReceiptRow] = useState<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null } | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const selectedMethod = WITHDRAWAL_METHODS.find((method) => method.id === methodId);
 
@@ -71,12 +74,14 @@ function WithdrawPage() {
     setHistoryLoading(true);
     const { data } = await userDb
       .from("withdrawals")
-      .select("id, amount, status, created_at")
+      .select("id, amount, status, created_at, method, account, fee")
       .eq("user_id", state.user.id)
       .order("created_at", { ascending: false })
       .limit(10);
     setWithdrawalHistory(
-      (data ?? []).map((row: { id: string; amount: number | null; status: string | null; created_at: string }) => ({
+      (data ?? []).map((row: { id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null }) => ({
+        ...row,
+        fee: row.fee == null ? 0 : Number(row.fee),
         ...row,
         amount: row.amount == null ? null : Number(row.amount),
       })),
@@ -95,12 +100,123 @@ function WithdrawPage() {
   const requestedPaise = Math.round(value * 100);
   const availablePaise = Math.round(Number(availableBalance) * 100);
   const minPaise = Math.round(Number(min) * 100);
-  const fee = Math.round(value * 0.02 * 100) / 100;
   const methodMin = selectedMethod?.minWithdrawal ?? min;
   const methodMax = selectedMethod?.maxWithdrawal ?? Number.POSITIVE_INFINITY;
   const methodMinPaise = Math.round(Number(methodMin) * 100);
   const methodMaxPaise = Number.isFinite(methodMax) ? Math.round(Number(methodMax) * 100) : Number.POSITIVE_INFINITY;
   const amountOutsideMethodLimits = Boolean(selectedMethod && (requestedPaise < methodMinPaise || requestedPaise > methodMaxPaise));
+
+  function getReceiptDetails(row: NonNullable<typeof receiptRow>) {
+    let details: Record<string, unknown> = {};
+    try {
+      const parsed = row.account ? JSON.parse(row.account) : {};
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) details = parsed as Record<string, unknown>;
+    } catch {
+      details = {};
+    }
+    const holder = String(details.holder ?? "—");
+    const accountNumber = String(details.number ?? details.accountNumber ?? details.iban ?? "—");
+    return {
+      receiptNo: `ADX-WD-${row.id.replaceAll("-", "").slice(0, 12).toUpperCase()}`,
+      date: row.created_at ? new Date(row.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" }) : "—",
+      holder,
+      method: row.method || "—",
+      accountNumber,
+      amount: Number(row.amount ?? 0),
+    };
+  }
+
+  function escapeReceiptText(value: string) {
+    return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+  }
+
+  function saveReceiptPdf() {
+    if (!receiptRow || String(receiptRow.status).toLowerCase() !== "paid") return;
+    const receipt = getReceiptDetails(receiptRow);
+    const popup = window.open("", "_blank", "width=520,height=760");
+    if (!popup) {
+      toast.error("Please allow pop-ups to save the receipt as PDF.");
+      return;
+    }
+    const rows = [
+      ["Receipt No.", receipt.receiptNo],
+      ["Date", receipt.date],
+      ["Account Holder", receipt.holder],
+      ["Payout Method", receipt.method],
+      ["Account Number", receipt.accountNumber],
+      ["Amount Sent", formatMoney(receipt.amount, "PKR")],
+    ];
+    popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>AdverX Withdrawal Receipt</title><style>body{font-family:Arial,sans-serif;color:#16302e;padding:24px}.receipt{max-width:440px;margin:auto;border:1px solid #d9e6e4;border-radius:14px;overflow:hidden}.head{background:#0d8a80;color:white;padding:22px;font-size:24px;font-weight:bold}.head span{color:#f28c00}.paid{text-align:center;padding:22px;color:#0d8a80}.amount{font-size:30px;font-weight:bold;margin-top:8px}.row{display:flex;justify-content:space-between;gap:18px;padding:12px 20px;border-top:1px solid #d9e6e4;font-size:13px}.row b{text-align:right;overflow-wrap:anywhere}.foot{text-align:center;padding:18px;background:#f8fbfa;font-size:12px;color:#6b7f7d}@media print{body{padding:0}}</style></head><body><div class="receipt"><div class="head">ADVER<span>X</span></div><div class="paid">Withdrawal Paid<div class="amount">${escapeReceiptText(formatMoney(receipt.amount, "PKR"))}</div></div>${rows.map(([label, value]) => `<div class="row"><span>${escapeReceiptText(label)}</span><b>${escapeReceiptText(value)}</b></div>`).join("")}<div class="foot">Computer-generated receipt · adverx.online</div></div><script>window.onload=()=>window.print()<\/script></body></html>`);
+    popup.document.close();
+  }
+
+  function saveReceiptImage() {
+    if (!receiptRow || String(receiptRow.status).toLowerCase() !== "paid") return;
+    const receipt = getReceiptDetails(receiptRow);
+    const canvas = document.createElement("canvas");
+    canvas.width = 900;
+    canvas.height = 1040;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      toast.error("Unable to create receipt image.");
+      return;
+    }
+    context.fillStyle = "#eef3f2";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#ffffff";
+    context.fillRect(80, 55, 740, 930);
+    context.fillStyle = "#0d8a80";
+    context.fillRect(80, 55, 740, 130);
+    context.fillStyle = "#ffffff";
+    context.font = "bold 52px Arial";
+    context.fillText("ADVER", 120, 125);
+    context.fillStyle = "#f28c00";
+    context.fillText("X", 285, 125);
+    context.font = "24px Arial";
+    context.fillStyle = "#e3f4f2";
+    context.fillText("Withdrawal Receipt", 550, 125);
+    context.textAlign = "center";
+    context.fillStyle = "#0d8a80";
+    context.font = "bold 30px Arial";
+    context.fillText("PAID", 450, 245);
+    context.font = "bold 54px Arial";
+    context.fillStyle = "#16302e";
+    context.fillText(formatMoney(receipt.amount, "PKR"), 450, 315);
+    const rows: Array<[string, string]> = [
+      ["Receipt No.", receipt.receiptNo],
+      ["Date", receipt.date],
+      ["Account Holder", receipt.holder],
+      ["Payout Method", receipt.method],
+      ["Account Number", receipt.accountNumber],
+      ["Amount Sent", formatMoney(receipt.amount, "PKR")],
+    ];
+    context.textAlign = "left";
+    rows.forEach(([label, value], index) => {
+      const y = 405 + index * 75;
+      context.strokeStyle = "#d9e6e4";
+      context.beginPath();
+      context.moveTo(115, y - 35);
+      context.lineTo(785, y - 35);
+      context.stroke();
+      context.font = "25px Arial";
+      context.fillStyle = "#6b7f7d";
+      context.fillText(label, 120, y);
+      context.font = "bold 25px Arial";
+      context.fillStyle = "#16302e";
+      const clipped = value.length > 27 ? value.slice(0, 24) + "…" : value;
+      context.textAlign = "right";
+      context.fillText(clipped, 780, y);
+      context.textAlign = "left";
+    });
+    context.textAlign = "center";
+    context.font = "20px Arial";
+    context.fillStyle = "#6b7f7d";
+    context.fillText("Computer-generated receipt · adverx.online", 450, 945);
+    const link = document.createElement("a");
+    link.download = `${receipt.receiptNo}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
 
   return (
     <AppShell title="Withdraw">
@@ -120,7 +236,7 @@ function WithdrawPage() {
             placeholder="Enter amount here"
           />
           <p className="text-xs text-muted-foreground">
-            Processing fee 2% · You receive {formatMoney(Math.max(0, value - fee))}
+            No processing fee · You receive {formatMoney(value)}
           </p>
           {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatMoney(methodMin)} – {formatMoney(methodMax)}</p> : null}
         </div>
@@ -246,12 +362,63 @@ function WithdrawPage() {
                   <Badge className={`shrink-0 rounded-full border-0 px-2.5 py-1 text-[11px] font-medium ${statusClass}`}>
                     {statusLabel}
                   </Badge>
+                  {status === "paid" ? (
+                    <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setReceiptRow(item)}>
+                      <ReceiptText className="mr-1.5 h-4 w-4" /> Receipt
+                    </Button>
+                  ) : null}
                 </div>
               );
             })}
           </div>
         )}
       </div>
+      <Dialog open={Boolean(receiptRow)} onOpenChange={(open) => { if (!open) setReceiptRow(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>AdverX Withdrawal Receipt</DialogTitle>
+            <DialogDescription>Receipt details are generated from your saved withdrawal record.</DialogDescription>
+          </DialogHeader>
+          {receiptRow ? (() => {
+            const receipt = getReceiptDetails(receiptRow);
+            return (
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                <div className="bg-primary px-5 py-4 text-primary-foreground">
+                  <p className="text-xl font-extrabold tracking-wide">ADVER<span className="text-amber-400">X</span></p>
+                  <p className="mt-1 text-xs opacity-85">Withdrawal Receipt</p>
+                </div>
+                <div className="px-5 py-6 text-center">
+                  <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-emerald-500/10 text-xl font-bold text-emerald-600">✓</div>
+                  <p className="mt-3 text-2xl font-bold">{formatMoney(receipt.amount, "PKR")}</p>
+                  <Badge className="mt-2 border-0 bg-emerald-500/10 text-emerald-700">Paid</Badge>
+                </div>
+                <div className="divide-y divide-border border-t border-dashed border-border px-5">
+                  {[
+                    ["Receipt No.", receipt.receiptNo],
+                    ["Date", receipt.date],
+                    ["Account Holder", receipt.holder],
+                    ["Payout Method", receipt.method],
+                    ["Account Number", receipt.accountNumber],
+                    ["Amount Sent", formatMoney(receipt.amount, "PKR")],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex items-start justify-between gap-4 py-3 text-sm">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className="break-all text-right font-semibold">{value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-muted/40 px-5 py-4 text-center text-xs leading-relaxed text-muted-foreground">
+                  Computer-generated receipt.<br />adverx.online
+                </div>
+              </div>
+            );
+          })() : null}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={saveReceiptImage}><Download className="mr-2 h-4 w-4" /> Save Image</Button>
+            <Button type="button" onClick={saveReceiptPdf}>Save as PDF</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
