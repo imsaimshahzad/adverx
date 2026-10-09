@@ -1662,8 +1662,8 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                     </p>
                   </div>
                   <div className="mt-3 grid gap-2 border-t pt-3 text-sm">
-                    <div><span className="text-muted-foreground">Purpose / Reason: </span><span>{formatValue(row.reason)}</span></div>
-                    <div><span className="text-muted-foreground">Reference: </span><span>{formatValue(row.reference)}</span></div>
+                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Purpose / Reason: </span><span className="break-words [overflow-wrap:anywhere]">{formatValue(row.reason)}</span></div>
+                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Reference: </span><span className="break-all">{formatValue(row.reference)}</span></div>
                     <div><span className="text-muted-foreground">Balance After: </span><span className="font-medium tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</span></div>
                   </div>
                 </div>
