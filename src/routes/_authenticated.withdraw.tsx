@@ -360,7 +360,7 @@ function WithdrawPage() {
                     <p className="whitespace-nowrap text-[10px] text-muted-foreground sm:mt-1 sm:text-xs">{new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
                   </div>
                   <div className="min-w-0 sm:col-start-3 sm:row-start-1 sm:text-center">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold whitespace-nowrap sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold whitespace-nowrap ${tone.badge} sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs`}>
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />{statusLabel}
                     </span>
                   </div>
