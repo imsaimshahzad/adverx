@@ -718,7 +718,7 @@ export function AdminRoute() {
         next.unpaid += 1;
       }
       return next;
-    }, { all: 0, paid: 0, unpaid: 0, starter: 0, growth: 0, pro: 0 });
+    }, { all: 0, paid: 0, unpaid: 0, starter: 0, growth: 0, pro: 0, elite: 0 });
   }, [active, currentRows]);
 
   const filtered = useMemo(() => {
@@ -3089,7 +3089,7 @@ function ModuleTable({
         <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/70 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label={active + " filters"}>
             {active === "users" && userCounts && onUserPartition ? (
-              (["all", "paid", "unpaid", "starter", "growth", "pro", "elite"] as const).map((filter) => (
+              (["all", "paid", "unpaid", "starter", "growth", "pro", ...(userCounts.elite > 0 ? (["elite"] as const) : [])] as const).map((filter) => (
                 <Button
                   key={filter}
                   type="button"
