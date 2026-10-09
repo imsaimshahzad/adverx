@@ -387,6 +387,10 @@ export function AdminRoute() {
     url: string | null;
     state: "loading" | "ready" | "unavailable" | "expired";
   } | null>(null);
+  const [paymentAccountDialog, setPaymentAccountDialog] = useState<{
+    holder: string;
+    number: string;
+  } | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminRow | null>(null);
   const [balanceTarget, setBalanceTarget] = useState<AdminRow | null>(null);
   const [balanceMode, setBalanceMode] = useState<"add" | "deduct">("add");
@@ -1177,6 +1181,65 @@ export function AdminRoute() {
               onUserDetails={openUserDetails}
             />
           )}
+          <Dialog
+            open={Boolean(paymentAccountDialog)}
+            onOpenChange={(open) => !open && setPaymentAccountDialog(null)}
+          >
+            <DialogContent className="max-w-sm rounded-2xl">
+              <DialogHeader>
+                <DialogTitle>Payment Account Details</DialogTitle>
+                <DialogDescription>Verify the recipient details before sending the withdrawal payment.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-1 text-xs font-medium text-slate-500">Account Holder Name</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="break-words text-sm font-semibold text-slate-900">{paymentAccountDialog?.holder || "Not provided"}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!paymentAccountDialog?.holder}
+                      onClick={() => {
+                        const value = paymentAccountDialog?.holder;
+                        if (!value) return;
+                        void navigator.clipboard.writeText(value).then(
+                          () => toast.success("Account holder name copied"),
+                          () => toast.error("Copy failed"),
+                        );
+                      }}
+                    >
+                      <Copy className="mr-1.5 size-3.5" /> Copy Name
+                    </Button>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-1 text-xs font-medium text-slate-500">Account Number</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="break-all font-mono text-sm font-semibold text-slate-900">{paymentAccountDialog?.number || "Not provided"}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!paymentAccountDialog?.number}
+                      onClick={() => {
+                        const value = paymentAccountDialog?.number;
+                        if (!value) return;
+                        void navigator.clipboard.writeText(value).then(
+                          () => toast.success("Account number copied"),
+                          () => toast.error("Copy failed"),
+                        );
+                      }}
+                    >
+                      <Copy className="mr-1.5 size-3.5" /> Copy Number
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setPaymentAccountDialog(null)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Dialog
             open={Boolean(receipt)}
             onOpenChange={(open) => !open && setReceipt(null)}
@@ -3239,20 +3302,10 @@ function ModuleTable({
                                   <button
                                     type="button"
                                     className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
-                                    onClick={() => {
-                                      const accountNumber = details.number;
-                                      if (!accountNumber) {
-                                        toast.error("Account number is not available.");
-                                        return;
-                                      }
-                                      void navigator.clipboard.writeText(accountNumber).then(
-                                        () => toast.success("Payment account number copied"),
-                                        () => toast.error("Copy failed. Please copy the number from the user's account details."),
-                                      );
-                                    }}
+                                    onClick={() => setPaymentAccountDialog(details)}
                                   >
-                                    <Copy className="size-3.5" />
-                                    View / Copy Account
+                                    <Eye className="size-3.5" />
+                                    View Payment Account
                                   </button>
                                 </div>
                               ) : (
