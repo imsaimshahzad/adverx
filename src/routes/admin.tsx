@@ -1415,8 +1415,9 @@ function CashPaymentsDashboard({ overview, onRefresh }: { overview: Record<strin
   const paid = Number(overview.total_withdrawals_paid ?? 0);
   const remaining = Math.max(0, received - paid);
   const cash = Number(overview.actual_cash_available ?? 0);
-  const difference = cash - remaining;
-  const coverage = remaining > 0 ? (cash / remaining) * 100 : 100;
+  const availableCash = Number(overview.cash_available_total ?? cash);
+  const difference = availableCash - remaining;
+  const coverage = remaining > 0 ? (availableCash / remaining) * 100 : 100;
   useEffect(() => { setCashInput(String(cash)); }, [cash]);
   async function saveCash() {
     const value = Number(cashInput);
@@ -1429,18 +1430,19 @@ function CashPaymentsDashboard({ overview, onRefresh }: { overview: Record<strin
   const money = (value: number) => value.toLocaleString("en-PK", { maximumFractionDigits: 2 });
   return (
     <div className="flex flex-col gap-5">
-      <div><h2 className="text-2xl font-semibold">Cash & Payments</h2><p className="mt-1 text-sm text-muted-foreground">Total received, total paid, and the remaining payment obligation.</p></div>
+      <div><h2 className="text-2xl font-semibold">Cash & Payments</h2><p className="mt-1 text-sm text-muted-foreground">Your saved cash stays fixed; newly approved plan payments add to available cash.</p></div>
       <section className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-5"><p className="text-xs uppercase tracking-wide text-muted-foreground">Total Received</p><p className="mt-2 text-3xl font-semibold tabular-nums">PKR {money(received)}</p></CardContent></Card>
         <Card><CardContent className="p-5"><p className="text-xs uppercase tracking-wide text-muted-foreground">Total Paid</p><p className="mt-2 text-3xl font-semibold tabular-nums">PKR {money(paid)}</p></CardContent></Card>
         <Card className="border-primary/30 bg-primary/5"><CardContent className="p-5"><p className="text-xs uppercase tracking-wide text-muted-foreground">Remaining Payment</p><p className="mt-2 text-3xl font-semibold tabular-nums">PKR {money(remaining)}</p></CardContent></Card>
       </section>
-      <Card><CardHeader><CardTitle>Cash Coverage</CardTitle><p className="text-sm text-muted-foreground">Actual cash compared with the amount still payable.</p></CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Actual Cash</p><p className="mt-1 text-2xl font-semibold tabular-nums">PKR {money(cash)}</p></div>
+      <Card><CardHeader><CardTitle>Cash Coverage</CardTitle><p className="text-sm text-muted-foreground">New approved payments increase available cash without overwriting your saved cash amount.</p></CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Actual Cash (Saved)</p><p className="mt-1 text-2xl font-semibold tabular-nums">PKR {money(cash)}</p></div>
+          <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Available Cash</p><p className="mt-1 text-2xl font-semibold tabular-nums">PKR {money(availableCash)}</p><p className="mt-1 text-xs text-muted-foreground">Includes new approved sales since last cash update.</p></div>
           <div className={"rounded-xl border p-4 " + (difference >= 0 ? "bg-emerald-500/10" : "bg-destructive/10")}><p className="text-xs uppercase tracking-wide text-muted-foreground">{difference >= 0 ? "Surplus" : "Shortfall"}</p><p className="mt-1 text-2xl font-semibold tabular-nums">PKR {money(Math.abs(difference))}</p></div>
           <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Coverage</p><p className="mt-1 text-2xl font-semibold tabular-nums">{coverage.toLocaleString("en-PK", { maximumFractionDigits: 1 })}%</p></div>
-          <div className="flex gap-2 sm:col-span-3"><Input className="max-w-sm" type="number" min="0" step="0.01" value={cashInput} onChange={(event) => setCashInput(event.target.value)} placeholder="Actual cash available" /><Button onClick={() => void saveCash()} disabled={saving}>{saving ? "Saving…" : "Update Cash"}</Button></div>
+          <div className="flex gap-2 sm:col-span-2 xl:col-span-4"><Input className="max-w-sm" type="number" min="0" step="0.01" value={cashInput} onChange={(event) => setCashInput(event.target.value)} placeholder="Saved actual cash amount" /><Button onClick={() => void saveCash()} disabled={saving}>{saving ? "Saving…" : "Update Cash"}</Button></div>
         </CardContent>
       </Card>
     </div>
