@@ -2663,7 +2663,7 @@ function prettyJson(value: unknown) {
 
 function ReportsPanel() {
   type ReportType = "all" | "deposits" | "withdrawals" | "rewards" | "referrals" | "plans";
-  type ReportRow = AdminRow & { report_type?: string; user_name?: string; user_uid?: string; record_id?: string; transaction_no?: string };
+  type ReportRow = AdminRow & { report_type?: string; user_name?: string; user_uid?: string; record_id?: string; transaction_no?: string; reference_code?: string };
   const [reportType, setReportType] = useState<ReportType>("all");
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -2698,15 +2698,11 @@ function ReportsPanel() {
         return {
           ...row,
           report_type: row.report_type || reportType,
-          ...(String(row.report_type ?? reportType) === "withdrawals" && row.id ? {
-            transaction_no: "WD-" + String(row.id).replaceAll("-", "").slice(0, 10).toUpperCase(),
-            record_id: "WD-" + String(row.id).replaceAll("-", "").slice(0, 10).toUpperCase(),
+          ...(String(row.report_type ?? reportType) === "withdrawals" && row.reference_code ? {
+            transaction_no: String(row.reference_code),
+            record_id: String(row.reference_code),
           } : {}),
-          record_id: String(
-            String(row.report_type ?? reportType) === "withdrawals" && row.id
-              ? "WD-" + String(row.id).replaceAll("-", "").slice(0, 10).toUpperCase()
-              : row.record_id ?? row.transaction_no ?? row.id ?? "—"
-          ),
+          record_id: String(row.reference_code ?? row.record_id ?? row.transaction_no ?? row.id ?? "—"),
           user_name: profile?.full_name || profile?.username || (row.user_id ? "Unknown user" : "Platform"),
           user_uid: profile?.public_uid || "—",
         };
