@@ -3230,14 +3230,31 @@ function ModuleTable({
                             <div className="truncate text-[11px] text-slate-500">Withdrawal account</div>
                           </div>
                         ) : active === "withdrawals" && column === "account" ? (
-                          <div className="min-w-[180px]">
+                          <div className="min-w-[150px]">
                             {(() => {
                               const details = getWithdrawalAccountDetails(row.account);
                               return details.number || details.holder ? (
-                                <>
-                                  <div className="font-mono text-sm font-semibold text-slate-900">{details.number || "Number unavailable"}</div>
-                                  <div className="text-xs text-slate-500">{details.holder ? `Account holder: ${details.holder}` : "Account holder not provided"}</div>
-                                </>
+                                <div className="flex flex-col items-start gap-1.5">
+                                  <span className="max-w-[145px] truncate text-xs text-slate-600">{details.holder ? `Account holder: ${details.holder}` : "Account holder not provided"}</span>
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
+                                    onClick={() => {
+                                      const accountNumber = details.number;
+                                      if (!accountNumber) {
+                                        toast.error("Account number is not available.");
+                                        return;
+                                      }
+                                      void navigator.clipboard.writeText(accountNumber).then(
+                                        () => toast.success("Payment account number copied"),
+                                        () => toast.error("Copy failed. Please copy the number from the user's account details."),
+                                      );
+                                    }}
+                                  >
+                                    <Copy className="size-3.5" />
+                                    View / Copy Account
+                                  </button>
+                                </div>
                               ) : (
                                 <span className="text-xs font-medium text-amber-700">Account details missing</span>
                               );
