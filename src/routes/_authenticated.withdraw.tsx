@@ -425,7 +425,7 @@ function WithdrawPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive"><CircleX className="h-5 w-5" /> Withdrawal rejected</DialogTitle>
             <DialogDescription>
-              {reasonRow ? `${formatMoney(reasonRow.amount, "PKR")} · ADX-WD-${reasonRow.id.replaceAll("-", "").slice(0, 12).toUpperCase()}` : ""}
+              {reasonRow ? `${formatMoney(reasonRow.amount, "PKR")} · ${reasonRow.reference_code || `WD-${reasonRow.id.replaceAll("-", "").slice(0, 10).toUpperCase()}`}` : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
