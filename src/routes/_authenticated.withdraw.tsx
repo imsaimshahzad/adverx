@@ -85,14 +85,18 @@ function WithdrawPage() {
     if (rejectedIds.length) {
       const { data: refundEntries } = await userDb
         .from("ledger_entries")
-        .select("reference_id, note")
+        .select("reference_id, note, entry_type, created_at")
         .eq("user_id", state.user.id)
-        .eq("entry_type", "withdrawal_refund")
-        .in("reference_id", rejectedIds);
+        .in("reference_id", rejectedIds)
+        .not("note", "is", null)
+        .order("created_at", { ascending: false });
       reasonByWithdrawal = new Map(
         (refundEntries ?? [])
-          .filter((entry: { reference_id?: string | null; note?: string | null }) => entry.reference_id && entry.note)
-          .map((entry: { reference_id: string; note: string }) => [entry.reference_id, entry.note] as [string, string]),
+          .filter((entry: { reference_id?: string | null; note?: string | null }) => entry.reference_id && entry.note?.trim())
+          .reduce((map: Map<string, string>, entry: { reference_id: string; note: string }) => {
+            if (!map.has(entry.reference_id)) map.set(entry.reference_id, entry.note.trim());
+            return map;
+          }, new Map<string, string>()),
       );
     }
     setWithdrawalHistory(rows.map((row) => ({
