@@ -2676,42 +2676,41 @@ function ReportsPanel() {
     setLoading(true);
     try {
       const db = supabase as any;
-      const sources: Array<{ type: ReportType; table: string; kind?: string; entryType?: string }> = [
-        { type: "deposits", table: "deposits" },
-        { type: "withdrawals", table: "withdrawals" },
-        { type: "rewards", table: "ledger_entries", entryType: "ad_reward" },
-        { type: "referrals", table: "referral_commissions" },
-        { type: "plans", table: "transactions", kind: "PLAN_PURCHASE" },
-      ];
-      const selected = reportType === "all" ? sources : sources.filter((source) => source.type === reportType);
-      const results = await Promise.allSettled(selected.map(async (source) => {
-        let request = db.from(source.table).select("*").order("created_at", { ascending: false }).limit(1000);
-        if (source.kind) request = request.eq("kind", source.kind);
-        if (source.entryType) request = request.eq("entry_type", source.entryType);
-        const result = await request;
-        if (result.error) throw result.error;
-        return { source, rows: (result.data ?? []) as AdminRow[] };
-      }));
-      const raw: ReportRow[] = [];
-      for (const result of results) {
-        if (result.status !== "fulfilled") continue;
-        for (const row of result.value.rows) raw.push({ ...row, report_type: result.value.source.type, record_id: String(row.transaction_no ?? row.id ?? "—") });
-      }
+      const { data, error } = await db.rpc("admin_get_activity_reports", {
+        p_report_type: reportType,
+      });
+      if (error) throw error;
+
+      const raw = (Array.isArray(data) ? data : []) as ReportRow[];
       const userIds = [...new Set(raw.map((row) => String(row.user_id ?? "").trim()).filter((id) => id.length > 20))];
       const profileMap = new Map<string, AdminRow>();
       if (userIds.length) {
-        const { data: profiles } = await db.from("profiles").select("id, public_uid, full_name, username").in("id", userIds);
+        const { data: profiles, error: profileError } = await db
+          .from("profiles")
+          .select("id, public_uid, full_name, username")
+          .in("id", userIds);
+        if (profileError) console.warn("[AdverX Reports] Could not enrich report users:", profileError);
         for (const profile of profiles ?? []) profileMap.set(String(profile.id), profile);
       }
+
       setReportRows(raw.map((row) => {
         const profile = profileMap.get(String(row.user_id ?? ""));
-        return { ...row, user_name: profile?.full_name || profile?.username || (row.user_id ? "Unknown user" : "Platform"), user_uid: profile?.public_uid || "—" };
+        return {
+          ...row,
+          report_type: row.report_type || reportType,
+          record_id: String(row.record_id ?? row.transaction_no ?? row.id ?? "—"),
+          user_name: profile?.full_name || profile?.username || (row.user_id ? "Unknown user" : "Platform"),
+          user_uid: profile?.public_uid || "—",
+        };
       }));
       setPage(1);
     } catch (cause) {
+      console.error("[AdVerX Reports] Failed to load reports:", cause);
       toast.error(cause instanceof Error ? cause.message : "Unable to load reports.");
       setReportRows([]);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, [reportType]);
 
   useEffect(() => { void loadReports(); }, [loadReports]);
