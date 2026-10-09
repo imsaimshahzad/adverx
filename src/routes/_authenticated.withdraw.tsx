@@ -82,7 +82,6 @@ function WithdrawPage() {
       (data ?? []).map((row: { id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null }) => ({
         ...row,
         fee: row.fee == null ? 0 : Number(row.fee),
-        ...row,
         amount: row.amount == null ? null : Number(row.amount),
       })),
     );
@@ -127,7 +126,8 @@ function WithdrawPage() {
   }
 
   function escapeReceiptText(value: string) {
-    return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+    const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
   }
 
   function saveReceiptPdf() {
