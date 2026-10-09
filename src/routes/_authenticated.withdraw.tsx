@@ -374,7 +374,7 @@ function WithdrawPage() {
         )}
       </div>
       <Dialog open={Boolean(receiptRow)} onOpenChange={(open) => { if (!open) setReceiptRow(null); }}>
-        <DialogContent className="w-[calc(100vw-1rem)] max-w-md overflow-hidden p-3 sm:p-6">
+        <DialogContent className="w-[calc(100vw-1rem)] max-w-sm overflow-hidden p-3 sm:max-w-md sm:p-6">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base sm:text-lg">AdverX Withdrawal Receipt</DialogTitle>
             <DialogDescription className="text-xs">Generated from your saved withdrawal record.</DialogDescription>
@@ -383,11 +383,11 @@ function WithdrawPage() {
             const receipt = getReceiptDetails(receiptRow);
             return (
               <div className="w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
-                <div className="bg-primary px-4 py-2.5 text-primary-foreground sm:px-5 sm:py-4">
+                <div className="bg-primary px-4 py-3 text-primary-foreground sm:px-5 sm:py-4">
                   <p className="text-lg font-extrabold tracking-wide sm:text-xl">ADVER<span className="text-amber-400">X</span></p>
                   <p className="text-[11px] opacity-85">Withdrawal Receipt</p>
                 </div>
-                <div className="px-3 py-3 text-center sm:px-5 sm:py-5">
+                <div className="px-3 py-4 text-center sm:px-5 sm:py-5">
                   <div className="mx-auto grid h-8 w-8 place-items-center rounded-full bg-emerald-500/10 text-lg font-bold text-emerald-600 sm:h-10 sm:w-10">✓</div>
                   <p className="mt-1.5 text-xl font-bold sm:mt-2 sm:text-2xl">{formatMoney(receipt.amount, "PKR")}</p>
                   <Badge className="mt-1 border-0 bg-emerald-500/10 px-2 py-0 text-xs text-emerald-700">Paid</Badge>
@@ -401,13 +401,13 @@ function WithdrawPage() {
                     ["Account Number", receipt.accountNumber],
                     ["Amount Sent", formatMoney(receipt.amount, "PKR")],
                   ].map(([label, value]) => (
-                    <div key={label} className="flex min-w-0 items-start justify-between gap-2 py-2 text-xs sm:gap-4 sm:py-3 sm:text-sm">
+                    <div key={label} className="flex min-w-0 items-start justify-between gap-2 py-2.5 text-xs sm:gap-4 sm:py-3 sm:text-sm">
                       <span className="w-[38%] shrink-0 text-muted-foreground">{label}</span>
                       <span className="min-w-0 flex-1 break-words text-right font-semibold [overflow-wrap:anywhere]">{value}</span>
                     </div>
                   ))}
                 </div>
-                <div className="bg-muted/40 px-3 py-2 text-center text-[10px] leading-snug text-muted-foreground sm:px-5 sm:py-3 sm:text-xs">
+                <div className="bg-muted/40 px-3 py-2.5 text-center text-[10px] leading-snug text-muted-foreground sm:px-5 sm:py-3 sm:text-xs">
                   Computer-generated receipt.<br />adverx.online
                 </div>
               </div>
