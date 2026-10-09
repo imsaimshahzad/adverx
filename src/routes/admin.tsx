@@ -1661,20 +1661,20 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                       {signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR
                     </p>
                   </div>
-                  <div className="mt-3 grid gap-2 border-t pt-3 text-sm">
+                  <div className="mt-3 grid min-w-0 gap-2 border-t pt-3 text-sm">
                     <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Purpose / Reason: </span><span className="break-words [overflow-wrap:anywhere]">{formatValue(row.reason)}</span></div>
-                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Reference: </span><span className="break-all">{formatValue(row.reference)}</span></div>
-                    <div><span className="text-muted-foreground">Balance After: </span><span className="font-medium tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</span></div>
+                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Reference: </span><span className="break-all [overflow-wrap:anywhere]">{formatValue(row.reference)}</span></div>
+                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Balance After: </span><span className="inline-block max-w-full break-words font-medium tabular-nums [overflow-wrap:anywhere]">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</span></div>
                   </div>
                 </div>
               );
             }) : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No Bonus & Promotion Fund activity yet.</div>}
           </div>
 
-          <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full min-w-[760px] table-fixed text-sm">
+          <div className="hidden max-w-full overflow-x-auto sm:block">
+            <table className="w-full min-w-[1040px] table-fixed text-sm">
               <colgroup>
-                <col className="w-[14%]" /><col className="w-[12%]" /><col className="w-[13%]" /><col className="w-[14%]" /><col className="w-[24%]" /><col className="w-[16%]" /><col className="w-[16%]" />
+                <col className="w-[15%]" /><col className="w-[12%]" /><col className="w-[10%]" /><col className="w-[12%]" /><col className="w-[24%]" /><col className="w-[13%]" /><col className="w-[14%]" />
               </colgroup>
               <thead className="bg-slate-50/95">
                 <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -1692,8 +1692,8 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                       <td className="whitespace-nowrap p-4 font-mono text-xs font-semibold text-primary">{shortId(String(row.id ?? ""))}</td>
                       <td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td>
                       <td className={`whitespace-nowrap p-4 text-right font-medium tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td>
-                      <td className="max-w-0 p-4"><span className="block truncate" title={String(row.reason ?? "—")}>{formatValue(row.reason)}</span></td>
-                      <td className="max-w-0 p-4"><span className="block truncate" title={String(row.reference ?? "—")}>{formatValue(row.reference)}</span></td>
+                      <td className="min-w-0 whitespace-normal break-words p-4 align-top [overflow-wrap:anywhere]"><span title={String(row.reason ?? "—")}>{formatValue(row.reason)}</span></td>
+                      <td className="min-w-0 whitespace-normal break-all p-4 align-top [overflow-wrap:anywhere]"><span title={String(row.reference ?? "—")}>{formatValue(row.reference)}</span></td>
                       <td className="whitespace-nowrap p-4 text-right font-medium tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td>
                     </tr>
                   );
