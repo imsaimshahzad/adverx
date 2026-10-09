@@ -133,7 +133,7 @@ function WithdrawPage() {
   function saveReceiptPdf() {
     if (!receiptRow || String(receiptRow.status).toLowerCase() !== "paid") return;
     const receipt = getReceiptDetails(receiptRow);
-    const popup = window.open("", "_blank", "width=520,height=760");
+    const popup = window.open("", "_blank", "popup,width=520,height=760");
     if (!popup) {
       toast.error("Please allow pop-ups to save the receipt as PDF.");
       return;
@@ -146,7 +146,7 @@ function WithdrawPage() {
       ["Account Number", receipt.accountNumber],
       ["Amount Sent", formatMoney(receipt.amount, "PKR")],
     ];
-    popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>AdverX Withdrawal Receipt</title><style>body{font-family:Arial,sans-serif;color:#16302e;padding:24px}.receipt{max-width:440px;margin:auto;border:1px solid #d9e6e4;border-radius:14px;overflow:hidden}.head{background:#0d8a80;color:white;padding:22px;font-size:24px;font-weight:bold}.head span{color:#f28c00}.paid{text-align:center;padding:22px;color:#0d8a80}.amount{font-size:30px;font-weight:bold;margin-top:8px}.row{display:flex;justify-content:space-between;gap:18px;padding:12px 20px;border-top:1px solid #d9e6e4;font-size:13px}.row b{text-align:right;overflow-wrap:anywhere}.foot{text-align:center;padding:18px;background:#f8fbfa;font-size:12px;color:#6b7f7d}@media print{body{padding:0}}</style></head><body><div class="receipt"><div class="head">ADVER<span>X</span></div><div class="paid">Withdrawal Paid<div class="amount">${escapeReceiptText(formatMoney(receipt.amount, "PKR"))}</div></div>${rows.map(([label, value]) => `<div class="row"><span>${escapeReceiptText(label)}</span><b>${escapeReceiptText(value)}</b></div>`).join("")}<div class="foot">Computer-generated receipt · adverx.online</div></div><script>window.onload=()=>window.print()</script></body></html>`);
+    popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>AdverX Withdrawal Receipt</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#16302e;padding:clamp(8px,4vw,24px);margin:0}.receipt{width:100%;max-width:440px;margin:0 auto;border:1px solid #d9e6e4;border-radius:14px;overflow:hidden}.head{background:#0d8a80;color:white;padding:clamp(16px,4vw,22px);font-size:clamp(21px,5vw,24px);font-weight:bold}.head span{color:#f28c00}.paid{text-align:center;padding:clamp(18px,5vw,22px);color:#0d8a80}.amount{font-size:clamp(24px,7vw,30px);font-weight:bold;margin-top:8px;overflow-wrap:anywhere}.row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px clamp(14px,4vw,20px);border-top:1px solid #d9e6e4;font-size:13px;line-height:1.45}.row span{flex:0 0 42%;color:#526966}.row b{flex:1;min-width:0;text-align:right;overflow-wrap:anywhere;word-break:break-word}.foot{text-align:center;padding:16px;background:#f8fbfa;font-size:12px;color:#6b7f7d}@media(max-width:360px){.row{flex-direction:column;gap:4px}.row span{flex-basis:auto}.row b{text-align:left;width:100%}}@media print{body{padding:0;background:#fff}.receipt{max-width:100%;border-radius:0;break-inside:avoid}.row{break-inside:avoid}}</style></head><body><div class="receipt"><div class="head">ADVER<span>X</span></div><div class="paid">Withdrawal Paid<div class="amount">${escapeReceiptText(formatMoney(receipt.amount, "PKR"))}</div></div>${rows.map(([label, value]) => `<div class="row"><span>${escapeReceiptText(label)}</span><b>${escapeReceiptText(value)}</b></div>`).join("")}<div class="foot">Computer-generated receipt · adverx.online</div></div><script>window.onload=()=>window.print()</script></body></html>`);
     popup.document.close();
   }
 
@@ -374,7 +374,7 @@ function WithdrawPage() {
         )}
       </div>
       <Dialog open={Boolean(receiptRow)} onOpenChange={(open) => { if (!open) setReceiptRow(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[90dvh] w-[calc(100vw-1rem)] max-w-md overflow-y-auto sm:w-full">
           <DialogHeader>
             <DialogTitle>AdverX Withdrawal Receipt</DialogTitle>
             <DialogDescription>Receipt details are generated from your saved withdrawal record.</DialogDescription>
@@ -382,7 +382,7 @@ function WithdrawPage() {
           {receiptRow ? (() => {
             const receipt = getReceiptDetails(receiptRow);
             return (
-              <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div className="w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
                 <div className="bg-primary px-5 py-4 text-primary-foreground">
                   <p className="text-xl font-extrabold tracking-wide">ADVER<span className="text-amber-400">X</span></p>
                   <p className="mt-1 text-xs opacity-85">Withdrawal Receipt</p>
@@ -392,7 +392,7 @@ function WithdrawPage() {
                   <p className="mt-3 text-2xl font-bold">{formatMoney(receipt.amount, "PKR")}</p>
                   <Badge className="mt-2 border-0 bg-emerald-500/10 text-emerald-700">Paid</Badge>
                 </div>
-                <div className="divide-y divide-border border-t border-dashed border-border px-5">
+                <div className="divide-y divide-border border-t border-dashed border-border px-3 sm:px-5">
                   {[
                     ["Receipt No.", receipt.receiptNo],
                     ["Date", receipt.date],
@@ -401,9 +401,9 @@ function WithdrawPage() {
                     ["Account Number", receipt.accountNumber],
                     ["Amount Sent", formatMoney(receipt.amount, "PKR")],
                   ].map(([label, value]) => (
-                    <div key={label} className="flex items-start justify-between gap-4 py-3 text-sm">
-                      <span className="text-muted-foreground">{label}</span>
-                      <span className="break-all text-right font-semibold">{value}</span>
+                    <div key={label} className="flex min-w-0 flex-col gap-1 py-3 text-sm sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <span className="text-xs text-muted-foreground sm:text-sm">{label}</span>
+                      <span className="min-w-0 break-words text-left font-semibold [overflow-wrap:anywhere] sm:max-w-[62%] sm:text-right">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -413,9 +413,9 @@ function WithdrawPage() {
               </div>
             );
           })() : null}
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button type="button" variant="outline" onClick={saveReceiptImage}><Download className="mr-2 h-4 w-4" /> Save Image</Button>
-            <Button type="button" onClick={saveReceiptPdf}>Save as PDF</Button>
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2">
+            <Button type="button" variant="outline" className="w-full" onClick={saveReceiptImage}><Download className="mr-2 h-4 w-4" /> Save Image</Button>
+            <Button type="button" className="w-full" onClick={saveReceiptPdf}>Save as PDF</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
