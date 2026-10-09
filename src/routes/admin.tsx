@@ -2724,7 +2724,10 @@ function ReportsPanel() {
       if (Number.isFinite(time) && (time < from || time > to)) return false;
       if (!Number.isFinite(time) && (from !== Number.NEGATIVE_INFINITY || to !== Number.POSITIVE_INFINITY)) return false;
       if (!q) return true;
-      return [row.report_type, row.user_name, row.user_uid, row.transaction_no, row.record_id, row.amount, row.status, row.method, row.entry_type, row.kind, row.source, row.description, row.note].filter(Boolean).join(" ").toLowerCase().includes(q);
+      const searchableText = [row.report_type, row.user_name, row.user_uid, row.transaction_no, row.record_id, row.id, row.amount, row.status, row.method, row.entry_type, row.kind, row.source, row.description, row.note].filter(Boolean).join(" ").toLowerCase();
+      const withdrawalRef = q.match(/adx-wd-([a-f0-9]{12})/i)?.[1];
+      const idPrefix = String(row.id ?? "").replaceAll("-", "").slice(0, 12).toLowerCase();
+      return searchableText.includes(q) || Boolean(withdrawalRef && idPrefix === withdrawalRef.toLowerCase());
     }).sort((a, b) => Date.parse(String(b.created_at ?? "")) - Date.parse(String(a.created_at ?? "")));
   }, [fromDate, reportRows, search, toDate]);
 
