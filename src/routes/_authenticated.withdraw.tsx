@@ -374,23 +374,23 @@ function WithdrawPage() {
         )}
       </div>
       <Dialog open={Boolean(receiptRow)} onOpenChange={(open) => { if (!open) setReceiptRow(null); }}>
-        <DialogContent className="max-h-[90dvh] w-[calc(100vw-1rem)] max-w-md overflow-y-auto sm:w-full">
-          <DialogHeader>
-            <DialogTitle>AdverX Withdrawal Receipt</DialogTitle>
-            <DialogDescription>Receipt details are generated from your saved withdrawal record.</DialogDescription>
+        <DialogContent className="w-[calc(100vw-1rem)] max-w-md overflow-hidden p-3 sm:p-6">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-base sm:text-lg">AdverX Withdrawal Receipt</DialogTitle>
+            <DialogDescription className="text-xs">Generated from your saved withdrawal record.</DialogDescription>
           </DialogHeader>
           {receiptRow ? (() => {
             const receipt = getReceiptDetails(receiptRow);
             return (
               <div className="w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
-                <div className="bg-primary px-5 py-4 text-primary-foreground">
-                  <p className="text-xl font-extrabold tracking-wide">ADVER<span className="text-amber-400">X</span></p>
-                  <p className="mt-1 text-xs opacity-85">Withdrawal Receipt</p>
+                <div className="bg-primary px-4 py-2.5 text-primary-foreground sm:px-5 sm:py-4">
+                  <p className="text-lg font-extrabold tracking-wide sm:text-xl">ADVER<span className="text-amber-400">X</span></p>
+                  <p className="text-[11px] opacity-85">Withdrawal Receipt</p>
                 </div>
-                <div className="px-5 py-6 text-center">
-                  <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-emerald-500/10 text-xl font-bold text-emerald-600">✓</div>
-                  <p className="mt-3 text-2xl font-bold">{formatMoney(receipt.amount, "PKR")}</p>
-                  <Badge className="mt-2 border-0 bg-emerald-500/10 text-emerald-700">Paid</Badge>
+                <div className="px-3 py-3 text-center sm:px-5 sm:py-5">
+                  <div className="mx-auto grid h-8 w-8 place-items-center rounded-full bg-emerald-500/10 text-lg font-bold text-emerald-600 sm:h-10 sm:w-10">✓</div>
+                  <p className="mt-1.5 text-xl font-bold sm:mt-2 sm:text-2xl">{formatMoney(receipt.amount, "PKR")}</p>
+                  <Badge className="mt-1 border-0 bg-emerald-500/10 px-2 py-0 text-xs text-emerald-700">Paid</Badge>
                 </div>
                 <div className="divide-y divide-border border-t border-dashed border-border px-3 sm:px-5">
                   {[
@@ -401,21 +401,21 @@ function WithdrawPage() {
                     ["Account Number", receipt.accountNumber],
                     ["Amount Sent", formatMoney(receipt.amount, "PKR")],
                   ].map(([label, value]) => (
-                    <div key={label} className="flex min-w-0 flex-col gap-1 py-3 text-sm sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                      <span className="text-xs text-muted-foreground sm:text-sm">{label}</span>
-                      <span className="min-w-0 break-words text-left font-semibold [overflow-wrap:anywhere] sm:max-w-[62%] sm:text-right">{value}</span>
+                    <div key={label} className="flex min-w-0 items-start justify-between gap-2 py-2 text-xs sm:gap-4 sm:py-3 sm:text-sm">
+                      <span className="w-[38%] shrink-0 text-muted-foreground">{label}</span>
+                      <span className="min-w-0 flex-1 break-words text-right font-semibold [overflow-wrap:anywhere]">{value}</span>
                     </div>
                   ))}
                 </div>
-                <div className="bg-muted/40 px-5 py-4 text-center text-xs leading-relaxed text-muted-foreground">
+                <div className="bg-muted/40 px-3 py-2 text-center text-[10px] leading-snug text-muted-foreground sm:px-5 sm:py-3 sm:text-xs">
                   Computer-generated receipt.<br />adverx.online
                 </div>
               </div>
             );
           })() : null}
-          <DialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2">
-            <Button type="button" variant="outline" className="w-full" onClick={saveReceiptImage}><Download className="mr-2 h-4 w-4" /> Save Image</Button>
-            <Button type="button" className="w-full" onClick={saveReceiptPdf}>Save as PDF</Button>
+          <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
+            <Button type="button" variant="outline" size="sm" className="w-full px-2 text-xs sm:text-sm" onClick={saveReceiptImage}><Download className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Save Image</Button>
+            <Button type="button" size="sm" className="w-full px-2 text-xs sm:text-sm" onClick={saveReceiptPdf}>Save as PDF</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
