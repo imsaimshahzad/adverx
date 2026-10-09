@@ -92,7 +92,12 @@ function WithdrawPage() {
         .order("created_at", { ascending: false });
       reasonByWithdrawal = new Map(
         (refundEntries ?? [])
-          .filter((entry: { reference_id?: string | null; note?: string | null }) => entry.reference_id && entry.note?.trim())
+          .filter((entry: { reference_id?: string | null; note?: string | null }) => {
+            const note = entry.note?.trim();
+            if (!entry.reference_id || !note) return false;
+            // Refund ledger descriptions are not admin rejection reasons.
+            return !/^(withdrawal refund|withdrawal rejected|refund for rejected withdrawal)$/i.test(note);
+          })
           .reduce((map: Map<string, string>, entry: { reference_id: string; note: string }) => {
             if (!map.has(entry.reference_id)) map.set(entry.reference_id, entry.note.trim());
             return map;
