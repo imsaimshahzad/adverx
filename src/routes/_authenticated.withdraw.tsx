@@ -73,42 +73,23 @@ function WithdrawPage() {
   const loadWithdrawalHistory = useCallback(async () => {
     if (!state.user?.id) return;
     setHistoryLoading(true);
-    const { data } = await userDb
+    const { data, error } = await userDb
       .from("withdrawals")
-      .select("id, amount, status, created_at, method, account, fee")
+      .select("id, amount, status, created_at, method, account, fee, rejection_reason")
       .eq("user_id", state.user.id)
       .order("created_at", { ascending: false })
       .limit(10);
-    const rows = (data ?? []) as Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null }>;
-    const rejectedIds = rows.filter((row) => String(row.status ?? "").toLowerCase() === "rejected").map((row) => row.id);
-    let reasonByWithdrawal = new Map<string, string>();
-    if (rejectedIds.length) {
-      const { data: refundEntries } = await userDb
-        .from("ledger_entries")
-        .select("reference_id, note, entry_type, created_at")
-        .eq("user_id", state.user.id)
-        .in("reference_id", rejectedIds)
-        .not("note", "is", null)
-        .order("created_at", { ascending: false });
-      reasonByWithdrawal = new Map(
-        (refundEntries ?? [])
-          .filter((entry: { reference_id?: string | null; note?: string | null }) => {
-            const note = entry.note?.trim();
-            if (!entry.reference_id || !note) return false;
-            // Refund ledger descriptions are not admin rejection reasons.
-            return !/^(withdrawal refund|withdrawal rejected|refund for rejected withdrawal)$/i.test(note);
-          })
-          .reduce((map: Map<string, string>, entry: { reference_id: string; note: string }) => {
-            if (!map.has(entry.reference_id)) map.set(entry.reference_id, entry.note.trim());
-            return map;
-          }, new Map<string, string>()),
-      );
+    if (error) {
+      console.error("[AdverX] Failed to load withdrawal history:", error);
+      setHistoryLoading(false);
+      return;
     }
+    const rows = (data ?? []) as Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null; rejection_reason?: string | null }>;
     setWithdrawalHistory(rows.map((row) => ({
       ...row,
       fee: row.fee == null ? 0 : Number(row.fee),
       amount: row.amount == null ? null : Number(row.amount),
-      rejectionReason: reasonByWithdrawal.get(row.id) ?? null,
+      rejectionReason: row.rejection_reason?.trim() || null,
     })));
     setHistoryLoading(false);
   }, [state.user?.id]);
