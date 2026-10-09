@@ -325,6 +325,36 @@ const statusActions: Partial<Record<AdminModule, string[]>> = {
   support: ["open", "in_progress", "resolved", "closed"],
 };
 
+function getWithdrawalAccountDetails(value: unknown): { holder: string; number: string } {
+  let details: Record<string, unknown> = {};
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    details = value as Record<string, unknown>;
+  } else if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        details = parsed as Record<string, unknown>;
+      } else {
+        return { holder: "", number: value.trim() };
+      }
+    } catch {
+      // Older records may store the account number as plain text.
+      return { holder: "", number: value.trim() };
+    }
+  }
+  const pick = (...keys: string[]) => {
+    for (const key of keys) {
+      const item = details[key];
+      if (typeof item === "string" && item.trim()) return item.trim();
+    }
+    return "";
+  };
+  return {
+    holder: pick("holder", "account_holder", "accountHolder", "holder_name", "name"),
+    number: pick("number", "account_number", "accountNumber", "mobile", "phone", "mobile_number"),
+  };
+}
+
 export function AdminRoute() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -2915,7 +2945,7 @@ function ModuleTable({
   : active === "deposits"
   ? ["deposit_user_name", "deposit_user_uid", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "withdrawals"
-  ? ["user_id_name", "user_id_uid", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
+  ? ["user_id_name", "user_id_uid", "account", "amount", "method", "status", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "referrals"
   ? ["referrer_user_name", "referrer_user_uid", "referred_user_name", "referred_user_uid", "level", "created_at"].filter((column) => rawColumns.includes(column))
   : active === "referral-commissions"
@@ -3109,6 +3139,7 @@ function ModuleTable({
                         } as Record<string, string>)[column] ?? column : active === "withdrawals" ? ({
                           user_id_name: "User",
                           user_id_uid: "UID",
+                          account: "Payment Account",
                           amount: "Amount (PKR)",
                           method: "Method",
                           status: "Status",
@@ -3197,6 +3228,20 @@ function ModuleTable({
                           <div className="min-w-[150px]">
                             <div className="truncate font-medium text-slate-900">{String(row.user_id_name ?? "Unknown user")}</div>
                             <div className="truncate text-[11px] text-slate-500">Withdrawal account</div>
+                          </div>
+                        ) : active === "withdrawals" && column === "account" ? (
+                          <div className="min-w-[180px]">
+                            {(() => {
+                              const details = getWithdrawalAccountDetails(row.account);
+                              return details.number || details.holder ? (
+                                <>
+                                  <div className="font-mono text-sm font-semibold text-slate-900">{details.number || "Number unavailable"}</div>
+                                  <div className="text-xs text-slate-500">{details.holder ? `Account holder: ${details.holder}` : "Account holder not provided"}</div>
+                                </>
+                              ) : (
+                                <span className="text-xs font-medium text-amber-700">Account details missing</span>
+                              );
+                            })()}
                           </div>
                         ) : active === "withdrawals" && column === "user_id_uid" ? (
                           <span className="font-mono text-xs font-semibold text-slate-700">{String(row.user_id_uid ?? "—")}</span>
