@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ReceiptText, Download } from "lucide-react";
+import { ReceiptText, Download, ArrowUpRight, Clock3, CircleX, Info } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -64,7 +64,8 @@ function WithdrawPage() {
     });
   }, [methodId, state.user]);
   const [details, setDetails] = useState<Record<string, string>>({});
-  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null }>>([]);
+  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null; rejectionReason?: string | null }>>([]);
+  const [reasonRow, setReasonRow] = useState<{ id: string; amount: number | null; rejectionReason?: string | null } | null>(null);
   const [receiptRow, setReceiptRow] = useState<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null } | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const selectedMethod = WITHDRAWAL_METHODS.find((method) => method.id === methodId);
@@ -78,13 +79,28 @@ function WithdrawPage() {
       .eq("user_id", state.user.id)
       .order("created_at", { ascending: false })
       .limit(10);
-    setWithdrawalHistory(
-      (data ?? []).map((row: { id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null }) => ({
-        ...row,
-        fee: row.fee == null ? 0 : Number(row.fee),
-        amount: row.amount == null ? null : Number(row.amount),
-      })),
-    );
+    const rows = (data ?? []) as Array<{ id: string; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null }>;
+    const rejectedIds = rows.filter((row) => String(row.status ?? "").toLowerCase() === "rejected").map((row) => row.id);
+    let reasonByWithdrawal = new Map<string, string>();
+    if (rejectedIds.length) {
+      const { data: refundEntries } = await userDb
+        .from("ledger_entries")
+        .select("reference_id, note")
+        .eq("user_id", state.user.id)
+        .eq("entry_type", "withdrawal_refund")
+        .in("reference_id", rejectedIds);
+      reasonByWithdrawal = new Map(
+        (refundEntries ?? [])
+          .filter((entry: { reference_id?: string | null; note?: string | null }) => entry.reference_id && entry.note)
+          .map((entry: { reference_id: string; note: string }) => [entry.reference_id, entry.note]),
+      );
+    }
+    setWithdrawalHistory(rows.map((row) => ({
+      ...row,
+      fee: row.fee == null ? 0 : Number(row.fee),
+      amount: row.amount == null ? null : Number(row.amount),
+      rejectionReason: reasonByWithdrawal.get(row.id) ?? null,
+    })));
     setHistoryLoading(false);
   }, [state.user?.id]);
   useEffect(() => {
@@ -331,42 +347,55 @@ function WithdrawPage() {
         </p>
       </div>
 
-      <div className="surface mt-3 overflow-hidden">
-        <div className="border-b border-border/60 p-4">
-          <p className="text-sm font-semibold">Withdrawal history</p>
-          <p className="mt-1 text-xs text-muted-foreground">Your recent withdrawal requests and their current status.</p>
+      <div className="surface mt-3 overflow-hidden rounded-2xl">
+        <div className="border-b border-border/60 px-4 py-4 sm:px-6">
+          <p className="text-base font-semibold">Withdrawal history</p>
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Your recent withdrawal requests and their current status.</p>
         </div>
         {historyLoading ? (
           <div className="p-5 text-center text-xs text-muted-foreground">Loading withdrawal history…</div>
         ) : withdrawalHistory.length === 0 ? (
           <div className="p-5 text-center text-xs text-muted-foreground">No withdrawals yet.</div>
         ) : (
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-border/60">
             {withdrawalHistory.map((item) => {
               const status = String(item.status ?? "pending").toLowerCase();
+              const isPaid = status === "paid";
+              const isRejected = status === "rejected";
+              const isPending = !isPaid && !isRejected;
               const statusLabel = STATUS_LABEL[status] ?? status.replaceAll("_", " ");
-              const statusClass =
-                status === "approved" || status === "paid"
-                  ? "bg-success/10 text-success"
-                  : status === "rejected"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-muted text-muted-foreground";
+              const tone = isPaid
+                ? { icon: "bg-teal-500/10 text-teal-600", badge: "bg-teal-500/10 text-teal-700 dark:text-teal-300" }
+                : isRejected
+                  ? { icon: "bg-red-500/10 text-red-600", badge: "bg-red-500/10 text-red-700 dark:text-red-300" }
+                  : { icon: "bg-amber-500/10 text-amber-700", badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300" };
               return (
-                <div key={item.id} className="flex items-center justify-between gap-4 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="num text-sm font-semibold">{formatMoney(item.amount, "PKR").replace(/^\+/, "")}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}
-                    </p>
+                <div key={item.id} className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 px-4 py-4 transition-colors hover:bg-muted/20 sm:grid-cols-[2.75rem_minmax(0,1fr)_minmax(7rem,0.8fr)_minmax(9rem,auto)] sm:gap-4 sm:px-6 sm:py-5">
+                  <div className={`grid h-10 w-10 place-items-center rounded-xl ${tone.icon} sm:h-11 sm:w-11`}>
+                    {isPaid ? <ArrowUpRight className="h-5 w-5" /> : isRejected ? <CircleX className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
                   </div>
-                  <Badge className={`shrink-0 rounded-full border-0 px-2.5 py-1 text-[11px] font-medium ${statusClass}`}>
-                    {statusLabel}
-                  </Badge>
-                  {status === "paid" ? (
-                    <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setReceiptRow(item)}>
-                      <ReceiptText className="mr-1.5 h-4 w-4" /> Receipt
-                    </Button>
-                  ) : null}
+                  <div className="min-w-0">
+                    <p className="num text-base font-bold sm:text-[17px]">{formatMoney(item.amount, "PKR").replace(/^\+/, "")}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                  </div>
+                  <div className="col-start-2 row-start-2 min-w-0 sm:col-start-3 sm:row-start-1 sm:text-center">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${tone.badge}`}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />{statusLabel}
+                    </span>
+                  </div>
+                  <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-4 sm:row-start-1 sm:justify-self-end">
+                    {isPaid ? (
+                      <Button type="button" className="w-full gap-2 sm:w-auto" size="sm" onClick={() => setReceiptRow(item)}>
+                        <ReceiptText className="h-4 w-4" /> View receipt
+                      </Button>
+                    ) : isRejected ? (
+                      <Button type="button" variant="outline" className="w-full gap-2 border-red-500/30 bg-red-500/5 text-red-700 hover:bg-red-500/10 dark:text-red-300 sm:w-auto" size="sm" onClick={() => setReasonRow(item)}>
+                        <Info className="h-4 w-4" /> View reason
+                      </Button>
+                    ) : (
+                      <p className="text-left text-xs text-muted-foreground sm:max-w-[150px] sm:text-right">Receipt is ready after payment</p>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -416,6 +445,25 @@ function WithdrawPage() {
           <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
             <Button type="button" variant="outline" size="sm" className="h-8 w-full px-1.5 text-[11px] sm:text-xs" onClick={saveReceiptImage}><Download className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Save Image</Button>
             <Button type="button" size="sm" className="h-8 w-full px-1.5 text-[11px] sm:text-xs" onClick={saveReceiptPdf}>Save as PDF</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={Boolean(reasonRow)} onOpenChange={(open) => { if (!open) setReasonRow(null); }}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive"><CircleX className="h-5 w-5" /> Withdrawal rejected</DialogTitle>
+            <DialogDescription>
+              {reasonRow ? `${formatMoney(reasonRow.amount, "PKR")} · ADX-WD-${reasonRow.id.replaceAll("-", "").slice(0, 12).toUpperCase()}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Reason from admin</p>
+            <div className="rounded-lg border-l-[3px] border-destructive bg-muted/50 px-3 py-3 text-sm leading-relaxed">
+              {reasonRow?.rejectionReason || "No reason was added by the admin."}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" className="w-full" onClick={() => setReasonRow(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
