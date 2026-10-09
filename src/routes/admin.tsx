@@ -1175,6 +1175,7 @@ export function AdminRoute() {
                 void load();
               }}
               onReceipt={openReceipt}
+              onViewPaymentAccount={setPaymentAccountDialog}
               managementTable={Boolean(managementTable)}
               onEdit={setEditingRow}
               onDelete={setDeleteTarget}
@@ -2819,6 +2820,7 @@ function ModuleTable({
   setCreateOpen,
   onCreated,
   onReceipt,
+  onViewPaymentAccount,
   managementTable,
   onEdit,
   onDelete,
@@ -2849,6 +2851,7 @@ function ModuleTable({
   setCreateOpen: (open: boolean) => void;
   onCreated: () => void;
   onReceipt: (row: AdminRow) => void;
+  onViewPaymentAccount: (details: { holder: string; number: string }) => void;
   managementTable: boolean;
   onEdit: (row: AdminRow) => void;
   onDelete: (row: AdminRow) => void;
@@ -3290,24 +3293,20 @@ function ModuleTable({
                         ) : active === "withdrawals" && column === "user_id_name" ? (
                           <div className="min-w-[150px]">
                             <div className="truncate font-medium text-slate-900">{String(row.user_id_name ?? "Unknown user")}</div>
-                            <div className="truncate text-[11px] text-slate-500">Withdrawal account</div>
                           </div>
                         ) : active === "withdrawals" && column === "account" ? (
                           <div className="min-w-[150px]">
                             {(() => {
                               const details = getWithdrawalAccountDetails(row.account);
                               return details.number || details.holder ? (
-                                <div className="flex flex-col items-start gap-1.5">
-                                  <span className="max-w-[145px] truncate text-xs text-slate-600">{details.holder ? `Account holder: ${details.holder}` : "Account holder not provided"}</span>
-                                  <button
-                                    type="button"
-                                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
-                                    onClick={() => setPaymentAccountDialog(details)}
-                                  >
-                                    <Eye className="size-3.5" />
-                                    View Payment Account
-                                  </button>
-                                </div>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
+                                  onClick={() => onViewPaymentAccount(details)}
+                                >
+                                  <Eye className="size-3.5" />
+                                  View Payment Account
+                                </button>
                               ) : (
                                 <span className="text-xs font-medium text-amber-700">Account details missing</span>
                               );
