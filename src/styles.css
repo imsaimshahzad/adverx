@@ -945,3 +945,9 @@ input:not([type="checkbox"]):not([type="radio"]):disabled, textarea:disabled, se
   color: #e2e8f0;
 }
 .dark .ad-task-skeleton { background: #1e293b; }
+
+/* Keep text clear of leading search icons across the entire app. */
+:where(div, label, form):has(> svg.lucide-search) > input,
+:where(div, label, form):has(> svg.lucide-search) > [data-slot="input"] {
+  padding-left: 2.75rem !important;
+}
