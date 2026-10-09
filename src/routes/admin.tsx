@@ -2698,7 +2698,15 @@ function ReportsPanel() {
         return {
           ...row,
           report_type: row.report_type || reportType,
-          record_id: String(row.record_id ?? row.transaction_no ?? row.id ?? "—"),
+          ...(String(row.report_type ?? reportType) === "withdrawals" && row.id ? {
+            transaction_no: "WD-" + String(row.id).replaceAll("-", "").slice(0, 10).toUpperCase(),
+            record_id: "WD-" + String(row.id).replaceAll("-", "").slice(0, 10).toUpperCase(),
+          } : {}),
+          record_id: String(
+            String(row.report_type ?? reportType) === "withdrawals" && row.id
+              ? "WD-" + String(row.id).replaceAll("-", "").slice(0, 10).toUpperCase()
+              : row.record_id ?? row.transaction_no ?? row.id ?? "—"
+          ),
           user_name: profile?.full_name || profile?.username || (row.user_id ? "Unknown user" : "Platform"),
           user_uid: profile?.public_uid || "—",
         };
@@ -2725,9 +2733,9 @@ function ReportsPanel() {
       if (!Number.isFinite(time) && (from !== Number.NEGATIVE_INFINITY || to !== Number.POSITIVE_INFINITY)) return false;
       if (!q) return true;
       const searchableText = [row.report_type, row.user_name, row.user_uid, row.transaction_no, row.record_id, row.id, row.amount, row.status, row.method, row.entry_type, row.kind, row.source, row.description, row.note].filter(Boolean).join(" ").toLowerCase();
-      const withdrawalRef = q.match(/adx-wd-([a-f0-9]{12})/i)?.[1];
-      const idPrefix = String(row.id ?? "").replaceAll("-", "").slice(0, 12).toLowerCase();
-      return searchableText.includes(q) || Boolean(withdrawalRef && idPrefix === withdrawalRef.toLowerCase());
+      const withdrawalRef = q.match(/^(?:adx-)?wd-([a-f0-9]{10,12})$/i)?.[1];
+      const idHex = String(row.id ?? "").replaceAll("-", "").toLowerCase();
+      return searchableText.includes(q) || Boolean(withdrawalRef && idHex.startsWith(withdrawalRef.toLowerCase()));
     }).sort((a, b) => Date.parse(String(b.created_at ?? "")) - Date.parse(String(a.created_at ?? "")));
   }, [fromDate, reportRows, search, toDate]);
 
