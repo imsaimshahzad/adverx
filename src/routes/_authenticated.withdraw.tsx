@@ -92,7 +92,7 @@ function WithdrawPage() {
       reasonByWithdrawal = new Map(
         (refundEntries ?? [])
           .filter((entry: { reference_id?: string | null; note?: string | null }) => entry.reference_id && entry.note)
-          .map((entry: { reference_id: string; note: string }) => [entry.reference_id, entry.note]),
+          .map((entry: { reference_id: string; note: string }) => [entry.reference_id, entry.note] as [string, string]),
       );
     }
     setWithdrawalHistory(rows.map((row) => ({
@@ -362,7 +362,6 @@ function WithdrawPage() {
               const status = String(item.status ?? "pending").toLowerCase();
               const isPaid = status === "paid";
               const isRejected = status === "rejected";
-              const isPending = !isPaid && !isRejected;
               const statusLabel = STATUS_LABEL[status] ?? status.replaceAll("_", " ");
               const tone = isPaid
                 ? { icon: "bg-teal-500/10 text-teal-600", badge: "bg-teal-500/10 text-teal-700 dark:text-teal-300" }
