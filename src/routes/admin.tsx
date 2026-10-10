@@ -74,9 +74,7 @@ import {
   getAdminProfitLedger,
   getAdminProfitSummary,
   getReferrerRecoveryReserve,
-  getRecoveryFundActivity,
   getRevenuePlans,
-  useRecoveryFund,
   getUsersPage,
   getUserDetails,
   approveDeposit,
@@ -270,7 +268,7 @@ function userSearchText(row: AdminRow) {
 const menu: Array<[AdminModule, string, Icon]> = [
   ["overview", "Overview", LayoutDashboard],
   ["cash-payments", "Cash & Payments", WalletCards],
-  ["funds-reserves", "Funds & Reserves", CircleDollarSign],
+  ["funds-reserves", "Funds & Reward Budget", CircleDollarSign],
   ["users", "Users", Users],
   ["plans", "Plans", BookOpen],
   ["tasks", "Tasks / Ads", BarChart3],
@@ -1107,7 +1105,7 @@ export function AdminRoute() {
           ) : active === "cash-payments" ? (
             <CashPaymentsDashboard overview={overview} onRefresh={load} />
           ) : active === "funds-reserves" ? (
-            <FundsReservesDashboard overview={overview} reserveSummary={reserveSummary} summary={profitSummary} onRefresh={load} />
+            <FundsReservesDashboard overview={overview} reserveSummary={reserveSummary} summary={profitSummary} />
           ) : active === "settings" ? (
             <HomepageHeroSettings />
           ) : active === "support" ? (
@@ -1496,12 +1494,10 @@ function FundsReservesDashboard({
   overview,
   reserveSummary,
   summary,
-  onRefresh,
 }: {
   overview: Record<string, number>;
   reserveSummary: AdminRow[];
   summary: AdminRow;
-  onRefresh: () => Promise<void>;
 }) {
   const allocated = reserveSummary.reduce((total, row) => total + Number(row.total_original_reserve ?? 0), 0);
   const money = (value: unknown) => Number(value ?? 0).toLocaleString("en-PK", { maximumFractionDigits: 2 });
@@ -1509,205 +1505,19 @@ function FundsReservesDashboard({
     ["Rewards Issued", overview.total_rewards_issued, "Rewards already issued to users."],
     ["Reward Money Left", overview.total_remaining_user_reward_reserves, "Remaining funded reward capacity."],
     ["Total Reward Budget", allocated, "Total reward capacity allocated to active plans."],
-    ["Recovery from No-Referrer Purchases", overview.total_recovery_fund_collected, "Money recovered from purchases where no eligible referrer was found."],
-    ["Recovery Money Left", overview.remaining_recovery_fund, "Unspent money from no-referrer purchases; this is the same balance used in the section below."],
-    ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral, "Referral money with no eligible referrer."],
     ["Retained Reward Budget", summary.retained_reward_budget, "Reward budget retained for platform accounting."],
     ["Admin Own Balance", summary.admin_own_balance, "Admin-owned money shown separately from platform profit."],
   ];
   return (
     <div className="flex flex-col gap-5">
-      <div><h2 className="text-2xl font-semibold">Funds & Reserves</h2><p className="mt-1 text-sm text-muted-foreground">Money held for rewards, referrals, recovery and other purposes. These are not automatically profit.</p></div>
+      <div><h2 className="text-2xl font-semibold">Funds & Reward Budget</h2><p className="mt-1 text-sm text-muted-foreground">Reward capacity and platform-owned balances, shown separately from user earnings.</p></div>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map(([label, value, description]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tabular-nums">PKR {money(value)}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{description}</p></CardContent></Card>)}
       </section>
       {reserveSummary.length ? <Card><CardHeader><CardTitle>Reward Reserves by Plan</CardTitle><p className="text-sm text-muted-foreground">Detailed funded capacity for each active plan.</p></CardHeader><CardContent className="grid gap-3 md:grid-cols-3">{reserveSummary.map((row) => <div key={String(row.plan_name)} className="rounded-lg border p-4"><p className="font-medium">{String(row.plan_name)}</p><p className="mt-2 text-xs text-muted-foreground">Users {String(row.total_users)} · Allocated {money(row.total_original_reserve)} PKR</p><p className="text-xs text-muted-foreground">Used {money(row.total_reserve_used)} PKR · Remaining {money(row.total_reserve_remaining)} PKR</p><p className="mt-1 text-sm font-semibold">Rewards issued {money(row.total_rewards_issued)} PKR</p></div>)}</CardContent></Card> : null}
-      <RecoveryFundPanel remaining={Number(summary.unallocated_recovery ?? 0)} onRefresh={onRefresh} />
     </div>
   );
 }
-function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefresh: () => Promise<void> }) {
-  const [activity, setActivity] = useState<AdminRow[]>([]);
-  const [amount, setAmount] = useState("");
-  const [usageType, setUsageType] = useState("");
-  const [reason, setReason] = useState("");
-  const [reference, setReference] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  const load = async () => {
-    try {
-      const rows = await getRecoveryFundActivity();
-      setActivity(rows);
-      setError("");
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load recovery money activity.");
-    }
-  };
-
-  useEffect(() => { void load(); }, []);
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0 || !usageType || !reason.trim()) {
-      setError("Enter a valid amount, purpose, and reason.");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      const result = await useRecoveryFund({ amount: value, usageType, targetUserId: null, reason, reference });
-      setAmount("");
-      setUsageType("");
-      setReason("");
-      setReference("");
-      await Promise.all([load(), onRefresh()]);
-      toast.success(`Recovery money used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to use recovery money.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.35fr)]">
-      <Card className="min-w-0 overflow-hidden">
-        <CardHeader className="space-y-2 p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Use Recovery Money</CardTitle>
-          <p className="text-sm leading-6 text-muted-foreground">
-            This is the unspent recovery money from purchases where no eligible referrer was found. You can record approved promotions, incentives, campaigns, or platform expenses here. This is the same balance shown above—not a separate bonus fund—and it is not part of user reward reserves.
-          </p>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-          <form className="grid gap-4" onSubmit={submit}>
-            <div className="grid gap-3 rounded-xl border bg-muted/30 p-3 text-sm sm:grid-cols-3 sm:p-4">
-              <div className="min-w-0">
-                <p className="text-xs leading-5 text-muted-foreground">Recovery Money Available</p>
-                <p className="mt-1 text-lg font-semibold tabular-nums">{remaining.toLocaleString()} PKR</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs leading-5 text-muted-foreground">Amount to use</p>
-                <p className="mt-1 text-lg font-semibold tabular-nums">{amount ? `${Number(amount).toLocaleString()} PKR` : "—"}</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs leading-5 text-muted-foreground">Balance after</p>
-                <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">
-                  {amount && Number(amount) <= remaining ? `${(remaining - Number(amount)).toLocaleString()} PKR` : "Confirmed after submit"}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid min-w-0 gap-2 text-sm font-medium">
-                <span>Amount (PKR)</span>
-                <Input className="w-full" type="number" min="0.01" max={remaining} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required />
-              </label>
-              <label className="grid min-w-0 gap-2 text-sm font-medium" htmlFor="recovery-purpose">
-                <span>Purpose</span>
-                <select id="recovery-purpose" className="h-10 w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm font-normal" value={usageType} onChange={(event) => setUsageType(event.target.value)} required>
-                  <option value="">Select purpose</option>
-                  <option value="Campaign">Campaign</option>
-                  <option value="Promotion">Promotion</option>
-                  <option value="Platform Incentive">Platform Incentive</option>
-                  <option value="Approved Platform Expense">Approved Platform Expense</option>
-                  <option value="Platform Recovery">Platform Recovery</option>
-                  <option value="Other">Other</option>
-                </select>
-              </label>
-            </div>
-
-            <label className="grid min-w-0 gap-2 text-sm font-medium">
-              <span>Reason / Note</span>
-              <textarea className="min-h-24 w-full resize-y rounded-md border bg-background px-3 py-2 text-sm font-normal leading-6" value={reason} onChange={(event) => setReason(event.target.value)} required />
-            </label>
-
-            <label className="grid min-w-0 gap-2 text-sm font-medium">
-              <span>Reference <span className="font-normal text-muted-foreground">(optional)</span></span>
-              <Input className="w-full" value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Ticket, incident, or internal reference" />
-            </label>
-
-            {error ? <p className="rounded-lg bg-destructive/10 p-3 text-sm leading-5 text-destructive" role="alert">{error}</p> : null}
-
-            <Button type="submit" disabled={busy} className="w-full sm:w-auto sm:min-w-52">
-              {busy ? "Recording…" : "Record Recovery Money Use"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card className="min-w-0 overflow-hidden">
-        <CardHeader className="space-y-2 p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Recovery Money Activity</CardTitle>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Credits come from purchases with no eligible referrer; debits represent approved platform use.
-          </p>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-0">
-          <div className="space-y-3 sm:hidden">
-            {activity.length ? activity.map((row) => {
-              const entryType = String(row.entry_type ?? row.usage_type ?? "").toLowerCase();
-              const amountPkr = Number(row.amount_pkr ?? row.amount ?? 0);
-              const signedAmount = entryType === "debit" ? -Math.abs(amountPkr) : entryType === "credit" || entryType === "reversal" ? Math.abs(amountPkr) : amountPkr;
-              return (
-                <div className="rounded-xl border bg-background p-3" key={String(row.id)}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">{formatValue(row.created_at)}</p>
-                      <p className="mt-1 font-mono text-[11px] font-semibold text-primary">{shortId(String(row.id ?? ""))}</p>
-                      <p className="mt-1 font-medium">{formatValue(row.entry_type ?? row.usage_type)}</p>
-                    </div>
-                    <p className={`shrink-0 font-semibold tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>
-                      {signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR
-                    </p>
-                  </div>
-                  <div className="mt-3 grid min-w-0 gap-2 border-t pt-3 text-sm">
-                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Purpose / Reason: </span><span className="break-words [overflow-wrap:anywhere]">{formatValue(row.reason)}</span></div>
-                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Reference: </span><span className="break-all [overflow-wrap:anywhere]">{formatValue(row.reference)}</span></div>
-                    <div className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="text-muted-foreground">Balance After: </span><span className="inline-block max-w-full break-words font-medium tabular-nums [overflow-wrap:anywhere]">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</span></div>
-                  </div>
-                </div>
-              );
-            }) : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No recovery money activity yet.</div>}
-          </div>
-
-          <div className="hidden max-w-full overflow-x-auto sm:block">
-            <table className="w-full min-w-[1040px] table-fixed text-sm">
-              <colgroup>
-                <col className="w-[15%]" /><col className="w-[12%]" /><col className="w-[10%]" /><col className="w-[12%]" /><col className="w-[24%]" /><col className="w-[13%]" /><col className="w-[14%]" />
-              </colgroup>
-              <thead className="bg-slate-50/95">
-                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th scope="col" className="p-4">Date</th><th scope="col" className="p-4">Tracking ID</th><th scope="col" className="p-4">Type</th><th scope="col" className="p-4 text-right">Amount</th><th scope="col" className="p-4">Purpose / Reason</th><th scope="col" className="p-4">Reference</th><th scope="col" className="p-4 text-right">Balance After</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activity.length ? activity.map((row) => {
-                  const entryType = String(row.entry_type ?? row.usage_type ?? "").toLowerCase();
-                  const amountPkr = Number(row.amount_pkr ?? row.amount ?? 0);
-                  const signedAmount = entryType === "debit" ? -Math.abs(amountPkr) : entryType === "credit" || entryType === "reversal" ? Math.abs(amountPkr) : amountPkr;
-                  return (
-                    <tr className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50" key={String(row.id)}>
-                      <td className="whitespace-nowrap p-4 text-muted-foreground">{formatValue(row.created_at)}</td>
-                      <td className="whitespace-nowrap p-4 font-mono text-xs font-semibold text-primary">{shortId(String(row.id ?? ""))}</td>
-                      <td className="p-4">{formatValue(row.entry_type ?? row.usage_type)}</td>
-                      <td className={`whitespace-nowrap p-4 text-right font-medium tabular-nums ${signedAmount < 0 ? "text-destructive" : "text-emerald-700"}`}>{signedAmount > 0 ? "+" : ""}{signedAmount.toLocaleString()} PKR</td>
-                      <td className="min-w-0 whitespace-normal break-words p-4 align-top [overflow-wrap:anywhere]"><span title={String(row.reason ?? "—")}>{formatValue(row.reason)}</span></td>
-                      <td className="min-w-0 whitespace-normal break-all p-4 align-top [overflow-wrap:anywhere]"><span title={String(row.reference ?? "—")}>{formatValue(row.reference)}</span></td>
-                      <td className="whitespace-nowrap p-4 text-right font-medium tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td>
-                    </tr>
-                  );
-                }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No recovery money activity yet.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </section>
-  );
-}
-
 function Overview({
   metrics,
   overview,
