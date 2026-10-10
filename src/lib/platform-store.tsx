@@ -123,6 +123,7 @@ export type NetworkMember = {
   active: boolean;
   planName: string;
   commission: number;
+  lockedCommission: number;
   status: string;
   level: number;
 };
@@ -191,6 +192,7 @@ const EMPTY = {
   adViews: [],
   network: [],
   totalReferralCommission: 0,
+  lockedReferralCommission: 0,
   thisMonthReferralCommission: 0,
   allTimeNetwork: 0,
   directNetwork: 0,
@@ -216,6 +218,7 @@ type State = {
   adViews: AdView[];
   network: NetworkMember[];
   totalReferralCommission: number;
+  lockedReferralCommission: number;
   thisMonthReferralCommission: number;
   allTimeNetwork: number;
   directNetwork: number;
@@ -609,7 +612,7 @@ async function loadState(user: {
     referredIds.length
       ? db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active")
       : Promise.resolve({ data: [] }),
-    db.from("referral_commissions").select("source_user_id, amount, created_at").eq("user_id", uid).eq("status", "completed"),
+    db.from("referral_commissions").select("source_user_id, amount, created_at, status, level").eq("user_id", uid).in("status", ["completed", "locked"]),
   ]);
   const paidReferralIds = new Set<string>((referredPlans ?? []).map((row: any) => row.user_id));
   // RLS can hide another member's user_plans row from the client. The profile's
@@ -636,6 +639,8 @@ async function loadState(user: {
     (referredPlans ?? []).map((row: any) => [row.user_id, row]),
   );
   const commissionByUser = new Map<string, number>();
+  const lockedCommissionByUser = new Map<string, number>();
+  let lockedReferralCommission = 0;
   let totalReferralCommission = 0;
   let thisMonthReferralCommission = 0;
   let directReferralCommission = 0;
@@ -644,6 +649,11 @@ async function loadState(user: {
   const currentMonth = pakistanDate().slice(0, 7);
   for (const row of commissions ?? []) {
     const amount = num(row.amount);
+    if (row.status === "locked") {
+      lockedReferralCommission += amount;
+      if (row.source_user_id) lockedCommissionByUser.set(row.source_user_id, (lockedCommissionByUser.get(row.source_user_id) ?? 0) + amount);
+      continue;
+    }
     totalReferralCommission += amount;
     if (row.created_at && pakistanDate(new Date(row.created_at)).slice(0, 7) === currentMonth) thisMonthReferralCommission += amount;
     const sourceLevel = row.source_user_id
@@ -807,11 +817,13 @@ async function loadState(user: {
         active: Boolean(activePlanRow || memberPlanId),
         planName: plan?.name ?? (activePlanRow || memberPlanId ? "Active Plan" : "No Plan"),
         commission: commissionByUser.get(r.referred_id) ?? 0,
+        lockedCommission: lockedCommissionByUser.get(r.referred_id) ?? 0,
         status: plan ? "Active" : "Registered",
         level: Number(r.level) || 1,
       };
     }),
     totalReferralCommission,
+    lockedReferralCommission,
     thisMonthReferralCommission,
     allTimeNetwork,
     directNetwork,
