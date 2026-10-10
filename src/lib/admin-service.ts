@@ -638,6 +638,7 @@ export async function getUserDetails(identifier: string) {
     "ad_reward",
     "referral_reward",
     "referral_commission",
+    "referral_commission_lock",
     "refund",
     "admin_adjustment",
     "withdrawal",
