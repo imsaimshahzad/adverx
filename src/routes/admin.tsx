@@ -1467,7 +1467,7 @@ function RevenueDashboard({
     ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit, "Profit earned from paid plan sales; excludes referral and recovery categories."],
     ["Referral Earnings", summary.referral_profit, "Verified direct/referral-related earnings, excluding unsupported referral entries."],
     ["Undistributed Indirect Referral Pool", summary.undistributed_indirect_referral_pool, "Indirect referral pool amounts settled to the admin when no eligible upliner receives them."],
-    ["Admin Recovery", summary.admin_recovery_total, "Verified recovery-ledger entries, excluding historical migration duplicates."],
+    ["Admin Referral Recovery", summary.admin_recovery_total, "Recovery allocation from purchases made through the admin’s referral link; old migration entries are excluded."],
     ["All-Time Profit", summary.all_time_profit, "Audited lifetime total after excluding unsupported entries and accounting for the Rs. 0.44 reward-budget overrun expense."],
     ["Withdrawable Balance", summary.available_balance, "Current ledger balance available for platform withdrawal; not the same as physical cash on hand."],
   ];
@@ -1509,10 +1509,9 @@ function FundsReservesDashboard({
     ["Rewards Issued", overview.total_rewards_issued, "Rewards already issued to users."],
     ["Reward Money Left", overview.total_remaining_user_reward_reserves, "Remaining funded reward capacity."],
     ["Total Reward Budget", allocated, "Total reward capacity allocated to active plans."],
-    ["Recovery Fund", overview.total_recovery_fund_collected, "Recovery money collected so far."],
-    ["Recovery Fund Left", overview.remaining_recovery_fund, "Recovery money still available."],
+    ["Recovery from No-Referrer Purchases", overview.total_recovery_fund_collected, "Money recovered from purchases where no eligible referrer was found."],
+    ["Recovery Money Left", overview.remaining_recovery_fund, "Unspent money from no-referrer purchases; this is the same balance used in the section below."],
     ["Unassigned Referral", summary.unassigned_referral ?? summary.total_unassigned_referral, "Referral money with no eligible referrer."],
-    ["Bonus & Promotion Fund", summary.unallocated_recovery, "Money held for bonuses, promotions and approved platform expenses."],
     ["Retained Reward Budget", summary.retained_reward_budget, "Reward budget retained for platform accounting."],
     ["Admin Own Balance", summary.admin_own_balance, "Admin-owned money shown separately from platform profit."],
   ];
@@ -1542,7 +1541,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
       setActivity(rows);
       setError("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load Bonus & Promotion Fund activity.");
+      setError(cause instanceof Error ? cause.message : "Unable to load recovery money activity.");
     }
   };
 
@@ -1564,9 +1563,9 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
       setReason("");
       setReference("");
       await Promise.all([load(), onRefresh()]);
-      toast.success(`Bonus & Promotion Fund used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
+      toast.success(`Recovery money used: ${value.toLocaleString()} PKR. Remaining balance: ${Number(result.balance_after ?? 0).toLocaleString()} PKR.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to use Bonus & Promotion Fund.");
+      setError(cause instanceof Error ? cause.message : "Unable to use recovery money.");
     } finally {
       setBusy(false);
     }
@@ -1576,16 +1575,16 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
     <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.35fr)]">
       <Card className="min-w-0 overflow-hidden">
         <CardHeader className="space-y-2 p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Use Bonus & Promotion Fund</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Use Recovery Money</CardTitle>
           <p className="text-sm leading-6 text-muted-foreground">
-            Use this separate platform fund for admin bonuses, promotions, incentives, or approved platform expenses. It is not part of user reward reserves.
+            This is the unspent recovery money from purchases where no eligible referrer was found. You can record approved promotions, incentives, campaigns, or platform expenses here. This is the same balance shown above—not a separate bonus fund—and it is not part of user reward reserves.
           </p>
         </CardHeader>
         <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
           <form className="grid gap-4" onSubmit={submit}>
             <div className="grid gap-3 rounded-xl border bg-muted/30 p-3 text-sm sm:grid-cols-3 sm:p-4">
               <div className="min-w-0">
-                <p className="text-xs leading-5 text-muted-foreground">Current Bonus & Promotion Fund</p>
+                <p className="text-xs leading-5 text-muted-foreground">Recovery Money Available</p>
                 <p className="mt-1 text-lg font-semibold tabular-nums">{remaining.toLocaleString()} PKR</p>
               </div>
               <div className="min-w-0">
@@ -1632,7 +1631,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
             {error ? <p className="rounded-lg bg-destructive/10 p-3 text-sm leading-5 text-destructive" role="alert">{error}</p> : null}
 
             <Button type="submit" disabled={busy} className="w-full sm:w-auto sm:min-w-52">
-              {busy ? "Recording…" : "Use Bonus & Promotion Fund"}
+              {busy ? "Recording…" : "Record Recovery Money Use"}
             </Button>
           </form>
         </CardContent>
@@ -1640,7 +1639,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
 
       <Card className="min-w-0 overflow-hidden">
         <CardHeader className="space-y-2 p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Bonus & Promotion Fund Activity</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Recovery Money Activity</CardTitle>
           <p className="text-sm leading-6 text-muted-foreground">
             Credits come from purchases with no eligible referrer; debits represent approved platform use.
           </p>
@@ -1670,7 +1669,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                   </div>
                 </div>
               );
-            }) : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No Bonus & Promotion Fund activity yet.</div>}
+            }) : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No recovery money activity yet.</div>}
           </div>
 
           <div className="hidden max-w-full overflow-x-auto sm:block">
@@ -1699,7 +1698,7 @@ function RecoveryFundPanel({ remaining, onRefresh }: { remaining: number; onRefr
                       <td className="whitespace-nowrap p-4 text-right font-medium tabular-nums">{row.balance_after === null || row.balance_after === undefined ? "—" : `${formatValue(row.balance_after)} PKR`}</td>
                     </tr>
                   );
-                }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No Bonus & Promotion Fund activity yet.</td></tr>}
+                }) : <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No recovery money activity yet.</td></tr>}
               </tbody>
             </table>
           </div>
