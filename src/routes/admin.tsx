@@ -2717,14 +2717,29 @@ function ModuleTable({
     let cancelled = false;
     void (async () => {
       const txId = String(transactionDetail.id ?? "");
-      const [ledgerResult, allocationResult] = await Promise.all([
-        (supabase as any).from("ledger_entries").select("id, entry_type, amount, note, created_at").eq("transaction_id", txId).order("created_at", { ascending: true }),
-        String(transactionDetail.kind ?? "") === "PLAN_PURCHASE" && String(transactionDetail.source_type ?? "") === "deposit" && transactionDetail.source_id
-          ? (supabase as any).from("purchase_allocations").select("gross_amount, admin_profit_amount, referral_commission_amount, recovery_fund_amount, ad_budget_amount, indirect_pool_amount_pkr, indirect_pool_distributed_pkr").eq("purchase_id", String(transactionDetail.source_id)).maybeSingle()
+      const sourceId = String(transactionDetail.source_id ?? "");
+      const isPlanPurchase = String(transactionDetail.kind ?? "") === "PLAN_PURCHASE" && String(transactionDetail.source_type ?? "") === "deposit" && Boolean(sourceId);
+      const [ledgerResult, allocationResult, commissionResult] = await Promise.all([
+        (supabase as any).from("ledger_entries").select("id, entry_type, amount, note, created_at, reference_id").eq("transaction_id", txId).order("created_at", { ascending: true }),
+        isPlanPurchase
+          ? (supabase as any).from("purchase_allocations").select("gross_amount, admin_profit_amount, referral_commission_amount, recovery_fund_amount, ad_budget_amount, indirect_pool_amount_pkr, indirect_pool_distributed_pkr").eq("purchase_id", sourceId).maybeSingle()
           : Promise.resolve({ data: null }),
+        isPlanPurchase
+          ? (supabase as any).from("referral_commissions").select("id").eq("purchase_id", sourceId)
+          : Promise.resolve({ data: [] }),
       ]);
+      let relatedLedgerRows: AdminRow[] = [];
+      if (isPlanPurchase) {
+        const relatedIds = [...new Set([sourceId, ...((commissionResult.data ?? []) as AdminRow[]).map((row) => String(row.id ?? "")).filter(Boolean)])];
+        if (relatedIds.length) {
+          const relatedResult = await (supabase as any).from("ledger_entries").select("id, entry_type, amount, note, created_at, reference_id").in("reference_id", relatedIds).order("created_at", { ascending: true });
+          relatedLedgerRows = (relatedResult.data ?? []) as AdminRow[];
+        }
+      }
       if (cancelled) return;
-      setTransactionLedger((ledgerResult.data ?? []) as AdminRow[]);
+      const uniqueLedgerRows = new Map<string, AdminRow>();
+      for (const entry of [...((ledgerResult.data ?? []) as AdminRow[]), ...relatedLedgerRows]) uniqueLedgerRows.set(String(entry.id ?? ""), entry);
+      setTransactionLedger([...uniqueLedgerRows.values()].sort((a, b) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""))));
       setTransactionAllocation((allocationResult.data ?? null) as AdminRow | null);
     })();
     return () => { cancelled = true; };
@@ -3420,7 +3435,7 @@ function ModuleTable({
               <div className="rounded-xl border p-3"><p className="text-xs text-muted-foreground">Status</p><p className="mt-1"><Badge variant="secondary">{String(transactionDetail?.status ?? "—")}</Badge></p></div>
             </div>
             <div className="rounded-xl border p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accounting breakdown</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Original purchase allocation snapshot</p>
               {transactionAllocation ? (
                 <div className="mt-3 grid gap-2 text-sm">
                   <div className="flex justify-between"><span>Customer payment</span><span className="font-medium">{Number(transactionAllocation.gross_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
@@ -3428,7 +3443,11 @@ function ModuleTable({
                   <div className="flex justify-between"><span>Platform Profit</span><span>{Number(transactionAllocation.admin_profit_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
                   <div className="flex justify-between"><span>Referral Allocation</span><span>{Number(transactionAllocation.referral_commission_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
                   <div className="flex justify-between"><span>Recovery Fund</span><span>{Number(transactionAllocation.recovery_fund_amount ?? 0).toLocaleString("en-PK")} PKR</span></div>
-                  <div className="flex justify-between"><span>Indirect Pool</span><span>{Number(transactionAllocation.indirect_pool_amount_pkr ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Indirect Pool (original allocation)</span><span>{Number(transactionAllocation.indirect_pool_amount_pkr ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Indirect Pool Distributed to Upliners</span><span>{Number(transactionAllocation.indirect_pool_distributed_pkr ?? 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between"><span>Indirect Pool Settled to Admin</span><span>{transactionLedger.filter((entry) => String(entry.entry_type ?? "") === "platform_profit" && String(entry.note ?? "").toLowerCase().startsWith("undistributed indirect referral pool settled to admin")).reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0).toLocaleString("en-PK")} PKR</span></div>
+                  <div className="flex justify-between border-t pt-2 font-medium"><span>Admin Referral Ledger Net (after corrections)</span><span>{transactionLedger.filter((entry) => ["referral_commission", "referral_commission_adjustment", "referral_commission_reversal", "referral_commission_reserve_adjustment"].includes(String(entry.entry_type ?? ""))).reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0).toLocaleString("en-PK")} PKR</span></div>
+                  <p className="text-xs text-muted-foreground">The allocation above is the original purchase snapshot. Later corrections are shown separately in the linked ledger entries below.</p>
                 </div>
               ) : <p className="mt-2 text-sm text-muted-foreground">No allocation breakdown attached to this transaction.</p>}
             </div>
