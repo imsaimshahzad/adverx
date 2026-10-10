@@ -155,8 +155,7 @@ begin
  round(v_admin_amount+v_direct_amount+v_indirect_pool+v_recovery_amount+v_ad_amount,2)=round(d.amount,2)));
  return d;
 end;
-$function$
-
+$function$;
 
 -- Release previously locked commissions exactly once when the referrer activates an eligible plan.
 create or replace function public.release_locked_referral_commissions_on_plan_activation()
