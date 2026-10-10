@@ -1465,7 +1465,6 @@ function RevenueDashboard({
     ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit, "Profit earned from paid plan sales; excludes referral and recovery categories."],
     ["Referral Earnings", summary.referral_profit, "Verified direct/referral-related earnings, excluding unsupported referral entries."],
     ["Undistributed Indirect Referral Pool", summary.undistributed_indirect_referral_pool, "Indirect referral pool amounts settled to the admin when no eligible upliner receives them."],
-    ["Admin Referral Recovery", summary.admin_recovery_total, "Recovery allocation from purchases made through the admin’s referral link; old migration entries are excluded."],
     ["All-Time Profit", summary.all_time_profit, "Audited lifetime total after excluding unsupported entries and accounting for the Rs. 0.44 reward-budget overrun expense."],
     ["Withdrawable Balance", summary.available_balance, "Current ledger balance available for platform withdrawal; not the same as physical cash on hand."],
   ];
