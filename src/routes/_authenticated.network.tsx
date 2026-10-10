@@ -1,6 +1,6 @@
 import { formatDate, formatMoney, statusBadge } from "@/lib/display";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Copy, Info, Share2, UserPlus } from "lucide-react";
+import { AlertTriangle, Copy, Info, LockKeyhole, Share2, UserPlus } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { toast } from "sonner";
@@ -74,18 +74,40 @@ function NetworkPage() {
         ) : null}
 
         {/* Earnings hero */}
-        <section className="glass-panel overflow-hidden p-5 sm:p-6">
-          <p className="text-sm font-semibold text-muted-foreground">Total earnings</p>
-          <p className="num mt-1 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            {formatMoney(state.totalReferralCommission, "PKR")}
-          </p>
-          <p className="mt-2 text-sm font-medium text-foreground/80">
-            This month:{" "}
-            <span className="num font-semibold">
-              +{formatMoney(state.thisMonthReferralCommission, "PKR")}
-            </span>
-          </p>
-        </section>
+        {!state.user?.planId && state.lockedReferralCommission > 0 ? (
+          <section className="glass-panel overflow-hidden border border-amber-500/25 p-5 sm:p-6">
+            <div className="flex items-center gap-2 text-amber-600">
+              <LockKeyhole className="size-5" />
+              <p className="text-sm font-semibold">Commission Locked</p>
+              <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-700">Locked</Badge>
+            </div>
+            <p className="num mt-2 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              {formatMoney(state.lockedReferralCommission, "PKR")}
+            </p>
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              Reason: No active plan. Activate a plan to unlock your commission.
+            </p>
+          </section>
+        ) : (
+          <section className="glass-panel overflow-hidden p-5 sm:p-6">
+            <p className="text-sm font-semibold text-muted-foreground">Total earnings</p>
+            <p className="num mt-1 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              {formatMoney(state.totalReferralCommission, "PKR")}
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground/80">
+              This month:{" "}
+              <span className="num font-semibold">
+                +{formatMoney(state.thisMonthReferralCommission, "PKR")}
+              </span>
+            </p>
+            {state.lockedReferralCommission > 0 ? (
+              <p className="mt-2 text-sm font-medium text-amber-600">
+                <LockKeyhole className="mr-1 inline size-4" />
+                {formatMoney(state.lockedReferralCommission, "PKR")} commission locked
+              </p>
+            ) : null}
+          </section>
+        )}
 
         {/* Referral code + invite */}
         <section className="glass-panel p-4 sm:p-5">
@@ -217,18 +239,29 @@ function NetworkPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <Badge
-                        className={
-                          m.active
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : statusBadge(m.status).className
-                        }
-                      >
-                        {m.active ? "Currently earning" : "Not subscribed"}
-                      </Badge>
+                      {m.lockedCommission > 0 ? (
+                        <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-700">
+                          <LockKeyhole className="mr-1 size-3" /> Commission Locked
+                        </Badge>
+                      ) : (
+                        <Badge
+                          className={
+                            m.active
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : statusBadge(m.status).className
+                          }
+                        >
+                          {m.active ? "Currently earning" : "Not subscribed"}
+                        </Badge>
+                      )}
                       <p className="mt-1 text-sm font-medium text-muted-foreground">
-                        {formatMoney(m.commission, "PKR")}
+                        {formatMoney(m.lockedCommission > 0 ? m.lockedCommission : m.commission, "PKR")}
                       </p>
+                      {m.lockedCommission > 0 ? (
+                        <p className="mt-1 max-w-44 text-xs leading-4 text-amber-700">
+                          No active plan. Activate a plan to unlock.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 ))
