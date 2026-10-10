@@ -287,18 +287,29 @@ function NetworkPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <Badge
-                        className={
-                          m.active
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : statusBadge(m.status).className
-                        }
-                      >
-                        {m.active ? "Currently earning" : "Not subscribed"}
-                      </Badge>
+                      {m.lockedCommission > 0 ? (
+                        <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-700">
+                          <LockKeyhole className="mr-1 size-3" /> Commission Locked
+                        </Badge>
+                      ) : (
+                        <Badge
+                          className={
+                            m.active
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : statusBadge(m.status).className
+                          }
+                        >
+                          {m.active ? "Currently earning" : "Not subscribed"}
+                        </Badge>
+                      )}
                       <p className="mt-1 text-sm font-medium text-muted-foreground">
-                        {formatMoney(m.commission, "PKR")}
+                        {formatMoney(m.lockedCommission > 0 ? m.lockedCommission : m.commission, "PKR")}
                       </p>
+                      {m.lockedCommission > 0 ? (
+                        <p className="mt-1 max-w-44 text-xs leading-4 text-amber-700">
+                          No active plan. Activate a plan to unlock.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 ))
