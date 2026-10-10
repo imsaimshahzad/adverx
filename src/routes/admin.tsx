@@ -1464,15 +1464,17 @@ function RevenueDashboard({
 }) {
   const metric = (value: unknown) => value === undefined || value === null ? "—" : Number(value).toLocaleString("en-PK", { maximumFractionDigits: 2 });
   const cards: Array<[string, unknown, string]> = [
-    ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit, "Total profit earned from platform plan sales."],
-    ["Referral Earnings", summary.referral_profit, "Total referral commissions and referral-related earnings credited to the admin account."],
-    ["All-Time Profit", summary.all_time_profit, "Lifetime admin earnings across platform profit, referral earnings, recovery allocations and pool settlements."],
-    ["Withdrawable Balance", summary.available_balance, "Current balance available for platform withdrawal."],
+    ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit, "Profit earned from paid plan sales; excludes referral and recovery categories."],
+    ["Referral Earnings", summary.referral_profit, "Verified direct/referral-related earnings, excluding unsupported referral entries."],
+    ["Undistributed Indirect Referral Pool", summary.undistributed_indirect_referral_pool, "Indirect referral pool amounts settled to the admin when no eligible upliner receives them."],
+    ["Admin Recovery", summary.admin_recovery_total, "Verified recovery-ledger entries, excluding historical migration duplicates."],
+    ["All-Time Profit", summary.all_time_profit, "Audited lifetime total after excluding unsupported entries and accounting for the Rs. 0.44 reward-budget overrun expense."],
+    ["Withdrawable Balance", summary.available_balance, "Current ledger balance available for platform withdrawal; not the same as physical cash on hand."],
   ];
   return (
     <div className="flex flex-col gap-5">
-      <div><h2 className="text-2xl font-semibold">Profit</h2><p className="mt-1 text-sm text-muted-foreground">Profit only. Money held for rewards, referrals or promotions is shown in Funds & Reserves.</p></div>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div><h2 className="text-2xl font-semibold">Revenue</h2><p className="mt-1 text-sm text-muted-foreground">Audited revenue breakdown. The category cards explain the all-time total; withdrawable balance is shown separately and is not proof of physical cash.</p></div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map(([label, value, description]) => <Card key={label}><CardContent className="p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tabular-nums">{metric(value)} PKR</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{description}</p></CardContent></Card>)}
       </section>
       <Card>
