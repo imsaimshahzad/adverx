@@ -1464,7 +1464,7 @@ function RevenueDashboard({
   const cards: Array<[string, unknown, string]> = [
     ["Platform Profit", summary.platform_profit ?? summary.total_admin_profit, "Profit earned from paid plan sales; excludes referral and recovery categories."],
     ["Referral Earnings", summary.referral_profit, "Verified direct/referral-related earnings, excluding unsupported referral entries."],
-    ["Undistributed Indirect Referral Pool", summary.undistributed_indirect_referral_pool, "Indirect referral pool amounts settled to the admin when no eligible upliner receives them."],
+    ["Indirect Pool Settled to Admin", summary.undistributed_indirect_referral_pool, "Indirect referral amount settled to the admin under the applicable rules when no eligible upliner receives it. This amount is already included in Admin balance and All-Time Profit; do not add it again."],
     ["All-Time Profit", summary.all_time_profit, "Audited lifetime total after excluding unsupported entries and accounting for the Rs. 0.44 reward-budget overrun expense."],
     ["Withdrawable Balance", summary.available_balance, "Current ledger balance available for platform withdrawal; not the same as physical cash on hand."],
   ];
