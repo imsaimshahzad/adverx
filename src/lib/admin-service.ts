@@ -634,6 +634,9 @@ export async function getUserDetails(identifier: string) {
   const paidWithdrawals = (withdrawals ?? []).filter((row: AdminRow) => row.status === "paid");
   const completedCommissions = (commissions ?? []).filter((row: AdminRow) => row.status === "completed");
 
+  const isAdminProfile = ["admin", "super_admin", "moderator"].includes(
+    String(profile.role ?? "").toLowerCase(),
+  );
   const balanceEntryTypes = new Set([
     "ad_reward",
     "referral_reward",
@@ -643,6 +646,15 @@ export async function getUserDetails(identifier: string) {
     "admin_adjustment",
     "withdrawal",
     "withdrawal_refund",
+    ...(isAdminProfile
+      ? [
+          "platform_admin_profit",
+          "platform_profit",
+          "referral_commission_adjustment",
+          "unassigned_referral",
+          "admin_recovery",
+        ]
+      : []),
   ]);
   const completedStatuses = new Set(["completed", "credited", "paid", "approved"]);
   const balance = (ledger ?? [])
@@ -650,6 +662,17 @@ export async function getUserDetails(identifier: string) {
     .filter((row: AdminRow) => !["cancelled", "reversed", "rejected"].includes(String(row.status ?? "").toLowerCase()))
     .filter((row: AdminRow) => {
       const type = String(row.entry_type ?? "").toLowerCase();
+      const note = String(row.note ?? "");
+      if (
+        isAdminProfile &&
+        type === "admin_recovery" &&
+        note.toLowerCase().startsWith("historical recovery allocation migrated from admin recovery reserve")
+      ) return false;
+      if (
+        isAdminProfile &&
+        type === "unassigned_referral" &&
+        note.toLowerCase().includes("ahmad31 purchase")
+      ) return false;
       return type === "withdrawal" || completedStatuses.has(String(row.status ?? "").toLowerCase()) || row.status == null;
     })
     .reduce((sum: number, row: AdminRow) => {
