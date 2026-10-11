@@ -77,7 +77,7 @@ export function AdminPushNotifications({ isAdmin }: { isAdmin: boolean }) {
             if (current) await current.unsubscribe().catch(() => undefined);
           });
           await registration.unregister().catch(() => undefined);
-          const freshRegistration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+          await navigator.serviceWorker.register("/sw.js", { scope: "/" });
           const activeRegistration = await navigator.serviceWorker.ready;
           if (!activeRegistration.active) throw new Error("Service Worker did not become active after retry");
           return await activeRegistration.pushManager.subscribe({
