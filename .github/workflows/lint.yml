@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Test shared API helpers
+        run: npm run test:api
+
       - name: Run ESLint
         run: "npm run lint -- --rule 'prettier/prettier: off'"
 
