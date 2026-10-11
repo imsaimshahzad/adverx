@@ -1,10 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.output/
+.vercel/
+.next/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Generated framework / deployment artifacts
+.tanstack/tmp/
+.wrangler/deploy/
+.attached-lovable/node_modules/
+.attached-lovable/.tanstack/tmp/
+.attached-lovable/.wrangler/deploy/
+
 # v0 runtime files
 __v0_runtime_loader.js
 __v0_devtools.tsx
 __v0_jsx-dev-runtime.ts
-
-# Common ignores
-node_modules
-.next/
-.env*.local
-.DS_Store
