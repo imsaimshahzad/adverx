@@ -4,9 +4,8 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
 import { UserDetailPage } from "@/routes/admin";
-import { getUserDetails } from "@/lib/admin-service";
+import { getUserDetails, type AdminRow } from "@/lib/admin-service";
 import { startImpersonation } from "@/lib/auth-guard.functions";
-import type { AdminRow } from "@/lib/admin-service";
 
 export const Route = createFileRoute("/_authenticated/users/detail/$publicUid")({
   component: UserDetailRoute,
