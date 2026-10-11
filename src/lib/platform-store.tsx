@@ -15,25 +15,6 @@ import {
 
 const db = supabase as any;
 
-const AD_TASK_ERRORS = new Set([
-  "Admin accounts cannot earn ad rewards",
-  "An ad session is already active. Finish it before starting another ad.",
-  "Please wait a few seconds before starting another ad.",
-  "Ad already completed today",
-  "Daily ad limit reached",
-  "No active plan",
-  "Ad session not found",
-  "Ad session is not claimable",
-  "Ad engagement time is incomplete",
-  "Ad unavailable",
-  "Reward reserve changed, retry",
-  "Recovery Reserve changed, retry",
-]);
-const adTaskErrorMessage = (message: unknown, fallback: string) => {
-  const value = String(message ?? "").trim();
-  return AD_TASK_ERRORS.has(value) ? value : fallback;
-};
-
 export type Plan = {
   id: string;
   name: string;
@@ -235,7 +216,6 @@ type State = {
   recoveries: Array<{ id: string; amount: number; status: string; createdAt: number; referredId: string }>;
   adminProfitSummary: AdminProfitSummary | null;
 };
-const DAY = 86400000;
 export const money = (n: number) => {
   const value = Number(n ?? 0);
   let currency: "PKR" | "USD" = "PKR";
@@ -270,13 +250,6 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
   "UNASSIGNED_REFERRAL",
   "WITHDRAWAL_REFUND",
 ]);
-  const BALANCE_TRANSACTION_TYPES = new Set([
-  "ADMIN_ADJUSTMENT",
-  "REFERRAL_COMMISSION",
-  "TASK_REWARD",
-  "AD_REWARD",
-  "WITHDRAWAL",
-  ]);
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
   
   async function loadCatalog() {
@@ -387,7 +360,6 @@ async function loadState(user: {
   const uid = user.id;
   const [
     { data: profile, error: profileError },
-    { data: roleRow },
     { data: plans, error: plansError },
     { data: userPlanSnapshot },
     { data: ads, error: adsError },
@@ -397,14 +369,12 @@ async function loadState(user: {
     { data: withdrawals },
     { data: adViewSessions },
     { data: notifications },
-    { data: ignoredReferredProfiles },
     { data: depositMethods },
     { data: withdrawalMethods },
     { data: recoveries },
     { data: referralReserveActivity },
   ] = await Promise.all([
     db.from("profiles").select("*").eq("id", uid).maybeSingle(),
-    db.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
     db
       .from("plans")
       .select("*")
@@ -459,7 +429,6 @@ async function loadState(user: {
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
-    Promise.resolve({ data: null }),
     db.from("deposit_methods").select("*").order("sort_order"),
     db.from("withdrawal_methods").select("*").eq("is_active", true).order("sort_order"),
     db.from("ad_budget_recoveries").select("id, amount_pkr, status, created_at, referred_id").eq("referrer_id", uid).order("created_at", { ascending: false }),
@@ -1116,19 +1085,6 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         (entry.type === "ad_reward" || entry.type === "referral_reward") &&
         COMPLETED_REWARD_STATUSES.has(String(entry.status).toLowerCase()),
     );
-    // Admin earnings are the admin-owned allocations credited today:
-    // platform profit + unassigned referral. These are distinct from the
-    // total available balance, which can include older credits and refunds.
-    const adminEarningTransactions = state.ledger.filter((entry) => {
-      if (entry.type !== "platform_admin_profit" && entry.type !== "unassigned_referral") return false;
-      const status = String(entry.status ?? "").toLowerCase();
-      if (["cancelled", "reversed", "rejected"].includes(status)) return false;
-      // Keep historical audit rows intact, but exclude the known old Ahmad31 test allocation
-      // from the live "Today" dashboard metric.
-      const auditText = String(entry.label ?? "").toLowerCase();
-      if (auditText.includes("ahmad31 purchase")) return false;
-      return true;
-    });
     const todaysEarnings = isAdmin && state.adminProfitSummary
       ? num(state.adminProfitSummary.today_admin_earnings)
       : completedRewardTransactions
