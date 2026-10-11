@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportError } from "../lib/error-handling";
 import { PlatformProvider } from "@/lib/platform-store";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { Toaster } from "@/components/ui/sonner";
@@ -39,9 +40,9 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
   const router = useRouter();
   useEffect(() => {
+    reportError("route error boundary", error);
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -57,8 +58,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              router.invalidate();
-              reset();
+              void router.invalidate().then(reset).catch((retryError: unknown) => {
+                reportError("route retry failed", retryError);
+                reset();
+              });
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
@@ -94,8 +97,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://adverx.online" },
-  { property: "og:image", content: "/adverx-logo.png" },
-  { property: "og:site_name", content: "AdverX" },
+      { property: "og:image", content: "/adverx-logo.png" },
+      { property: "og:site_name", content: "AdverX" },
       { name: "twitter:title", content: "AdverX" },
       { name: "twitter:description", content: "Complete verified daily ad tasks, grow your network and withdraw earnings." },
       { name: "twitter:card", content: "summary_large_image" },
@@ -146,6 +149,25 @@ function RootComponent() {
     document.documentElement.style.colorScheme = theme;
   }, []);
 
+  useEffect(() => {
+    const onError = (event: ErrorEvent) => {
+      const error = event.error ?? event.message;
+      reportError("uncaught browser error", error);
+      reportLovableError(error, { source: "window_error" });
+    };
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      reportError("unhandled promise rejection", event.reason);
+      reportLovableError(event.reason, { source: "unhandledrejection" });
+    };
+
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <PlatformProvider>
@@ -157,4 +179,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-
