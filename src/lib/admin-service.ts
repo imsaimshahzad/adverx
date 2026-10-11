@@ -751,24 +751,33 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
     authPage += 1;
   } while (authPage <= 100);
 
-  const profilesWithAuth = (profiles ?? []).map((profile: AdminRow) => {
-    const authUser = authUsersById.get(String(profile.id ?? ""));
-    return {
-      ...profile,
-      email: authUser?.email ?? null,
-      phone: authUser?.phone ?? null,
-    };
-  });
-
+  // Prefer the full profile query, but keep the Users page usable from the
+  // staff-guarded directory RPC if a profile column/policy query fails.
+  // The RPC is already fetched above for private auth fields, so it is a safe
+  // fallback without broadening direct access to auth.users.
   if (profilesError) {
-    console.error("[AdVerX] users profile query failed", {
+    console.error("[AdVerX] users profile query failed; trying staff directory fallback", {
       message: profilesError.message,
       code: profilesError.code,
       details: profilesError.details,
       hint: profilesError.hint,
     });
-    throw new Error(profilesError.message || "Unable to load user profiles.");
+    if (authUsersById.size === 0) {
+      throw new Error(profilesError.message || "Unable to load user profiles.");
+    }
   }
+
+  const profileRows = profilesError
+    ? [...authUsersById.values()]
+    : ((profiles ?? []) as AdminRow[]);
+  const profilesWithAuth = profileRows.map((profile: AdminRow) => {
+    const authUser = authUsersById.get(String(profile.id ?? ""));
+    return {
+      ...profile,
+      email: profile.email ?? authUser?.email ?? null,
+      phone: profile.phone ?? authUser?.phone ?? null,
+    };
+  });
 
   if (plansError) {
     console.error("[AdVerX] users active-plan query failed", plansError);
@@ -815,7 +824,7 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
   if (!withdrawalsError) addRelatedRows((withdrawals ?? []) as AdminRow[]);
 
   const normalizedSearch = search.trim().toLowerCase();
-  const matchingRows = (profiles ?? [])
+  const matchingRows = profilesWithAuth
     .map((profile: AdminRow) => {
       const activePlan = activePlanByUser.get(String(profile.id));
       const planName = activePlan ? planById.get(String(activePlan.plan_id)) ?? "" : "";
