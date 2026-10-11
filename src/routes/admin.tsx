@@ -13,7 +13,6 @@ import {
   ArrowUpDown,
   BarChart3,
   Bell,
-  Check,
   Copy,
   Eye,
   Inbox,
@@ -51,7 +50,6 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { LoadingButtonContent, LoadingIndicator, LoadingScreen } from "@/components/LoadingIndicator";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -61,14 +59,12 @@ import { SupportTicketPanel } from "@/components/SupportTicketPanel";
 import { AdminEmailComposer } from "@/components/AdminEmailComposer";
 import "@/admin-design.css";
 import "@/morphic-system.css";
-import { isImpersonating, supabase, ensureSupabaseSessionReady } from "@/integrations/supabase/client";
-import { checkRouteAccess } from "@/lib/auth-guard.functions";
-import { formatDate, formatMoney, plainDescription, shortId, shortUserId, statusBadge, typeLabel } from "@/lib/display";
+import { isImpersonating, supabase } from "@/integrations/supabase/client";
+import { formatDate, shortId } from "@/lib/display";
 import {
   AdminModule,
   type AdminRow,
   adjustLedger,
-  amount,
   getReserveSummary,
   getOperationsOverview,
   getAdminProfitLedger,
@@ -112,7 +108,6 @@ export const Route = createFileRoute("/admin")({
   component: AdminRoute,
 });
 type Icon = typeof Users;
-type UserPartition = "all" | "paid" | "unpaid" | "starter" | "growth" | "pro" | "elite";
 
 type UserClassification = {
   paid: boolean;
@@ -2402,7 +2397,6 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
         const remaining = Number(activePlan.remaining_reward_budget_pkr ?? 0) + Number(profile.recovery_reserve_pkr ?? 0);
         const used = Math.max(0, allocated - remaining);
         const dailyUsed = Number(activePlan.daily_reward_used_pkr ?? 0);
-        const dailyLimit = Number(activePlan.daily_reward_limit_pkr ?? 0);
         return (
           <Card>
             <CardHeader className="px-4 py-3">
