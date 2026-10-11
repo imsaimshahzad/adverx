@@ -36,15 +36,7 @@ function TransactionsPage() {
 
   const load = useCallback(async () => {
     const requestVersion = ++loadVersionRef.current;
-      setLoading(true);
-      setError(null);
-      try {
-        const db = supabase as any;
-        const { data: authData, error: authError } = await supabase.auth.getUser();
-        if (authError || !authData.user) throw new Error("Please sign in again.");
-
-        const uid = authData.us  const load = useCallback(async () => {
-    const requestVersion = ++loadVersionRef.current;
+    lastLiveRefreshRef.current = Date.now();
     setLoading(true);
     setError(null);
     try {
@@ -54,11 +46,23 @@ function TransactionsPage() {
       setIsStaff(result.isStaff);
       setItems(result.rows);
     } catch (cause) {
-      if (requestVersion === loadVersionRef.current) setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
+      if (requestVersion === loadVersionRef.current) {
+        setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
+      }
     } finally {
       if (requestVersion === loadVersionRef.current) setLoading(false);
-    }Ref.current = now;
-      void load();
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+
+    const refreshIfDue = () => {
+      const now = Date.now();
+      if (now - lastLiveRefreshRef.current >= 30_000) {
+        lastLiveRefreshRef.current = now;
+        void load();
+      }
     };
     const onFocus = () => refreshIfDue();
     const onVisibility = () => {
