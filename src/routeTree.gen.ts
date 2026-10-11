@@ -649,16 +649,16 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdsRoute: AuthenticatedAdsRoute
-  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute
-  AuthenticatedNetworkRoute: AuthenticatedNetworkRoute
-  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute
-  AuthenticatedPlansRoute: AuthenticatedPlansRoute
-  AuthenticatedProfileRoute: AuthenticatedProfileRoute
-  AuthenticatedSupportRoute: AuthenticatedSupportRoute
-  AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute
-  AuthenticatedDepositPlanIdRoute: AuthenticatedDepositPlanIdRoute
-  AuthenticatedUsersDetailPublicUidRoute: AuthenticatedUsersDetailPublicUidRoute
+  AuthenticatedAdsRoute: AuthenticatedAdsRoute,
+  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedNetworkRoute: AuthenticatedNetworkRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedPlansRoute: AuthenticatedPlansRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
+  AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
+  AuthenticatedDepositPlanIdRoute: AuthenticatedDepositPlanIdRoute,
+  AuthenticatedUsersDetailPublicUidRoute: AuthenticatedUsersDetailPublicUidRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(AuthenticatedRouteChildren)
