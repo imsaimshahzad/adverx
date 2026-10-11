@@ -707,7 +707,7 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
     { data: deposits, error: depositsError },
     { data: withdrawals, error: withdrawalsError },
   ] = await Promise.all([
-    db.from("profiles").select("*").order("created_at", { ascending: false }),
+    db.from("profiles").select("id, public_uid, full_name, username, status, role, created_at, referral_code, referred_by, verified, plan_id, plan_activated_at, recovery_reserve_pkr").order("created_at", { ascending: false }),
     db.from("user_plans").select("user_id, plan_id, status").eq("status", "active"),
     db.from("plans").select("id, name"),
     db.from("transactions").select("*").order("created_at", { ascending: false }),
@@ -718,6 +718,48 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
   // The profile list is the core Users view. Related financial tables are
   // used only to enrich plan labels and search by transaction references; a
   // permission/schema issue in one of them must not blank the entire user list.
+  // Read email/phone through the staff-guarded RPC because authenticated users
+  // intentionally have column-level SELECT grants on profiles rather than SELECT *.
+  // A wildcard profile query fails with 42501 when any ungranted column exists.
+  const authUsersById = new Map<string, AdminRow>();
+  let authPage = 1;
+  let authTotal = 0;
+  let authLookupFailed = false;
+  do {
+    const { data: authRows, error: authRowsError } = await db.rpc("admin_users_page", {
+      p_search: null,
+      p_status: null,
+      p_page: authPage,
+      p_page_size: 100,
+    });
+    if (authRowsError) {
+      authLookupFailed = true;
+      console.error("[AdVerX] staff user directory RPC failed", {
+        message: authRowsError.message,
+        code: authRowsError.code,
+        details: authRowsError.details,
+        hint: authRowsError.hint,
+      });
+      break;
+    }
+    for (const row of (authRows ?? []) as AdminRow[]) {
+      const id = String(row.id ?? "");
+      if (id) authUsersById.set(id, row);
+      authTotal = Number(row.total_count ?? authTotal);
+    }
+    if (!authRows?.length || authPage * 100 >= authTotal) break;
+    authPage += 1;
+  } while (authPage <= 100);
+
+  const profilesWithAuth = (profiles ?? []).map((profile: AdminRow) => {
+    const authUser = authUsersById.get(String(profile.id ?? ""));
+    return {
+      ...profile,
+      email: authUser?.email ?? null,
+      phone: authUser?.phone ?? null,
+    };
+  });
+
   if (profilesError) {
     console.error("[AdVerX] users profile query failed", {
       message: profilesError.message,
