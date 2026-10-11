@@ -1,6 +1,6 @@
 import { formatDate, formatMoney, statusBadge } from "@/lib/display";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Copy, Info, LockKeyhole, Share2, UserPlus } from "lucide-react";
+import { AlertTriangle, Copy, LockKeyhole, Share2, UserPlus } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { toast } from "sonner";
