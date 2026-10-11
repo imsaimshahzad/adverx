@@ -15,7 +15,6 @@ export const getRouter = () => {
       queries: {
         // Retry transient failures once; avoid retry loops for broken permissions/schema.
         retry: 1,
-        refetchOnWindowFocus: false,
       },
       // Mutations may have financial side effects and must never be retried automatically.
       mutations: {
