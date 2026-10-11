@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
 import { formatMoney } from "@/lib/display";
-import { isImpersonating, supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { amountSchema, supportTextSchema, uuidSchema } from "@/lib/input-validation";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({
@@ -128,11 +128,6 @@ function WithdrawPage() {
       accountNumber,
       amount: Number(row.amount ?? 0),
     };
-  }
-
-  function escapeReceiptText(value: string) {
-    const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-    return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
   }
 
 
