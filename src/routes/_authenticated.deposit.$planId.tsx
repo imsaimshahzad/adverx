@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { money, PAYMENT_METHODS, type Plan, usePlatform } from "@/lib/platform-store";
 import { transactionIdSchema } from "@/lib/input-validation";
+import { loadDepositPlan, uploadProofAndSubmitDeposit } from "@/lib/deposit-service";
 
 export const Route = createFileRoute("/_authenticated/deposit/$planId")({
   head: () => ({ meta: [{ title: "Submit deposit — AdverX" }] }),
@@ -35,23 +35,14 @@ function DepositPage() {
     const loadPlan = async () => {
       setLoadingPlan(true);
       setPlanError(null);
-      const { data, error } = await (supabase as any).from("plans").select("*").eq("id", planId).maybeSingle();
-      if (cancelled) return;
-      if (error) setPlanError(`Unable to load this plan: ${error.message}`);
-      else if (!data) setPlanError("Unable to load this plan. Please return to Plans and select a plan again.");
-      else if (!data.active || data.status !== "active") setPlanError("This plan is no longer active.");
-      else setPlan({
-        id: data.id, name: data.name, price: Number(data.price_pkr ?? data.min_deposit ?? 0),
-        description: data.description ?? "Verified rewards plan", durationDays: data.duration_days ?? 30,
-        dailyAdLimit: Number(data.daily_task_limit ?? data.ads_per_day ?? 0), rewardBudget: Number(data.reward_budget ?? 0),
-        baseAdReward: Number(data.base_ad_reward ?? 0), maxAdReward: Number(data.max_ad_reward ?? 0),
-        dailyRewardLimit: Number(data.daily_reward_limit ?? 0), remainingRewardBudget: 0,
-        adminProfitPct: Number(data.admin_profit_pct ?? 0), referrerCommissionPct: Number(data.referrer_commission_pct ?? 0),
-        recoveryFundPct: Number(data.recovery_fund_pct ?? 0), adBudgetPct: Number(data.ad_budget_pct ?? 0),
-        recoveryPerReferral: Number(data.recovery_per_referral_pkr ?? 0),
-        minWithdrawal: Number(data.min_withdrawal ?? 0), networkEligible: Boolean(data.referral_eligible ?? data.referral_enabled),
-      });
-      setLoadingPlan(false);
+      try {
+        const loadedPlan = await loadDepositPlan(planId);
+        if (!cancelled) setPlan(loadedPlan);
+      } catch (error) {
+        if (!cancelled) setPlanError(error instanceof Error ? error.message : "Unable to load this plan.");
+      } finally {
+        if (!cancelled) setLoadingPlan(false);
+      }
     };
     void loadPlan();
     return () => { cancelled = true; };
@@ -81,14 +72,13 @@ function DepositPage() {
         if (!method) { toast.error("Choose a payment method."); return; }
         setSubmitting(true);
         try {
-          const { data: auth } = await supabase.auth.getUser();
-          if (!auth.user) throw new Error("Invalid authenticated user");
-          const path = `${auth.user.id}/${crypto.randomUUID()}-${proofFile.name}`;
-          const { error: uploadError } = await supabase.storage.from("payment-proofs").upload(path, proofFile, { contentType: proofFile.type, upsert: false });
-          if (uploadError) throw new Error(`Receipt upload failed: ${uploadError.message}`);
-          const digest = await crypto.subtle.digest("SHA-256", await proofFile.arrayBuffer());
-          const imageHash = Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
-          await submitDeposit({ planId: plan.id, method: method.name, transactionId: txnId.trim(), proofName: path, imageHash });
+          await uploadProofAndSubmitDeposit({
+            file: proofFile,
+            planId: plan.id,
+            method: method.name,
+            transactionId: txnId.trim(),
+            submitDeposit,
+          });
           toast.success("Deposit submitted for review");
           await navigate({ to: "/plans" });
         } catch (error) { toast.error(error instanceof Error ? error.message : "Deposit creation failed"); } finally { setSubmitting(false); }
