@@ -715,22 +715,40 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
     db.from("withdrawals").select("*").order("created_at", { ascending: false }),
   ]);
 
-  if (
-    profilesError ||
-    plansError ||
-    planNamesError ||
-    transactionsError ||
-    depositsError ||
-    withdrawalsError
-  ) {
-    throw new Error("Unable to load users.");
+  // The profile list is the core Users view. Related financial tables are
+  // used only to enrich plan labels and search by transaction references; a
+  // permission/schema issue in one of them must not blank the entire user list.
+  if (profilesError) {
+    console.error("[AdVerX] users profile query failed", {
+      message: profilesError.message,
+      code: profilesError.code,
+      details: profilesError.details,
+      hint: profilesError.hint,
+    });
+    throw new Error(profilesError.message || "Unable to load user profiles.");
+  }
+
+  if (plansError) {
+    console.error("[AdVerX] users active-plan query failed", plansError);
+  }
+  if (planNamesError) {
+    console.error("[AdVerX] users plan-name query failed", planNamesError);
+  }
+  if (transactionsError) {
+    console.error("[AdVerX] users transaction search query failed", transactionsError);
+  }
+  if (depositsError) {
+    console.error("[AdVerX] users deposit search query failed", depositsError);
+  }
+  if (withdrawalsError) {
+    console.error("[AdVerX] users withdrawal search query failed", withdrawalsError);
   }
 
   const planById = new Map(
-    (plans ?? []).map((plan: AdminRow) => [String(plan.id), String(plan.name ?? "")]),
+    (plansError ? [] : plans ?? []).map((plan: AdminRow) => [String(plan.id), String(plan.name ?? "")]),
   );
   const activePlanByUser = new Map<string, AdminRow>();
-  for (const activePlan of activePlans ?? []) {
+  for (const activePlan of plansError ? [] : activePlans ?? []) {
     const userId = String(activePlan.user_id ?? "");
     if (userId && !activePlanByUser.has(userId)) {
       activePlanByUser.set(userId, activePlan);
@@ -750,9 +768,9 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
       relatedSearchByUser.set(userId, tokens);
     }
   };
-  addRelatedRows((transactions ?? []) as AdminRow[]);
-  addRelatedRows((deposits ?? []) as AdminRow[]);
-  addRelatedRows((withdrawals ?? []) as AdminRow[]);
+  if (!transactionsError) addRelatedRows((transactions ?? []) as AdminRow[]);
+  if (!depositsError) addRelatedRows((deposits ?? []) as AdminRow[]);
+  if (!withdrawalsError) addRelatedRows((withdrawals ?? []) as AdminRow[]);
 
   const normalizedSearch = search.trim().toLowerCase();
   const matchingRows = (profiles ?? [])
