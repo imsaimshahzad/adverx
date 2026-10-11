@@ -10,9 +10,9 @@ AdverX is a TanStack Start + React + TypeScript application backed by Supabase. 
 4. Start the dev server: `npm run dev`.
 5. Validate changes with `npm run lint` and `npm run build`.
 
-Start with [`docs/CODEBASE_GUIDE.md`](docs/CODEBASE_GUIDE.md) for the architecture, request/data flows, security boundaries, and troubleshooting. See [`docs/API_ARCHITECTURE.md`](docs/API_ARCHITECTURE.md) for API route conventions and shared HTTP helpers. See [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) for the folder map and rules for generated/database files.
+**Before investigating a reported/recurring bug or changing financial behavior, read [`docs/ISSUE_RESOLUTION_LOG.md`](docs/ISSUE_RESOLUTION_LOG.md) first.** Match the report to the existing issue/status and do not repeat a resolved transaction adjustment. Then consult the [`docs/FINANCIAL_RULES_AND_ALLOCATION.md`](docs/FINANCIAL_RULES_AND_ALLOCATION.md) for plan prices, allocation targets, referral commissions, reward limits, role boundaries, admin financial scenarios, and reconciliation checks. The issue log records historical resolutions and open verification; neither document replaces live Supabase/RPC/ledger verification.
 
-For plan prices, allocation targets, referral commissions, reward limits, role boundaries, admin financial scenarios, ledger/reconciliation checks, and the required documentation-update process, see [`docs/FINANCIAL_RULES_AND_ALLOCATION.md`](docs/FINANCIAL_RULES_AND_ALLOCATION.md). This is a baseline plus verification checklist; live Supabase values and financial RPCs must be checked before treating a rule as confirmed in production.
+Start with [`docs/CODEBASE_GUIDE.md`](docs/CODEBASE_GUIDE.md) for the architecture, request/data flows, security boundaries, and troubleshooting. See [`docs/API_ARCHITECTURE.md`](docs/API_ARCHITECTURE.md) for API route conventions and shared HTTP helpers. See [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) for the folder map and rules for generated/database files.
 
 ## Important conventions
 
