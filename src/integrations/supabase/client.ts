@@ -67,13 +67,13 @@ function resilientStorage(primary: Storage | undefined): Storage {
   };
   const write = (key: string, value: string) => {
     memory.set(key, value);
-    try { primary?.setItem(key, value); return; } catch {}
-    try { fallback?.setItem(key, value); } catch {}
+    try { primary?.setItem(key, value); return; } catch { /* Storage may be blocked by browser privacy settings. */ }
+    try { fallback?.setItem(key, value); } catch { /* Storage may be blocked by browser privacy settings. */ }
   };
   const remove = (key: string) => {
     memory.delete(key);
-    try { primary?.removeItem(key); } catch {}
-    try { fallback?.removeItem(key); } catch {}
+    try { primary?.removeItem(key); } catch { /* Storage may be blocked by browser privacy settings. */ }
+    try { fallback?.removeItem(key); } catch { /* Storage may be blocked by browser privacy settings. */ }
   };
 
   return { getItem: read, setItem: write, removeItem: remove, clear: () => {}, key: () => null, length: 0 } as Storage;
