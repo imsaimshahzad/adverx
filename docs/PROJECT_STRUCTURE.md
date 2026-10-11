@@ -48,3 +48,11 @@ The repository has both Supabase SQL migrations and Drizzle migrations. They are
 - `.tanstack/tmp/` is temporary router output and should not be versioned.
 - `.wrangler/deploy/` is generated deployment metadata and should not be versioned.
 - `.attached-lovable/` is a tool-generated project snapshot currently present in the repository. Treat the root-level files as the canonical deployable app; do not copy edits between the snapshot and root automatically. Remove the snapshot only after confirming the connected editor no longer depends on it.
+
+
+## Business logic and UI separation
+
+- Route components should focus on rendering, local form state, navigation, and user feedback.
+- Put database reads/writes, data mapping, proof uploads/hashing, and wallet transaction loading in focused modules under `src/lib/*-service.ts`.
+- Client services orchestrate requests but are not a security boundary; financial enforcement stays in guarded Supabase RPCs/database functions.
+- Avoid moving file-based route modules or generated route trees during routine refactors.
