@@ -9,6 +9,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useReducer,
   useState,
   type ReactNode,
 } from "react";
@@ -216,6 +217,27 @@ type State = {
   recoveries: Array<{ id: string; amount: number; status: string; createdAt: number; referredId: string }>;
   adminProfitSummary: AdminProfitSummary | null;
 };
+
+/** Centralized reducer for authenticated account snapshots.
+ * Server data remains authoritative; financial values are never optimistic here.
+ */
+type StateAction =
+  | { type: "hydrate"; state: State }
+  | { type: "clear" }
+  | { type: "set-user"; user: User };
+
+function stateReducer(_current: State, action: StateAction): State {
+  switch (action.type) {
+    case "hydrate": return action.state;
+    case "clear": return EMPTY as unknown as State;
+    case "set-user": return { ...(EMPTY as unknown as State), user: action.user };
+    default: {
+      const exhaustive: never = action;
+      return exhaustive;
+    }
+  }
+}
+
 export const money = (n: number) => {
   const value = Number(n ?? 0);
   let currency: "PKR" | "USD" = "PKR";
@@ -871,7 +893,7 @@ type Ctx = {
 const StoreContext = createContext<Ctx | null>(null);
 
 export function PlatformProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<State>(EMPTY as unknown as State);
+  const [state, dispatchState] = useReducer(stateReducer, EMPTY as unknown as State);
   const [ready, setReady] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
   const [catalogReady, setCatalogReady] = useState(false);
@@ -906,38 +928,35 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const version = ++refreshVersion.current;
   setDataError(null);
   if (!user) {
-    setState(EMPTY as unknown as State);
+    dispatchState({ type: "clear" });
     setReady(true);
     return;
   }
   // Let the authenticated shell open as soon as Supabase confirms a user.
   // The full account snapshot includes many independent queries; waiting for all
   // of them before exposing state leaves the login screen spinning unnecessarily.
-  setState((current) => {
-    if (current.user?.id === user.id) return current;
-    return {
-      ...(EMPTY as unknown as State),
-      user: {
-        id: user.id,
-        fullName: String(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Member"),
-        username: String(user.user_metadata?.username ?? user.email?.split("@")[0] ?? "member"),
-        email: user.email ?? "",
-        phone: String(user.user_metadata?.phone ?? ""),
-        publicUid: "",
-        referralCode: user.id.slice(0, 8).toUpperCase(),
-        verified: true,
-        planId: null,
-        planActivatedAt: null,
-        status: "active",
-        role: "user",
-        createdAt: Date.now(),
-      },
-    } as State;
+  dispatchState({
+    type: "set-user",
+    user: {
+      id: user.id,
+      fullName: String(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Member"),
+      username: String(user.user_metadata?.username ?? user.email?.split("@")[0] ?? "member"),
+      email: user.email ?? "",
+      phone: String(user.user_metadata?.phone ?? ""),
+      publicUid: "",
+      referralCode: user.id.slice(0, 8).toUpperCase(),
+      verified: true,
+      planId: null,
+      planActivatedAt: null,
+      status: "active",
+      role: "user",
+      createdAt: Date.now(),
+    },
   });
   setReady(true);
   try {
   const nextState = await loadState(user);
-  if (version === refreshVersion.current) setState(nextState);
+  if (version === refreshVersion.current) dispatchState({ type: "hydrate", state: nextState });
   } catch (error) {
   console.error("[v0] Supabase data sync failed", error);
   if (version === refreshVersion.current) {
