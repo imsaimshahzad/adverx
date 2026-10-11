@@ -9,7 +9,7 @@ AdverX currently uses TanStack Start file-based server routes for HTTP endpoints
 - **Transport / route layer:** `src/routes/api.*.ts` defines the URL, HTTP methods, request parsing, and response status.
 - **Authentication and authorization:** use the existing server-side guards in `src/lib/auth.server.ts` or the domain-specific guard (for example, `src/lib/ad-api.server.ts`). A hidden button or client-side role check is not authorization.
 - **Shared HTTP helpers:** `src/lib/api/http.server.ts` contains bounded JSON parsing and standard error responses.
-- **Shared rate limiting:** `src/lib/api/rate-limit.server.ts` uses an atomic PostgreSQL RPC, so limits are shared across serverless instances. Authenticated endpoints use user IDs; the unauthenticated impersonation endpoint uses a hashed network identity. Raw IPs are not persisted.
+- **Shared rate limiting:** `src/lib/api/rate-limit.server.ts` reuses the existing `public.consume_rate_limit` RPC, so limits are shared across serverless instances. Authenticated endpoints use user IDs; unauthenticated endpoints use a hashed network identity. Raw IPs are not persisted.
 - **Domain/service layer:** keep reusable business operations in focused modules under `src/lib/*-service.ts` or a domain folder under `src/lib/`.
 - **Database enforcement:** Supabase RLS, grants, and guarded RPC/database functions remain the security and consistency boundary for protected or financial operations.
 
@@ -72,4 +72,4 @@ Do not batch-refactor all routes just to make them look uniform. Migrate one end
 
 ## Validation
 
-For changes to this structure, run `npm run test:api`, `npm run lint`, and `npm run build`. The API tests cover bounded JSON parsing and error response contracts. The database rate-limit RPC must also be smoke-tested after migration. A green build does not by itself validate authorization or accounting correctness.
+For changes to this structure, run `npm run test:api`, `npm run lint`, and `npm run build`. The API tests cover bounded JSON parsing and error response contracts. The existing database rate-limit RPC should also be smoke-tested against the active Supabase project. A green build does not by itself validate authorization or accounting correctness.
