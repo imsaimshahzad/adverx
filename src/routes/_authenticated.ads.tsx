@@ -4,7 +4,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -500,8 +499,6 @@ function AdPlayer({
   const mountAd = ({
     type,
     src,
-    w,
-    h,
   }: {
     type: "video" | "html" | "image";
     src: string;
