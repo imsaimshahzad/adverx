@@ -51,15 +51,19 @@ export function clearReferralAttribution() {
 }
 
 export async function validateReferralCode(code: string) {
-  const normalized = code.trim().toUpperCase();
+  const normalized = normalizeReferralCode(code);
+  if (!normalized) return null;
+
   const { data, error } = await (supabase as any)
     .from("profiles")
-    .select("id, full_name, referral_code")
+    .select("referral_code")
     .eq("referral_code", normalized)
     .maybeSingle();
+
   if (error) {
     console.error("[v0] Referral validation query failed", { code: error.code, message: error.message, details: error.details });
     throw new Error(`Unable to validate referral link: ${error.message}`);
   }
-  return data as { id: string; full_name: string; referral_code: string } | null;
+
+  return data as { referral_code: string } | null;
 }
