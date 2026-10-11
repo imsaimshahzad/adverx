@@ -13,7 +13,6 @@ const db = supabase as any;
 const categories = ["Withdrawal Issue", "Task Not Credited", "Account Issue", "Referral Issue", "Other"] as const;
 const statuses = ["open", "in_progress", "resolved", "closed"] as const;
 const priorities = ["low", "normal", "high", "urgent"] as const;
-const priorityLabels: Record<(typeof priorities)[number], string> = { low: "Low", normal: "Medium", high: "High", urgent: "Urgent" };
 
 type Ticket = { id: string; user_id: string; user_name?: string | null; user_public_uid?: string | null; subject: string; description: string | null; message: string | null; category: string; status: string; priority: string; created_at: string; updated_at: string };
 type Message = { id: string; ticket_id: string; sender_type: "user" | "admin"; message: string; created_at: string };
