@@ -1,19 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireAdApiUser } from "@/lib/ad-api.server";
+import { jsonError, readJsonObject } from "@/lib/api/http.server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function jsonError(message: string, status = 400) {
-  return Response.json({ error: message }, { status });
-}
-
-async function readBody(request: Request) {
-  try {
-    return (await request.json()) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
 
 export const Route = createFileRoute("/api/ads/$action")({
   server: {
@@ -21,7 +10,7 @@ export const Route = createFileRoute("/api/ads/$action")({
       POST: async ({ request, params }) => {
         try {
           const { db } = await requireAdApiUser();
-          const body = await readBody(request);
+          const body = (await readJsonObject(request)) ?? {};
 
           if (params.action === "start") {
             const adId = String(body.adId ?? "");
