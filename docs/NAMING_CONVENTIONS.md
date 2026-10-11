@@ -5,7 +5,7 @@ This document defines naming rules for new and modified AdverX code. It delibera
 ## Source code
 
 - React components and component files: `PascalCase` (for example, `AdminEmailComposer.tsx`, `TransactionRow.tsx`).
-- React hooks: files and exported hook names start with `use`; preserve the repository's established hook style where touching existing files (current examples include `use-mobile.tsx` and `useUserProfile()`-style names).
+- React hooks: files and exported hook names start with `use`; preserve the repository's established hook style where touching existing files (current example is `use-mobile.tsx` exporting `useIsMobile()`).
 - Functions and local variables: `camelCase` (for example, `fetchUsers`, `isVerified`, `handleApproveWithdrawal`).
 - Boolean names should communicate a yes/no state with prefixes such as `is`, `has`, `can`, or `should`.
 - Constants: `UPPER_SNAKE_CASE` for module-level values that are true constants (for example, `MAX_DAILY_REWARDS`); do not convert ordinary variables to constants-style names.
