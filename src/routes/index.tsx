@@ -10,11 +10,8 @@ import {
   Network,
   ReceiptText,
   ChevronDown,
-  Menu,
-  X,
   CreditCard,
   CircleDollarSign,
-  Activity,
   LockKeyhole,
   Linkedin,
   Twitter,
@@ -57,7 +54,6 @@ export const Route = createFileRoute("/")({
 });
 
 function PublicHome() {
-  const { state } = usePlatform();
   const plans = PLANS;
   const hero = useHomepageHero();
 
