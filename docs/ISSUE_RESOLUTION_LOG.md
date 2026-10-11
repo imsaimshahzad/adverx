@@ -30,42 +30,37 @@
 
 | Issue ID | Search keys | Short description | Status | Required next action |
 |---|---|---|---|---|
-| AX-FIN-027 | `27`, `341355`, reward budget `522`, `549`, reserve adjustment | PKR 27 difference absorbed by platform-use reserve; historic adjustment recorded | **RESOLVED** | Do not deduct from member wallet or apply the reserve adjustment again; reopen only with contradictory new evidence |
-| AX-FIN-024 | `24`, `341355`, indirect/L2 commission, Pro pool `54`, admin settlement `30` | Historical commission split needs the event-time L2 rate verified | **PENDING VERIFICATION** | Trace the original event and historical configuration/RPC before any correction |
+| AX-FIN-027 | `27`, buyer UID `341355`, referrer UID `622644`, reward budget `522`, `549`, purchase `cb592147-7ce5-4978-ae28-542a12b13a05` | PKR 27 commission overpayment was reserve-funded; buyer's reward budget reconciled 522→549 | **RESOLVED — LIVE DB VERIFIED 2026-10-11** | Do not repeat reserve debit or reward-budget reconciliation; do not debit either member wallet |
+| AX-FIN-024 | `24`, buyer UID `341355`, recipient UID `411613`, indirect/L2 commission, Pro pool `54`, admin settlement `30` | Current DB confirms 24 distributed + 30 admin settlement = 54; event-time rate/algorithm remains unverified | **PENDING VERIFICATION — LIVE DB PARTIALLY VERIFIED 2026-10-11** | Do not move/refund/debit the 24; establish the event-time rule before any correction |
 | AX-DOC-BASELINE | plan allocation, `5/8/30`, `5/7/9`, direct commission | Financial baseline created; several live implementation items still need verification | **OPEN / VERIFICATION BACKLOG** | Follow Section 11 in `FINANCIAL_RULES_AND_ALLOCATION.md`; do not assume target rules are live rules |
 
 ---
 
 ## AX-FIN-027 — PKR 27 reward-budget / reserve adjustment
 
-**Status:** **RESOLVED** (based on the recorded prior investigation; reopen only with new contradictory evidence)
+**Status:** **RESOLVED — LIVE DATABASE VERIFIED 2026-10-11** (read-only verification; no new financial entries written)
 
-- **Search terms:** `27`, `Rs. 27`, public UID `341355`, reward budget `522`, `549`, platform-use reserve, reserve adjustment.
-- **Reported discrepancy:** For public UID `341355`, PKR 162 had been recorded where PKR 135 was the correct amount for the relevant commission/reward comparison, leaving a PKR 27 difference.
-- **Recorded resolution:** The PKR 27 difference was absorbed by the platform-use reserve. The reward-budget figure was adjusted from **PKR 522 to PKR 549**, and the reserve adjustment was recorded. The original history was preserved; no member-wallet deduction was required.
-- **Do not do this again:** Do **not** deduct PKR 27 from the member's wallet. Do not repeat the reserve adjustment, add a second correction, or rewrite/delete the original ledger history simply because the difference appears in a new report or conversation.
-- **Evidence / limitation:** This entry is based on the recorded prior investigation and decision. This log entry itself is not a live Supabase query and does not independently prove the current database still contains the adjustment.
-- **Reopen only if:** The original reserve adjustment is absent, duplicated, reversed, or the current authoritative ledger shows a new/unexplained difference. If reopened, first inspect all related entries and references and record the new evidence.
-- **Verification required before reopening:** Confirm the original PKR 27 adjustment and PKR 522 → PKR 549 budget change in the authoritative records; compare current ledger and reserve summaries without writing any new entry.
-- **Resolution history:** Original financial history must remain intact; the documented resolution is a reserve-side adjustment, not a member-wallet debit.
+- **Search terms:** `27`, `Rs. 27`, buyer public UID `341355`, commission recipient/referrer public UID `622644`, reward budget `522`, `549`, purchase ID `cb592147-7ce5-4978-ae28-542a12b13a05`, reserve adjustment.
+- **Important identity clarification:** UID `341355` is the Pro-plan buyer whose reward budget was reconciled. The **PKR 162 direct commission was paid to referrer UID `622644`**, whose active plan was Growth. The approved policy rate recorded in the audit is 15%, so the expected direct commission was PKR 135; the actual completed payment was PKR 162, a PKR 27 overpayment.
+- **Verified reserve correction:** `recovery_fund_ledger` contains one PKR 27 `debit` row for the purchase, with note that the difference was absorbed by the platform-use reserve. `ledger_entries` contains one `referral_commission_reserve_adjustment` of -PKR 27. The admin wallet history has a matching -PKR 27 `ADMIN_ADJUSTMENT` entry explicitly recording `member_wallet_debit_pkr: 0`. Audit record `audit_issue_resolved` points to the correction entry and says not to apply another adjustment.
+- **Verified reward-budget reconciliation:** The buyer's `user_plans` row currently has reward budget and original reserve **PKR 549**. Its remaining reward budget is now **PKR 471.64** (it was PKR 496.29 at the time of the prior audit, so subsequent reward use explains the change). The purchase's reward-budget ledger rows are +552 initial, -30 reversal, and +27 reconciliation = **PKR 549 net**. There is one row for each of those correction types; the original purchase/allocation snapshots remain preserved.
+- **Conclusion:** The historic PKR 27 correction is present in the live database and must not be repeated. The original commission stays paid at PKR 162; the reserve absorbs the PKR 27 difference; no member wallet should be debited.
+- **Do not do this again:** Do not issue another reserve debit, another +PKR 27 budget reconciliation, or a member-wallet debit. Do not change/delete the original commission, completed withdrawal, or historical purchase snapshot to make reports look different.
+- **Reopen only if:** A new query shows one of the correction rows missing/duplicated/reversed, the buyer budget ledger no longer reconciles to PKR 549 net, or a new separate discrepancy appears. Inspect all rows linked to the purchase ID before any action.
 
 ## AX-FIN-024 — historical PKR 24 indirect/L2 commission discrepancy
 
-**Status:** **PENDING VERIFICATION** (not resolved)
+**Status:** **PENDING VERIFICATION — LIVE DATABASE PARTIALLY VERIFIED 2026-10-11**
 
-- **Search terms:** `24`, `Rs. 24`, public UID `341355`, indirect commission, L2, Pro pool `54`, admin settlement `30`, historical rate.
-- **Recorded observation:** A PKR 54 Pro-related pool was recorded as **PKR 24 commission + PKR 30 admin settlement**, which accounts for the full PKR 54 pool arithmetically.
-- **Discrepancy:** The currently described L2 rate would imply PKR 18 for the relevant event, not PKR 24. The correct rate/rule at the time of the original event has not yet been established.
-- **Current conclusion:** The pool appears fully accounted for in the described split, but the commission-rate correctness remains unverified. Arithmetic reconciliation alone does not prove the allocation was correct.
-- **Do not do this yet:** Do not debit the user, refund PKR 6, move the PKR 24, change the admin settlement, or rerun/reverse the commission until the event-time rule and complete ledger chain are confirmed.
-- **Required investigation:**
-  1. Find the original commission/pool event and all linked ledger/audit entries.
-  2. Identify the plan/level/rate configuration and active RPC/code that applied **at the event timestamp**.
-  3. Confirm the rate base, rounding, eligibility, and whether PKR 24 was an approved historical rate or an error.
-  4. Check whether the admin settlement is a separate allocation, a remainder, or a report-only figure; do not assume its meaning from the label.
-  5. Reconcile the total pool exactly once and inspect whether a later correction already exists.
-  6. Record the evidence, approved outcome, any compensating-entry reference, and tests here before changing the status.
-- **Completion rule:** Mark **RESOLVED** only after the event-time rule and ledger chain are evidenced and the correct outcome is documented. If the historical rate cannot be established, keep this item pending and explain the uncertainty in future audits.
+- **Search terms:** `24`, `Rs. 24`, buyer public UID `341355`, commission recipient public UID `411613`, indirect commission, L2, Pro pool `54`, admin settlement `30`, purchase ID `cb592147-7ce5-4978-ae28-542a12b13a05`, historical rate.
+- **Verified purchase:** The Pro purchase is PKR 900, approved at `2026-10-09 14:01:08 UTC`, purchase/deposit ID `cb592147-7ce5-4978-ae28-542a12b13a05`.
+- **Verified commission row:** Recipient UID `411613` received one completed PKR 24 Level-2 commission. Its source is `approved_plan_purchase_indirect`, stored `percentage=100`, and wallet transaction metadata labels it `commission_source=indirect_normalized` with `indirect_pool=24`. There is no reversal row for this commission.
+- **Verified current pool/settlement:** The current `purchase_allocations` row records indirect pool **PKR 54**, distributed **PKR 24**. `indirect_pool_admin_settlements` has one settlement for the same purchase of **PKR 30**, and matching admin wallet/ledger entries exist. Therefore the current pool is arithmetically reconciled: 24 + 30 = 54. This proves the current recorded split, not that the original rate was correct.
+- **Historical evidence and uncertainty:** The purchase-time `PLAN_PURCHASE_APPROVED` audit snapshot (Oct 9) records the original indirect pool as **PKR 24** and one eligible recipient receiving the full 24. The pool was restored/reconciled to PKR 54 by an audit event on **Oct 10 at 07:27:54 UTC**; the L2–L6 rate table's current rows were last updated **Oct 10 at 07:43:18 UTC**, after the purchase. Current rates are L2 33.3333%, L3 25%, L4 16.6667%, L5 12.5%, L6 12.5%. On a PKR 54 pool, today's L2 weight would yield PKR 18; on the original PKR 24 pool it would yield PKR 8. However, the purchase-time row stores 100% and the original audit shows a different distribution path. The current rate table cannot establish the historical rule that applied on Oct 9.
+- **Current conclusion:** PKR 24 + PKR 30 is fully accounted for in current records, but the event-time rule/algorithm remains unverified. The 24 commission may reflect the old normalization method; do not assume either that it was correct or that it was an overpayment.
+- **Do not do this yet:** Do not debit/refund PKR 6 or PKR 16, reverse the PKR 24, change the PKR 30 admin settlement, or rerun distribution. The original purchase was Oct 9; the pool/rate changes occurred Oct 10.
+- **Remaining investigation:** Find the deployed code/SQL migration and rate configuration active on Oct 9 (before the Oct 10 pool/rate changes), then compare the old distribution rule with the recorded commission. Preserve the current settlement's idempotency; the settlement function explicitly returns `already_settled` after a settlement exists.
+- **Completion rule:** Mark **RESOLVED** only when event-time configuration/code or equivalent audit evidence establishes the approved L2 calculation. Until then, keep pending. If the historic rule cannot be recovered, record that limitation and obtain an explicit business decision before any compensating entry.
 
 ## AX-DOC-BASELINE — baseline-vs-live financial rules
 
@@ -117,3 +112,4 @@ Copy this template for each genuinely new issue. Keep the original entry and res
 | Date | Change | Evidence/status |
 |---|---|---|
 | 2026-10-11 | Created issue/resolution memory; added the recorded PKR 27 resolution and PKR 24 pending verification case. | Historical notes captured; live ledger state not independently re-queried as part of this documentation change. |
+| 2026-10-11 | Read-only verification against active Supabase project: confirmed the single PKR 27 reserve debit, budget net PKR 549, and no member-wallet debit; confirmed PKR 24 indirect commission + PKR 30 admin settlement = PKR 54, but the event-time rate remains unverified. Clarified buyer UID versus commission recipient UID. | PKR 27: resolved and live DB corroborated. PKR 24: pending historical rule/code verification. No data changed by the verification queries. |
