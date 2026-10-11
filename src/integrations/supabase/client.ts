@@ -67,13 +67,21 @@ function resilientStorage(primary: Storage | undefined): Storage {
   };
   const write = (key: string, value: string) => {
     memory.set(key, value);
-    try { primary?.setItem(key, value); return; } catch {}
-    try { fallback?.setItem(key, value); } catch {}
+    try { primary?.setItem(key, value); return; } catch {
+      // Fall back to session storage or in-memory storage when browser storage is blocked.
+    }
+    try { fallback?.setItem(key, value); } catch {
+      // In-memory storage remains available for this tab.
+    }
   };
   const remove = (key: string) => {
     memory.delete(key);
-    try { primary?.removeItem(key); } catch {}
-    try { fallback?.removeItem(key); } catch {}
+    try { primary?.removeItem(key); } catch {
+      // Continue clearing the fallback stores even if primary storage is blocked.
+    }
+    try { fallback?.removeItem(key); } catch {
+      // No persistent fallback is available; the in-memory entry is already removed.
+    }
   };
 
   return { getItem: read, setItem: write, removeItem: remove, clear: () => {}, key: () => null, length: 0 } as Storage;
