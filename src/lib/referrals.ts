@@ -54,16 +54,15 @@ export async function validateReferralCode(code: string) {
   const normalized = normalizeReferralCode(code);
   if (!normalized) return null;
 
-  const { data, error } = await (supabase as any)
-    .from("profiles")
-    .select("referral_code")
-    .eq("referral_code", normalized)
-    .maybeSingle();
+  const { data, error } = await (supabase as any).rpc("validate_public_referral_code", {
+    p_code: normalized,
+  });
 
   if (error) {
     console.error("[v0] Referral validation query failed", { code: error.code, message: error.message, details: error.details });
     throw new Error(`Unable to validate referral link: ${error.message}`);
   }
 
-  return data as { referral_code: string } | null;
+  const match = Array.isArray(data) ? data[0] ?? null : data;
+  return match as { referral_code: string } | null;
 }
