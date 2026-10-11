@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ATTRIBUTION_KEY = "adverx_referral_code";
 
-export function referralUrl(code: string, origin = typeof window !== "undefined" ? window.location.origin : "") {
+export function referralUrl(code: string) {
   const productionOrigin = "https://adverx.online";
   return `${productionOrigin}/signup?ref=${encodeURIComponent(code)}`;
 }
