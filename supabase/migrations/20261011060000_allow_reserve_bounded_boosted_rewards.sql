@@ -25,8 +25,8 @@ begin
 
   v_updated := replace(
     v_updated,
-    'least(100.00,',
-    'least(150.00,'
+    'least(' || E'\n    100.00,',
+    'least(' || E'\n    150.00,'
   );
 
   v_updated := replace(
@@ -49,10 +49,11 @@ begin
 
   if v_updated = v_definition
      or position('if v_combined_available <= 0 then' in v_updated) = 0
-     or position('least(150.00,' in v_updated) = 0
+     or position('150.00,' || E'\n    greatest(10.00,' in v_updated) = 0
      or position('(1.00 + v_total_boost_pct / 100.00)' in v_updated) = 0
      or position('v_remaining_daily,' in v_updated) > 0
-     or position('v_remaining_daily <= 0' in v_updated) > 0 then
+     or position('v_remaining_daily <= 0' in v_updated) > 0
+     or position('v_remaining_daily := greatest' in v_updated) > 0 then
     raise exception 'Safe reward-policy patch verification failed; no function change applied';
   end if;
 
