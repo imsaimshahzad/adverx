@@ -7,7 +7,7 @@ import { TransactionRow } from "@/components/TransactionRow";
 import { Badge } from "@/components/ui/badge";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { formatDate, formatMoney, plainDescription, shortId, statusBadge, typeLabel } from "@/lib/display";
-import { supabase } from "@/integrations/supabase/client";
+import { loadWalletTransactions, type TransactionRowData } from "@/lib/transaction-service";
 
 export const Route = createFileRoute("/transactions")({
   head: () => ({
@@ -18,23 +18,6 @@ export const Route = createFileRoute("/transactions")({
   }),
   component: TransactionsPage,
 });
-
-type TransactionRowData = {
-  id: string;
-  transaction_no?: string | null;
-  user_id: string | null;
-  parent_transaction_id?: string | null;
-  kind: string;
-  amount: number | null;
-  currency?: string | null;
-  status: string | null;
-  source_type: string | null;
-  source_id: string | null;
-  description: string | null;
-  metadata?: Record<string, unknown>;
-  created_at: string;
-  processed_at?: string | null;
-};
 
 function TransactionsPage() {
   const [items, setItems] = useState<TransactionRowData[]>([]);
@@ -60,58 +43,21 @@ function TransactionsPage() {
         const { data: authData, error: authError } = await supabase.auth.getUser();
         if (authError || !authData.user) throw new Error("Please sign in again.");
 
-        const uid = authData.user.id;
-        const { data: profile, error: profileError } = await db
-          .from("profiles")
-          .select("role, public_uid")
-          .eq("id", uid)
-          .maybeSingle();
-        if (profileError) throw new Error(profileError.message);
-
-        const staff = ["admin", "super_admin", "moderator"].includes(String(profile?.role ?? ""));
-        if (requestVersion !== loadVersionRef.current) return;
-        setAccountUid(String(profile?.public_uid ?? "").trim() || null);
-        setIsStaff(staff);
-
-        // This page is the signed-in user's wallet activity, including when the user is staff.
-        // Admin-wide transaction monitoring belongs in the admin area, not the personal wallet.
-        const query = db
-          .from("transactions")
-          .select("*")
-          .eq("user_id", uid)
-          .order("created_at", { ascending: false })
-          .order("transaction_no", { ascending: false });
-        const { data, error: txError } = await query.limit(500);
-        if (txError) throw new Error(txError.message);
-
-        const rows = ((data ?? []) as TransactionRowData[]).map((row) => ({
-          ...row,
-          amount: row.amount == null ? null : Number(row.amount),
-          metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
-        }));
-
-        // Keep the existing wallet-state read intact; display never derives or estimates balances.
-        if (!staff) await db.rpc("wallet_state", { _user_id: uid });
-
-        if (requestVersion === loadVersionRef.current) setItems(rows);
-      } catch (cause) {
-        if (requestVersion === loadVersionRef.current) setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
-      } finally {
-        if (requestVersion === loadVersionRef.current) setLoading(false);
-      }
-  }, []);
-
-  useEffect(() => {
-    const requestedFilter = new URLSearchParams(window.location.search).get("type");
-    if (requestedFilter === "withdrawals") setActivityFilter("withdrawals");
-  }, []);
-
-  useEffect(() => {
-    void load();
-    const refreshIfDue = () => {
-      const now = Date.now();
-      if (now - lastLiveRefreshRef.current < 10_000) return;
-      lastLiveRefreshRef.current = now;
+        const uid = authData.us  const load = useCallback(async () => {
+    const requestVersion = ++loadVersionRef.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await loadWalletTransactions();
+      if (requestVersion !== loadVersionRef.current) return;
+      setAccountUid(result.accountUid);
+      setIsStaff(result.isStaff);
+      setItems(result.rows);
+    } catch (cause) {
+      if (requestVersion === loadVersionRef.current) setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
+    } finally {
+      if (requestVersion === loadVersionRef.current) setLoading(false);
+    }Ref.current = now;
       void load();
     };
     const onFocus = () => refreshIfDue();
