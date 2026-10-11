@@ -1,26 +1,58 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { put } from "@vercel/blob";
 import { requireAdminUser } from "@/lib/auth.server";
+import { enforceRateLimit } from "@/lib/api/rate-limit.server";
+
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 export const Route = createFileRoute("/api/upload-hero")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        let admin: Awaited<ReturnType<typeof requireAdminUser>>;
         try {
-          await requireAdminUser();
+          admin = await requireAdminUser();
         } catch {
           return Response.json({ error: "Forbidden" }, { status: 403 });
         }
-        const formData = await request.formData();
+
+        const rateLimitResponse = await enforceRateLimit({
+          identifier: admin.id,
+          routeKey: "admin.upload-hero",
+          limit: 10,
+          windowSeconds: 60 * 60,
+        });
+        if (rateLimitResponse) return rateLimitResponse;
+
+        const contentLength = Number(request.headers.get("content-length") ?? 0);
+        if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_BYTES + 64 * 1024) {
+          return Response.json({ error: "Image upload is too large." }, { status: 413 });
+        }
+
+        let formData: FormData;
+        try {
+          formData = await request.formData();
+        } catch {
+          return Response.json({ error: "Invalid upload payload." }, { status: 400 });
+        }
+
         const keys = Array.from(formData.keys());
-        if (keys.length !== 1 || keys[0] !== "file") return Response.json({ error: "Invalid upload payload." }, { status: 400 });
+        if (keys.length !== 1 || keys[0] !== "file") {
+          return Response.json({ error: "Invalid upload payload." }, { status: 400 });
+        }
+
         const file = formData.get("file");
-        if (!(file instanceof File)) return Response.json({ error: "Image file is required." }, { status: 400 });
+        if (!(file instanceof File)) {
+          return Response.json({ error: "Image file is required." }, { status: 400 });
+        }
+
         const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-        const maxBytes = 5 * 1024 * 1024;
-        if (!allowedMimeTypes.has(file.type)) return Response.json({ error: "Only JPG, PNG or WebP images are allowed." }, { status: 415 });
-        if (!/^.{1,180}$/.test(file.name) || !/^[a-zA-Z0-9._-]+$/.test(file.name)) return Response.json({ error: "Invalid file name." }, { status: 400 });
-        if (file.size <= 0 || file.size > maxBytes) return Response.json({ error: "Image must be between 1 byte and 5MB." }, { status: 413 });
+        if (!allowedMimeTypes.has(file.type)) {
+          return Response.json({ error: "Only JPG, PNG or WebP images are allowed." }, { status: 415 });
+        }
+        if (file.size <= 0 || file.size > MAX_UPLOAD_BYTES) {
+          return Response.json({ error: "Image must be between 1 byte and 5MB." }, { status: 413 });
+        }
 
         // Never trust the browser-provided MIME type: verify the actual file signature.
         const bytes = new Uint8Array(await file.arrayBuffer());
@@ -28,16 +60,19 @@ export const Route = createFileRoute("/api/upload-hero")({
         const isPng = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
         const isWebp = bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
         const detectedMime = isJpeg ? "image/jpeg" : isPng ? "image/png" : isWebp ? "image/webp" : null;
-        if (!detectedMime || detectedMime !== file.type) return Response.json({ error: "The uploaded file is not a valid supported image." }, { status: 415 });
+        if (!detectedMime || detectedMime !== file.type) {
+          return Response.json({ error: "The uploaded file is not a valid supported image." }, { status: 415 });
+        }
 
         const extension = detectedMime === "image/jpeg" ? "jpg" : detectedMime === "image/png" ? "png" : "webp";
         const blobPath = `homepage-hero/${crypto.randomUUID()}.${extension}`;
         const uploadFile = new File([bytes], `hero.${extension}`, { type: detectedMime });
+
         try {
           const blob = await put(blobPath, uploadFile, { access: "public", addRandomSuffix: false });
           return Response.json({ url: blob.url });
         } catch (error) {
-          console.error("[AdverX] hero image upload failed", error);
+          console.error("[AdVerX] hero image upload failed", error);
           return Response.json({ error: "Unable to upload the hero image. Please try again." }, { status: 500 });
         }
       },

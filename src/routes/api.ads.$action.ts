@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireAdApiUser } from "@/lib/ad-api.server";
 import { jsonError, readJsonObject } from "@/lib/api/http.server";
+import { enforceRateLimit } from "@/lib/api/rate-limit.server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -9,10 +10,22 @@ export const Route = createFileRoute("/api/ads/$action")({
     handlers: {
       POST: async ({ request, params }) => {
         try {
-          const { db } = await requireAdApiUser();
+          const { user, db } = await requireAdApiUser();
+          const action = params.action;
+
+          if (["start", "loaded", "claim", "cancel"].includes(action)) {
+            const rateLimitResponse = await enforceRateLimit({
+              identifier: user.id,
+              routeKey: `ads.${action}`,
+              limit: action === "claim" ? 20 : 60,
+              windowSeconds: 60,
+            });
+            if (rateLimitResponse) return rateLimitResponse;
+          }
+
           const body = (await readJsonObject(request)) ?? {};
 
-          if (params.action === "start") {
+          if (action === "start") {
             const adId = String(body.adId ?? "");
             if (!UUID_RE.test(adId)) return jsonError("Invalid ad identifier.");
 
@@ -28,7 +41,7 @@ export const Route = createFileRoute("/api/ads/$action")({
             return Response.json({ sessionId: String(data) });
           }
 
-          if (params.action === "loaded") {
+          if (action === "loaded") {
             const sessionId = String(body.sessionId ?? "");
             if (!UUID_RE.test(sessionId)) return jsonError("Invalid ad session identifier.");
 
@@ -44,7 +57,7 @@ export const Route = createFileRoute("/api/ads/$action")({
             return Response.json({ loadedAt: data });
           }
 
-          if (params.action === "claim") {
+          if (action === "claim") {
             const sessionId = String(body.sessionId ?? "");
             const idempotencyKey = String(body.idempotencyKey ?? "");
 
@@ -66,7 +79,7 @@ export const Route = createFileRoute("/api/ads/$action")({
             return Response.json({ reward: Number(data ?? 0) });
           }
 
-          if (params.action === "cancel") {
+          if (action === "cancel") {
             const sessionId = String(body.sessionId ?? "");
             if (!UUID_RE.test(sessionId)) return jsonError("Invalid ad session identifier.");
 

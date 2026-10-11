@@ -1,25 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdminUser } from "@/lib/auth.server";
+import { readJsonObject } from "@/lib/api/http.server";
+import { enforceIpRateLimit, enforceRateLimit } from "@/lib/api/rate-limit.server";
 
 const SUPABASE_FUNCTION_URL =
   "https://iozdfcsounatmcqmgoct.supabase.co/functions/v1/admin-send-email";
+const MAX_REQUEST_BYTES = 350_000;
+const USER_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/api/admin-send-email")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = await request.text();
-          const parsed = JSON.parse(body) as Record<string, unknown>;
+          const ipLimit = await enforceIpRateLimit(request, "admin-send-email", 30, 60);
+          if (ipLimit) return ipLimit;
 
+          const parsed = await readJsonObject(request, MAX_REQUEST_BYTES);
+          if (!parsed) {
+            return Response.json({ success: false, error: "Invalid email request." }, { status: 400 });
+          }
+
+          const body = JSON.stringify(parsed);
           if (parsed.action === "user_status") {
             const admin = await requireAdminUser();
+            const adminLimit = await enforceRateLimit({
+              identifier: admin.id,
+              routeKey: "admin.user-status",
+              limit: 20,
+              windowSeconds: 60,
+            });
+            if (adminLimit) return adminLimit;
+
             const userId = String(parsed.user_id ?? "");
             const status = String(parsed.status ?? "");
-            const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-            if (!uuid.test(userId) || !["active", "suspended", "restricted"].includes(status)) {
+            if (!USER_ID_RE.test(userId) || !["active", "suspended", "restricted"].includes(status)) {
               return Response.json({ success: false, error: "Invalid user status request." }, { status: 400 });
             }
             if (userId === admin.id) {
@@ -70,12 +87,6 @@ export const Route = createFileRoute("/api/admin-send-email")({
               data,
             });
           }
-          if (!body || body.length > 350000) {
-            return Response.json(
-              { success: false, error: "Invalid email request." },
-              { status: 400 },
-            );
-          }
 
           const authorization = request.headers.get("authorization");
           if (!authorization?.startsWith("Bearer ")) {
@@ -97,7 +108,6 @@ export const Route = createFileRoute("/api/admin-send-email")({
           });
 
           const responseBody = await response.text();
-
           return new Response(
             responseBody ||
               JSON.stringify({
@@ -113,6 +123,7 @@ export const Route = createFileRoute("/api/admin-send-email")({
             },
           );
         } catch (error) {
+          if (error instanceof Response) return error;
           console.error("[AdVerX] admin email proxy failed", error);
           return Response.json(
             { success: false, error: "Unable to send email." },

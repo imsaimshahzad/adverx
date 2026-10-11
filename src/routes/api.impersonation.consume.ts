@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createCsrfMiddleware } from "@tanstack/react-start";
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { readJsonObject } from "@/lib/api/http.server";
+import { enforceIpRateLimit } from "@/lib/api/rate-limit.server";
 
 async function digestToken(token: string) {
   const digest = await crypto.subtle.digest(
@@ -20,10 +22,17 @@ export const Route = createFileRoute("/api/impersonation/consume")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = await request.json();
-          const keys = body && typeof body === "object" ? Object.keys(body) : [];
-          const tokenHash = typeof body?.tokenHash === "string" ? body.tokenHash.trim() : "";
-          if (keys.length !== 1 || keys[0] !== "tokenHash") return Response.json({ ok: false }, { status: 400 });
+          const ipLimit = await enforceIpRateLimit(request, "impersonation.consume", 10, 60);
+          if (ipLimit) return ipLimit;
+
+          const body = await readJsonObject(request, 4096);
+          if (!body) return Response.json({ ok: false }, { status: 400 });
+
+          const keys = Object.keys(body);
+          const tokenHash = typeof body.tokenHash === "string" ? body.tokenHash.trim() : "";
+          if (keys.length !== 1 || keys[0] !== "tokenHash") {
+            return Response.json({ ok: false }, { status: 400 });
+          }
 
           if (!/^[a-f0-9]{64}$/i.test(tokenHash)) {
             return Response.json({ ok: false }, { status: 400 });
@@ -64,7 +73,9 @@ export const Route = createFileRoute("/api/impersonation/consume")({
           }
 
           return Response.json({ ok: true });
-        } catch {
+        } catch (error) {
+          if (error instanceof Response) return error;
+          console.error("[AdVerX] impersonation consume failed", error);
           return Response.json({ ok: false }, { status: 400 });
         }
       },
