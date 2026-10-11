@@ -10,7 +10,7 @@ AdverX is a TanStack Start + React + TypeScript application backed by Supabase. 
 4. Start the development server: `npm run dev`
 5. Validate changes with `npm run lint` and `npm run build`.
 
-Start with [`docs/CODEBASE_GUIDE.md`](docs/CODEBASE_GUIDE.md) for the architecture, request/data flows, security boundaries, and troubleshooting. See `docs/PROJECT_STRUCTURE.md` for the folder map and rules for generated/database files.
+Start with [`docs/CODEBASE_GUIDE.md`](docs/CODEBASE_GUIDE.md) for the architecture, request/data flows, security boundaries, and troubleshooting. See [`docs/API_ARCHITECTURE.md`](docs/API_ARCHITECTURE.md) for API route conventions and shared HTTP helpers. See `docs/PROJECT_STRUCTURE.md` for the folder map and rules for generated/database files.
 
 ## Important conventions
 
