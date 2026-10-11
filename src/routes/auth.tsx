@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { loginSchema, signupSchema, resetRequestSchema } from "@/lib/input-validation";
+import { loginSchema, resetRequestSchema } from "@/lib/input-validation";
 
 import { usePlatform } from "@/lib/platform-store";
 import {
