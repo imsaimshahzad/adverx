@@ -19,8 +19,7 @@ import {
 } from "@/components/ui/select";
 import { WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
 import { formatMoney } from "@/lib/display";
-import { isImpersonating } from "@/integrations/supabase/client";
-import { supabase } from "@/integrations/supabase/client";
+import { isImpersonating, supabase } from "@/integrations/supabase/client";
 import { amountSchema, supportTextSchema, uuidSchema } from "@/lib/input-validation";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({
