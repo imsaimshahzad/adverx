@@ -6,9 +6,11 @@ AdverX is a TanStack Start + React + TypeScript application backed by Supabase. 
 
 1. Install Node.js (use a version supported by the current Vite/TanStack toolchain).
 2. Install dependencies: `npm install`
-3. Configure local environment variables for the Supabase project (never commit secrets).
+3. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for your Supabase project.
 4. Start the development server: `npm run dev`
 5. Validate changes with `npm run lint` and `npm run build`.
+
+See [Environment configuration](docs/ENVIRONMENT_CONFIG.md) for local, Preview, and Production setup and secret-handling rules. Never commit `.env.local`, production environment files, or real credentials.
 
 See `docs/PROJECT_STRUCTURE.md` for the folder map and rules for generated/database files.
 
