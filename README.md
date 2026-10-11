@@ -7,10 +7,12 @@ AdverX is a TanStack Start + React + TypeScript application backed by Supabase. 
 1. Install Node.js (use a version supported by the current Vite/TanStack toolchain).
 2. Install dependencies: `npm install`
 3. Configure local environment variables for the Supabase project (never commit secrets).
-4. Start the development server: `npm run dev`
+4. Start the dev server: `npm run dev`.
 5. Validate changes with `npm run lint` and `npm run build`.
 
-Start with [`docs/CODEBASE_GUIDE.md`](docs/CODEBASE_GUIDE.md) for the architecture, request/data flows, security boundaries, and troubleshooting. See [`docs/API_ARCHITECTURE.md`](docs/API_ARCHITECTURE.md) for API route conventions and shared HTTP helpers. See `docs/PROJECT_STRUCTURE.md` for the folder map and rules for generated/database files.
+Start with [`docs/CODEBASE_GUIDE.md`](docs/CODEBASE_GUIDE.md) for the architecture, request/data flows, security boundaries, and troubleshooting. See [`docs/API_ARCHITECTURE.md`](docs/API_ARCHITECTURE.md) for API route conventions and shared HTTP helpers. See [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) for the folder map and rules for generated/database files.
+
+For plan prices, allocation targets, referral commissions, reward limits, role boundaries, admin financial scenarios, ledger/reconciliation checks, and the required documentation-update process, see [`docs/FINANCIAL_RULES_AND_ALLOCATION.md`](docs/FINANCIAL_RULES_AND_ALLOCATION.md). This is a baseline plus verification checklist; live Supabase values and financial RPCs must be checked before treating a rule as confirmed in production.
 
 ## Important conventions
 
