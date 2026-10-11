@@ -724,7 +724,6 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
   const authUsersById = new Map<string, AdminRow>();
   let authPage = 1;
   let authTotal = 0;
-  let authLookupFailed = false;
   do {
     const { data: authRows, error: authRowsError } = await db.rpc("admin_users_page", {
       p_search: null,
@@ -733,7 +732,6 @@ export async function getUsersPage(search = "", status = "", page = 1, pageSize 
       p_page_size: 100,
     });
     if (authRowsError) {
-      authLookupFailed = true;
       console.error("[AdVerX] staff user directory RPC failed", {
         message: authRowsError.message,
         code: authRowsError.code,
