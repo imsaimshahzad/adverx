@@ -36,7 +36,21 @@ export async function loadWalletTransactions(): Promise<{ rows: TransactionRowDa
     amount: row.amount == null ? null : Number(row.amount),
     metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
   }));
+
+  // A withdrawal request is the canonical user-facing event. Older data may
+  // also contain shadow rows emitted by wallet/ledger triggers; keep those
+  // accounting records in the database, but don't show them as separate events.
+  const visibleRows = rows.filter((row) => {
+    const sourceType = String(row.source_type ?? "").toLowerCase();
+    const kind = String(row.kind ?? "").toUpperCase();
+    const entryType = String(row.metadata?.entry_type ?? "").toLowerCase();
+    const isWithdrawalShadow =
+      (sourceType === "wallet_transaction" && kind === "WITHDRAWAL") ||
+      (sourceType === "ledger_entry" && entryType.includes("withdrawal"));
+    return !isWithdrawalShadow;
+  });
+
   // Preserve the wallet-state read; balances are not inferred from displayed rows.
   if (!isStaff) await db.rpc("wallet_state", { _user_id: uid });
-  return { rows, accountUid: String(profile?.public_uid ?? "").trim() || null, isStaff };
+  return { rows: visibleRows, accountUid: String(profile?.public_uid ?? "").trim() || null, isStaff };
 }
