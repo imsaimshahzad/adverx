@@ -12,7 +12,6 @@ import {
   ChevronDown,
   CreditCard,
   CircleDollarSign,
-  LockKeyhole,
   Linkedin,
   Twitter,
   Facebook,
@@ -25,7 +24,7 @@ import {
 import { AppShell, StatTile } from "@/components/AppShell";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { BrandLogo } from "@/components/BrandLogo";
-import { HeroTrustStrip, useHomepageHero } from "@/components/HomepageHeroSettings";
+import { HeroTrustStrip, HomepageTrustStrip, useHomepageHero } from "@/components/HomepageHeroSettings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -86,7 +85,7 @@ function PublicHome() {
         </div>
       </section>
       <HeroTrustStrip />
-      <TrustStrip />
+      <HomepageTrustStrip />
       <Testimonials value={hero.testimonials} />
       <HowItWorks />
       <section id="workspace" className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
@@ -128,10 +127,7 @@ function PublicHeader() {
   );
 }
 
-function TrustStrip() {
-  const items = [[CheckCircle2, "Verified Tasks"], [ReceiptText, "Transparent History"], [LockKeyhole, "Secure Account"], [CreditCard, "Tracked Withdrawals"]] as const;
-  return <section className="border-b border-border/70 bg-card/70 backdrop-blur"><div className="mx-auto flex max-w-7xl flex-wrap gap-x-8 gap-y-3 px-5 py-4 text-sm text-muted-foreground lg:px-8">{items.map(([Icon, label]) => <span key={label} className="flex items-center gap-2"><Icon className="size-4 text-primary" />{label}</span>)}</div></section>;
-}
+
 
 function SectionIntro({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) { return <div className="max-w-2xl"><p className="text-xs font-semibold tracking-[0.18em] text-primary">{eyebrow}</p><h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h2><p className="mt-4 text-base leading-7 text-muted-foreground">{text}</p></div>; }
 
