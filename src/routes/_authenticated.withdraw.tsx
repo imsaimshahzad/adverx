@@ -335,7 +335,7 @@ function WithdrawPage() {
                   ? { icon: "bg-red-500/10 text-red-600", badge: "bg-red-500/10 text-red-700 dark:text-red-300" }
                   : { icon: "bg-amber-500/10 text-amber-700", badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300" };
               return (
-                <div key={item.id} className="grid grid-cols-1 items-center gap-2 px-3 py-3 transition-colors hover:bg-muted/20 sm:grid-cols-3 sm:gap-4 sm:px-6 sm:py-5">
+                <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-2 py-3 transition-colors hover:bg-muted/20 sm:gap-4 sm:px-6 sm:py-5">
                   <div className="flex min-w-0 items-center gap-2 sm:gap-4">
                   <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${tone.icon} sm:h-11 sm:w-11`}>
                     {isPaid ? <ArrowUpRight className="h-5 w-5" /> : isRejected ? <CircleX className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
@@ -345,19 +345,19 @@ function WithdrawPage() {
                     <p className="whitespace-nowrap text-[10px] text-muted-foreground sm:mt-1 sm:text-xs">{new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
                   </div>
                   </div>
-                  <div className="min-w-0 justify-self-start sm:justify-self-center">
+                  <div className="min-w-0 justify-self-center">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold whitespace-nowrap ${tone.badge} sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs`}>
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />{statusLabel}
                     </span>
                   </div>
                   <div className="min-w-0 justify-self-end">
                     {isPaid ? (
-                      <Button type="button" className="h-8 w-auto gap-1 px-2 text-[10px] sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" size="sm" onClick={() => setReceiptRow(item)}>
-                        <ReceiptText className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" /><span className="sm:hidden">Receipt</span><span className="hidden sm:inline">View receipt</span>
+                      <Button type="button" className="h-8 w-auto whitespace-nowrap gap-1 px-2 text-[10px] sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" size="sm" onClick={() => setReceiptRow(item)}>
+                        <ReceiptText className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" /><span>View receipt</span>
                       </Button>
                     ) : isRejected ? (
-                      <Button type="button" variant="outline" className="h-8 w-auto gap-1 border-red-500/30 bg-red-500/5 px-2 text-[10px] text-red-700 hover:bg-red-500/10 dark:text-red-300 sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" size="sm" onClick={() => setReasonRow(item)}>
-                        <Info className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" /><span className="sm:hidden">Reason</span><span className="hidden sm:inline">View reason</span>
+                      <Button type="button" variant="outline" className="h-8 w-auto whitespace-nowrap gap-1 border-red-500/30 bg-red-500/5 px-2 text-[10px] text-red-700 hover:bg-red-500/10 dark:text-red-300 sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" size="sm" onClick={() => setReasonRow(item)}>
+                        <Info className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" /><span>View reason</span>
                       </Button>
                     ) : (
                       <p className="max-w-[5.5rem] text-right text-[10px] leading-tight text-muted-foreground sm:max-w-[150px] sm:text-xs">Receipt after payment</p>
