@@ -572,11 +572,24 @@ async function loadState(user: {
     ...(referredProfiles ?? []),
     ...((graphProfiles ?? []) as any[]),
   ];
-  const directNetwork = graphRows.filter((row) => Number(row.level) === 1).length;
-  const indirectNetwork = graphRows.filter((row) => Number(row.level) > 1).length;
-  const allTimeNetwork = graphRows.length;
-  const graphIds = graphRows.map((row) => row.referred_id).filter(Boolean);
-  const referredIds = Array.from(new Set([...referralRows.map((row) => row.id).filter(Boolean), ...graphIds]));
+  // The profiles.referred_by relation is the canonical direct-referral fallback.
+  // Some accounts have valid direct referrals in profiles but no matching row
+  // in referrals; using referrals alone made the Network page show zero members.
+  const networkRowsById = new Map<string, any>();
+  for (const row of graphRows) {
+    if (row?.referred_id) networkRowsById.set(row.referred_id, row);
+  }
+  for (const member of referralRows) {
+    if (member?.id && !networkRowsById.has(member.id)) {
+      networkRowsById.set(member.id, { referred_id: member.id, level: 1 });
+    }
+  }
+  const networkRows = Array.from(networkRowsById.values());
+  const directNetwork = networkRows.filter((row) => Number(row.level) === 1).length;
+  const indirectNetwork = networkRows.filter((row) => Number(row.level) > 1).length;
+  const allTimeNetwork = networkRows.length;
+  const graphIds = networkRows.map((row) => row.referred_id).filter(Boolean);
+  const referredIds = graphIds;
   const [{ data: referredPlans }, { data: commissions }] = await Promise.all([
     referredIds.length
       ? db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active")
@@ -590,8 +603,8 @@ async function loadState(user: {
   for (const member of allNetworkProfiles) {
     if (member?.plan_id) paidReferralIds.add(member.id);
   }
-  const directIds = new Set(graphRows.filter((row) => Number(row.level) === 1).map((row) => row.referred_id).filter(Boolean));
-  const indirectIds = new Set(graphRows.filter((row) => Number(row.level) > 1).map((row) => row.referred_id).filter(Boolean));
+  const directIds = new Set(networkRows.filter((row) => Number(row.level) === 1).map((row) => row.referred_id).filter(Boolean));
+  const indirectIds = new Set(networkRows.filter((row) => Number(row.level) > 1).map((row) => row.referred_id).filter(Boolean));
   const paidDirectReferrals = [...directIds].filter((id) => paidReferralIds.has(id)).length;
   const paidIndirectReferrals = [...indirectIds].filter((id) => paidReferralIds.has(id)).length;
   const unpaidDirectReferrals = Math.max(0, directIds.size - paidDirectReferrals);
@@ -614,7 +627,7 @@ async function loadState(user: {
   let thisMonthReferralCommission = 0;
   let directReferralCommission = 0;
   let indirectReferralCommission = 0;
-  const levelByUserId = new Map<string, number>(graphRows.map((row: any) => [row.referred_id, Number(row.level)]));
+  const levelByUserId = new Map<string, number>(networkRows.map((row: any) => [row.referred_id, Number(row.level)]));
   const currentMonth = pakistanDate().slice(0, 7);
   for (const row of commissions ?? []) {
     const amount = num(row.amount);
@@ -768,7 +781,7 @@ async function loadState(user: {
       completedAt: new Date(c.completed_at).getTime(),
       reward: num(c.reward_amount_pkr),
     })),
-    network: graphRows.map((r) => {
+    network: networkRows.map((r) => {
       const member = profileById.get(r.referred_id);
       const activePlanRow = activePlanRowByUserId.get(r.referred_id);
       const memberPlanId = member?.plan_id;
