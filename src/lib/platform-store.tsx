@@ -536,55 +536,45 @@ async function loadState(user: {
       }
     : null;
   const referralCode = profileRow?.referral_code?.trim().toUpperCase();
-  let referredProfiles: any[] = [];
-  if (referralCode) {
-    const referralQuery = await db
-      .from("profiles")
-      .select("id, full_name, created_at, referral_code, referred_by, plan_id")
-      .eq("referred_by", referralCode);
-    if (referralQuery.error) {
-      console.error("[v0] Referral count query failed", {
-        userId: uid,
-        referralCode,
-        code: referralQuery.error.code,
-        message: referralQuery.error.message,
-        details: referralQuery.error.details,
-      });
-      console.error("[AdverX] referral network query failed", referralQuery.error);
+  // Read network members through a narrowly scoped authenticated RPC. Direct
+  // profiles SELECT is restricted by RLS, which previously hid names while the
+  // referral graph still made the total-member count appear populated.
+  const { data: secureNetworkData, error: secureNetworkError } = await db.rpc("get_my_network_members");
+  if (secureNetworkError) {
+    console.error("[AdverX] secure network query failed", {
+      code: secureNetworkError.code,
+      message: secureNetworkError.message,
+    });
     throw new Error("Unable to load your referral network.");
-    }
-    referredProfiles = (referralQuery.data ?? []) as any[];
   }
+  const networkMembers = (secureNetworkData ?? []) as any[];
+  const referredProfiles = networkMembers
+    .filter((member) => Number(member.level) === 1)
+    .map((member) => ({
+      id: member.id,
+      full_name: member.full_name,
+      created_at: member.created_at,
+      referral_code: member.referral_code,
+      referred_by: member.referred_by,
+      plan_id: member.plan_id,
+    }));
   const referralRows = referredProfiles;
-  const { data: referralGraph } = await db
-    .from("referrals")
-    .select("referred_id, level")
-    .eq("referrer_id", uid);
-  const graphRows = (referralGraph ?? []) as any[];
-  const graphProfileIds = graphRows.map((row) => row.referred_id).filter(Boolean);
-  const { data: graphProfiles } = graphProfileIds.length
-    ? await db
-        .from("profiles")
-        .select("id, full_name, created_at, referral_code, referred_by, plan_id")
-        .in("id", graphProfileIds)
-    : { data: [] };
-  const allNetworkProfiles = [
-    ...(referredProfiles ?? []),
-    ...((graphProfiles ?? []) as any[]),
-  ];
-  // The profiles.referred_by relation is the canonical direct-referral fallback.
-  // Some accounts have valid direct referrals in profiles but no matching row
-  // in referrals; using referrals alone made the Network page show zero members.
-  const networkRowsById = new Map<string, any>();
-  for (const row of graphRows) {
-    if (row?.referred_id) networkRowsById.set(row.referred_id, row);
-  }
-  for (const member of referralRows) {
-    if (member?.id && !networkRowsById.has(member.id)) {
-      networkRowsById.set(member.id, { referred_id: member.id, level: 1 });
-    }
-  }
-  const networkRows = Array.from(networkRowsById.values());
+  const graphRows = networkMembers.map((member) => ({
+    referred_id: member.id,
+    level: Number(member.level) || 1,
+  }));
+  const graphProfiles = networkMembers.map((member) => ({
+    id: member.id,
+    full_name: member.full_name,
+    created_at: member.created_at,
+    referral_code: member.referral_code,
+    referred_by: member.referred_by,
+    plan_id: member.plan_id,
+  }));
+  const allNetworkProfiles = [...graphProfiles];
+  // RPC already returns the union of direct profile links and referral-graph
+  // links, de-duplicated by member ID.
+  const networkRows = graphRows;
   const directNetwork = networkRows.filter((row) => Number(row.level) === 1).length;
   const indirectNetwork = networkRows.filter((row) => Number(row.level) > 1).length;
   const allTimeNetwork = networkRows.length;
