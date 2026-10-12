@@ -1,190 +1,162 @@
- .admin-shell { --admin-accent:#6366f1; --admin-accent-strong:#4f46e5; --admin-accent-soft:#eef2ff; --admin-wash:#f8fafc; --admin-surface:#fff; --admin-line:#e2e8f0; background:#f8fafc; color:#111827; }
-.admin-shell .admin-sidebar { background:#fff; border-color:#e2e8f0; box-shadow:10px 0 30px rgba(15,23,42,.05); }
-.admin-shell .admin-nav-item { border-left:3px solid transparent; border-radius:0 .75rem .75rem 0; color:#4b5563; }
-.admin-shell .admin-nav-item:hover { background:#f8fafc; color:#4f46e5; }
-.admin-shell .admin-nav-item[data-active="true"] { border-left-color:#6366f1; background:#eef2ff; color:#3730a3; box-shadow:4px 0 18px rgba(99,102,241,.08); }
-.admin-shell .admin-page-content { max-width:1600px; margin-inline:auto; }
-.admin-shell [data-slot="card"],.admin-shell .bg-white,.admin-shell .bg-card { border-color:#e2e8f0; background:#fff; box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 26px rgba(15,23,42,.05); }
-.admin-shell [data-slot="card"]:hover { border-color:#c7d2fe; }
-/* Keep icon treatment subtle so every card reads as one cohesive surface. */
-.admin-shell [data-slot="card"] > [class*="bg-indigo-"],
-.admin-shell [data-slot="card"] > [class*="bg-blue-"],
-.admin-shell .admin-stat-card > [class*="bg-indigo-"],
-.admin-shell .admin-stat-card > [class*="bg-blue-"] { background:#f8fafc; border-color:#e2e8f0; color:#4f46e5; }
-.admin-shell [data-slot="card"] > [class*="bg-primary\\/"],
-.admin-shell .admin-stat-card > [class*="bg-primary\\/"] { background:#f8fafc; border-color:#e2e8f0; color:#4f46e5; }
-.admin-shell [data-slot="card"] > [class*="rounded-full"],
-.admin-shell .admin-stat-card > [class*="rounded-full"] { box-shadow:none; }
-.admin-shell table { width:100%; border-collapse:separate; border-spacing:0; background:#fff; }
-.admin-shell thead { background:#f8fafc; }
-.admin-shell th { padding:14px 16px; color:#475569; font-weight:600; text-align:left; border-bottom:1px solid #e2e8f0; }
-.admin-shell td { padding:14px 16px; color:#111827; border-bottom:1px solid #f1f5f9; }
-.admin-shell tbody tr { background:#fff; transition:background-color 180ms ease; }
-.admin-shell tbody tr:hover { background:#f8fafc; }
-.admin-shell tbody tr[data-selected="true"],.admin-shell tbody tr[data-state="selected"] { background:#eef2ff; }
-.admin-shell tbody tr:last-child td { border-bottom:0; }
-.admin-shell h2,.admin-shell h3 { letter-spacing:-.025em; color:#111827; }
-.admin-shell .admin-section-heading { font-size:1.5rem; font-weight:700; color:#111827; }
-.admin-shell .admin-section-heading::after { content:""; display:block; width:2.5rem; height:.2rem; margin-top:.65rem; border-radius:999px; background:#6366f1; }
-.admin-shell .admin-empty-state { display:flex; min-height:12rem; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; border:1px dashed #cbd5e1; border-radius:1rem; background:#f8fafc; padding:2.5rem 1.5rem; text-align:center; }
-.admin-shell .admin-table-wrap { overflow-x:auto; border:1px solid #e2e8f0; border-radius:1rem; background:#fff; box-shadow:0 10px 30px rgba(15,23,42,.05); }
-.admin-shell .admin-table-wrap table { border-collapse:separate; border-spacing:0; width:100%; background:#fff; }
-.admin-shell .admin-table-wrap thead { position:sticky; top:0; z-index:2; background:#f8fafc; }
-.admin-shell .admin-table-wrap th { padding:14px 16px; color:#475569; font-weight:600; text-align:left; border-bottom:1px solid #e2e8f0; }
-.admin-shell .admin-table-wrap td { padding:14px 16px; color:#111827; border-bottom:1px solid #f1f5f9; }
-.admin-shell .admin-table-wrap tbody tr { background:#fff; transition:background-color 180ms ease; }
-.admin-shell .admin-table-wrap tbody tr:hover { background:#f8fafc; }
-.admin-shell .admin-table-wrap tbody tr[data-state="selected"] { background:#eef2ff; }
-.admin-shell .admin-table-wrap tbody tr:last-child td { border-bottom:0; }
-.admin-stat-card { border:1px solid #e2e8f0; border-radius:1rem; background:#fff; padding:1.25rem; box-shadow:0 10px 30px rgba(15,23,42,.05); }
-.admin-stat-card strong { color:#111827; font-size:1.5rem; font-weight:700; }
-.admin-stat-card svg { color:#6366f1; }
-.admin-button { background:#6366f1; color:#fff; border:1px solid #4f46e5; box-shadow:0 6px 14px rgba(99,102,241,.2); }
-.admin-shell [class*="fffaf5"] { background:#f8fafc; border-color:#e2e8f0; }
-.admin-shell [class*="e9d8ca"],.admin-shell [class*="eadbd0"] { border-color:#e2e8f0; }
-.admin-shell [class*="f5e4d8"] { background:#eef2ff; color:#3730a3; }
-.admin-shell [class*="b85f3d"],.admin-shell [class*="c86b45"] { color:#4f46e5; }
-.admin-shell [class*="fffaf5"],.admin-shell [class*="f8e9df"],.admin-shell [class*="eadbd0"],.admin-shell [class*="e9d8ca"] { background:#f8fafc; border-color:#e2e8f0; }
-.admin-shell [class*="rgba(74,54,42"] { box-shadow:0 10px 30px rgba(15,23,42,.06); }
-.admin-shell tr[class*="bg-white"] { background:#fff; }
-.admin-shell tr[class*="fff8f2"]:hover { background:#f8fafc; }
-.admin-button:hover { background:#4f46e5; }
-@media (prefers-reduced-motion:reduce) { .admin-shell * { transition-duration:.01ms!important; } }
-
-.dark .admin-shell { background:#0b1120; color:#f8fafc; }
-.dark .admin-shell .admin-sidebar { background:#111827; border-color:#334155; }
-.dark .admin-shell .admin-nav-item { color:#cbd5e1; }
-.dark .admin-shell .admin-nav-item:hover { background:#1e293b; color:#c7d2fe; }
-.dark .admin-shell .admin-nav-item[data-active="true"] { background:#312e81; color:#c7d2fe; border-left-color:#818cf8; }
-.dark .admin-shell [data-slot="card"],.dark .admin-shell .bg-white,.dark .admin-shell .bg-card,.dark .admin-shell .admin-stat-card,.dark .admin-shell .admin-table-wrap { background:#111827; border-color:#334155; color:#f8fafc; }
-.dark .admin-shell table { background:#111827; }
-.dark .admin-shell thead { background:#1e293b; }
-.dark .admin-shell th { color:#cbd5e1; border-color:#334155; }
-.dark .admin-shell td { color:#f8fafc; border-color:#1e293b; }
-.dark .admin-shell tbody tr { background:#111827; }
-.dark .admin-shell tbody tr:hover { background:#1e293b; }
-.dark .admin-shell h2,.dark .admin-shell h3,.dark .admin-shell .admin-section-heading,.dark .admin-shell .admin-stat-card strong { color:#f8fafc; }
-.dark .admin-shell input,.dark .admin-shell textarea,.dark .admin-shell select { background:#0f172a; color:#f8fafc; border-color:#475569; }
-
-/* Admin theme readability overrides */
-.admin-shell { color:#0f172a; }
-.admin-shell .text-slate-900 { color:#0f172a !important; }
-.admin-shell .text-slate-800 { color:#1e293b !important; }
-.admin-shell .text-slate-700 { color:#334155 !important; }
-.admin-shell .text-slate-600 { color:#475569 !important; }
-.admin-shell .text-slate-500 { color:#64748b !important; }
-.admin-shell .text-slate-400 { color:#64748b !important; }
-.admin-shell .text-muted-foreground { color:#64748b !important; }
-.admin-shell input::placeholder,.admin-shell textarea::placeholder { color:#94a3b8; opacity:1; }
-.dark .admin-shell { color:#f8fafc; }
-.dark .admin-shell .text-slate-900,.dark .admin-shell .text-slate-800 { color:#f8fafc !important; }
-.dark .admin-shell .text-slate-700 { color:#e2e8f0 !important; }
-.dark .admin-shell .text-slate-600 { color:#cbd5e1 !important; }
-.dark .admin-shell .text-slate-500 { color:#94a3b8 !important; }
-.dark .admin-shell .text-slate-400 { color:#cbd5e1 !important; }
-.dark .admin-shell .text-muted-foreground { color:#94a3b8 !important; }
-.dark .admin-shell .bg-white { background:#111827 !important; }
-.dark .admin-shell .bg-slate-50,.dark .admin-shell .bg-slate-50\/70 { background:#1e293b !important; }
-.dark .admin-shell .bg-slate-50\/95 { background:rgba(30,41,59,.95) !important; }
-.dark .admin-shell .border-slate-100 { border-color:#1e293b !important; }
-.dark .admin-shell .border-slate-200,.dark .admin-shell .border-slate-300 { border-color:#334155 !important; }
-.dark .admin-shell .hover\\:bg-slate-50:hover { background:#1e293b !important; }
-.dark .admin-shell .hover\\:bg-slate-100:hover { background:#334155 !important; }
-.dark .admin-shell .text-blue-700 { color:#93c5fd !important; }
-.dark .admin-shell .bg-blue-50 { background:#172554 !important; }
-.dark .admin-shell .ring-blue-100 { --tw-ring-color:#1e40af !important; }
-.dark .admin-shell .text-indigo-700 { color:#a5b4fc !important; }
-.dark .admin-shell .bg-indigo-50 { background:#312e81 !important; }
-.dark .admin-shell .text-rose-600 { color:#fda4af !important; }
-.dark .admin-shell .text-emerald-600 { color:#6ee7b7 !important; }
-.dark .admin-shell select { color-scheme:dark; }
-
-
-/* Final admin contrast hardening: readable muted text and semantic accents in dark mode. */
-.admin-shell .text-slate-400 { color:#64748b !important; }
-.dark .admin-shell .text-slate-400 { color:#cbd5e1 !important; }
-.dark .admin-shell .text-emerald-700 { color:#6ee7b7 !important; }
-.dark .admin-shell .text-rose-700 { color:#fda4af !important; }
-.dark .admin-shell .bg-emerald-50 { background:#064e3b !important; }
-.dark .admin-shell .border-emerald-200 { border-color:#065f46 !important; }
-.dark .admin-shell .bg-rose-50 { background:#4c0519 !important; }
-.dark .admin-shell .border-rose-200 { border-color:#881337 !important; }
-.dark .admin-shell [role="tab"] { outline-color:#475569; }
-
-/* Final admin contrast pass: keep neutral surfaces and text readable in both themes. */
-.admin-shell,
-.admin-shell .text-foreground { color:#0f172a; }
-.admin-shell .text-black { color:#0f172a !important; }
-.admin-shell .text-white { color:#fff !important; }
-.admin-shell .text-gray-900,.admin-shell .text-gray-800,.admin-shell .text-zinc-900,.admin-shell .text-neutral-900 { color:#0f172a !important; }
-.admin-shell .text-gray-700,.admin-shell .text-zinc-700,.admin-shell .text-neutral-700 { color:#334155 !important; }
-.admin-shell .text-gray-600,.admin-shell .text-zinc-600,.admin-shell .text-neutral-600 { color:#475569 !important; }
-.admin-shell .text-gray-500,.admin-shell .text-zinc-500,.admin-shell .text-neutral-500 { color:#64748b !important; }
-.admin-shell .text-gray-400,.admin-shell .text-zinc-400,.admin-shell .text-neutral-400 { color:#64748b !important; }
-.admin-shell .bg-gray-50,.admin-shell .bg-zinc-50,.admin-shell .bg-neutral-50 { background:#f8fafc !important; }
-.admin-shell .bg-gray-100,.admin-shell .bg-zinc-100,.admin-shell .bg-neutral-100 { background:#f1f5f9 !important; }
-.admin-shell .border-gray-200,.admin-shell .border-zinc-200,.admin-shell .border-neutral-200 { border-color:#e2e8f0 !important; }
-
-.dark .admin-shell,
-.dark .admin-shell .text-foreground { color:#f8fafc; }
-.dark .admin-shell .text-black { color:#f8fafc !important; }
-.dark .admin-shell .text-white { color:#fff !important; }
-.dark .admin-shell .text-gray-900,.dark .admin-shell .text-gray-800,.dark .admin-shell .text-zinc-900,.dark .admin-shell .text-neutral-900 { color:#f8fafc !important; }
-.dark .admin-shell .text-gray-700,.dark .admin-shell .text-zinc-700,.dark .admin-shell .text-neutral-700 { color:#e2e8f0 !important; }
-.dark .admin-shell .text-gray-600,.dark .admin-shell .text-zinc-600,.dark .admin-shell .text-neutral-600 { color:#cbd5e1 !important; }
-.dark .admin-shell .text-gray-500,.dark .admin-shell .text-zinc-500,.dark .admin-shell .text-neutral-500 { color:#94a3b8 !important; }
-.dark .admin-shell .text-gray-400,.dark .admin-shell .text-zinc-400,.dark .admin-shell .text-neutral-400 { color:#94a3b8 !important; }
-.dark .admin-shell .bg-gray-50,.dark .admin-shell .bg-zinc-50,.dark .admin-shell .bg-neutral-50 { background:#111827 !important; }
-.dark .admin-shell .bg-gray-100,.dark .admin-shell .bg-zinc-100,.dark .admin-shell .bg-neutral-100 { background:#1e293b !important; }
-.dark .admin-shell .border-gray-200,.dark .admin-shell .border-zinc-200,.dark .admin-shell .border-neutral-200 { border-color:#334155 !important; }
-
-/* Native controls and shadcn controls: never let a light surface keep dark-theme text. */
-.admin-shell button:not([class*="bg-"]):not([class*="text-"]),
-.admin-shell [role="button"]:not([class*="bg-"]):not([class*="text-"]) { color:#0f172a; }
-.dark .admin-shell button:not([class*="bg-"]):not([class*="text-"]),
-.dark .admin-shell [role="button"]:not([class*="bg-"]):not([class*="text-"]) { color:#f8fafc; }
-.admin-shell input,.admin-shell textarea,.admin-shell select {
-  color:#0f172a;
-  background:#fff;
+/* AdverX Admin — liquid-glass reference adaptation.
+   Presentation only: application components, routing, auth and data services remain unchanged. */
+.admin-shell {
+  --adx-bg:#041214; --adx-ink:#eaf6f4; --adx-muted:#b4cdc9; --adx-line:rgba(255,255,255,.16);
+  --adx-soft:rgba(255,255,255,.10); --adx-brand:#0a7469; --adx-link:#7fe6d9; --adx-orange:#f28c00;
+  --adx-glass:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),rgba(6,26,28,.58);
+  --adx-border:rgba(255,255,255,.2); --adx-shadow:rgba(0,0,0,.38);
+  position:relative; isolation:isolate; overflow:clip; min-height:100vh;
+  background:var(--adx-bg)!important; color:var(--adx-ink)!important;
+  font-family:"Fira Sans","Segoe UI",system-ui,sans-serif;
 }
-.admin-shell input::placeholder,.admin-shell textarea::placeholder { color:#64748b; }
-.dark .admin-shell input,.dark .admin-shell textarea,.dark .admin-shell select {
-  color:#f8fafc;
-  background:#0f172a;
-  border-color:#475569;
+.admin-shell::before {
+  content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:radial-gradient(ellipse 62vmax 62vmax at -8% -18%,rgba(10,154,141,.30),transparent 65%),
+    radial-gradient(ellipse 55vmax 55vmax at 105% 24%,rgba(242,140,0,.20),transparent 66%),
+    radial-gradient(ellipse 62vmax 62vmax at 26% 112%,rgba(27,127,158,.22),transparent 66%),#041214;
 }
-.dark .admin-shell input::placeholder,.dark .admin-shell textarea::placeholder { color:#94a3b8; }
-
-/* Common neutral interactive surfaces. */
-.admin-shell .hover\:text-slate-900:hover { color:#0f172a !important; }
-.dark .admin-shell .hover\:text-slate-900:hover { color:#fff !important; }
-.dark .admin-shell .hover\:text-slate-700:hover { color:#f8fafc !important; }
-.dark .admin-shell .hover\:text-slate-600:hover { color:#e2e8f0 !important; }
-
-/* Keep links visible when they sit on neutral admin surfaces. */
-.admin-shell a:not([class*="text-"]) { color:#334155; }
-.admin-shell a:not([class*="text-"]):hover { color:#1e293b; }
-.dark .admin-shell a:not([class*="text-"]) { color:#e2e8f0; }
-.dark .admin-shell a:not([class*="text-"]):hover { color:#fff; }
-
-/* Dialogs/dropdowns/popovers rendered inside the admin shell. */
-.dark .admin-shell [role="dialog"],
-.dark .admin-shell [data-radix-popper-content-wrapper] > *,
-.dark .admin-shell [data-slot="popover-content"],
-.dark .admin-shell [data-slot="dropdown-menu-content"] {
-  background:#111827;
-  color:#f8fafc;
-  border-color:#334155;
+.admin-shell::after {content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(140deg,rgba(4,18,20,.10),rgba(4,18,20,.34));}
+.admin-shell .admin-sidebar {
+  top:14px; bottom:14px; left:14px; width:278px; height:calc(100vh - 28px);
+  padding:16px; border:1px solid var(--adx-border); border-radius:26px;
+  background:var(--adx-glass)!important; color:var(--adx-ink);
+  -webkit-backdrop-filter:blur(24px) saturate(170%);backdrop-filter:blur(24px) saturate(170%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 18px 54px var(--adx-shadow);
 }
-.admin-shell [role="dialog"] .text-muted-foreground,
-.admin-shell [data-slot="dialog-description"] { color:#64748b !important; }
-.dark .admin-shell [role="dialog"] .text-muted-foreground,
-.dark .admin-shell [data-slot="dialog-description"] { color:#cbd5e1 !important; }
-
-/* Table and pagination controls. */
-.admin-shell .admin-table-wrap button:not([class*="text-"]),
-.admin-shell table button:not([class*="text-"]) { color:#0f172a; }
-.dark .admin-shell .admin-table-wrap button:not([class*="text-"]),
-.dark .admin-shell table button:not([class*="text-"]) { color:#f8fafc; }
-.dark .admin-shell .admin-table-wrap .text-slate-400,
-.dark .admin-shell table .text-slate-400 { color:#cbd5e1 !important; }
+.admin-shell .admin-sidebar > a {min-height:48px;color:var(--adx-link)!important;font-size:25px;font-weight:700;letter-spacing:-.4px}
+.admin-shell .admin-sidebar > a img {max-height:38px}
+.admin-shell .admin-sidebar .text-muted-foreground {color:var(--adx-muted)!important}
+.admin-shell .admin-sidebar nav {gap:4px}
+.admin-shell .admin-nav-item {
+  position:relative;min-height:46px;padding:0 13px;border:1px solid transparent;border-radius:16px;
+  background:transparent!important;color:#dff1ee!important;font-size:15px;font-weight:500;
+}
+.admin-shell .admin-nav-item:hover {background:rgba(255,255,255,.09)!important;color:#fff!important}
+.admin-shell .admin-nav-item[data-active="true"] {
+  border-color:var(--adx-border);background:linear-gradient(135deg,rgba(127,230,217,.18),rgba(127,230,217,.05))!important;
+  color:#fff!important;font-weight:700;box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+}
+.admin-shell .admin-nav-item[data-active="true"]::before {content:"";position:absolute;left:-17px;top:11px;bottom:11px;width:4px;border-radius:0 4px 4px 0;background:var(--adx-link)}
+.admin-shell .admin-nav-item svg {color:var(--adx-link)}
+.admin-shell main {padding-left:306px!important;min-width:0}
+.admin-shell header {
+  position:sticky;top:0;z-index:20;min-height:76px;padding:12px 28px!important;
+  border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;
+  background:linear-gradient(180deg,rgba(4,18,20,.94),rgba(4,18,20,.58))!important;
+  -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+}
+.admin-shell header .text-primary {color:var(--adx-link)!important;letter-spacing:2px}
+.admin-shell header h1 {color:var(--adx-ink)!important;font-size:clamp(24px,3vw,30px);letter-spacing:-.5px;font-weight:700}
+.admin-shell header [data-slot="avatar-fallback"] {background:var(--adx-brand)!important;color:white!important}
+.admin-shell .admin-page-content {max-width:1700px;margin-inline:auto;padding:22px 28px 42px!important}
+.admin-shell h2,.admin-shell h3,.admin-shell .admin-section-heading {color:var(--adx-ink)!important;letter-spacing:-.025em}
+.admin-shell h2 {font-weight:650}
+.admin-shell .text-muted-foreground {color:var(--adx-muted)!important}
+.admin-shell [data-slot="card"],.admin-shell .admin-stat-card,.admin-shell .admin-table-wrap {
+  border:1px solid var(--adx-border)!important;border-radius:26px!important;
+  background:var(--adx-glass)!important;color:var(--adx-ink)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 14px 44px var(--adx-shadow)!important;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.admin-shell [data-slot="card"]:hover {border-color:rgba(255,255,255,.30)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 18px 48px rgba(0,0,0,.34)!important}
+.admin-shell .admin-stat-card {padding:22px}
+.admin-shell .admin-stat-card strong {color:var(--adx-ink)!important;font-size:clamp(24px,2.5vw,36px);letter-spacing:-.5px}
+.admin-shell .admin-stat-card svg {color:var(--adx-link)!important}
+.admin-shell [data-slot="card"] [class*="bg-indigo-"],.admin-shell [data-slot="card"] [class*="bg-blue-"],
+.admin-shell [data-slot="card"] [class*="bg-emerald-"],.admin-shell [data-slot="card"] [class*="bg-rose-"] {
+  background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.13)!important;
+}
+.admin-shell [data-slot="card"] [class*="text-slate-900"],.admin-shell [data-slot="card"] [class*="text-slate-800"],
+.admin-shell [data-slot="card"] [class*="text-gray-900"],.admin-shell [data-slot="card"] [class*="text-gray-800"] {color:var(--adx-ink)!important}
+.admin-shell [data-slot="card"] [class*="text-slate-700"],.admin-shell [data-slot="card"] [class*="text-slate-600"],
+.admin-shell [data-slot="card"] [class*="text-slate-500"],.admin-shell [data-slot="card"] [class*="text-gray-600"],
+.admin-shell [data-slot="card"] [class*="text-gray-500"] {color:var(--adx-muted)!important}
+.admin-shell [data-slot="card"] [class*="border-slate-"],.admin-shell [data-slot="card"] [class*="border-gray-"] {border-color:var(--adx-line)!important}
+.admin-shell [data-slot="card"] .bg-white,.admin-shell [data-slot="card"] .bg-slate-50,
+.admin-shell [data-slot="card"] .bg-slate-100,.admin-shell [data-slot="card"] .bg-gray-50 {background:rgba(255,255,255,.055)!important}
+.admin-shell .admin-section-heading::after {content:"";display:block;width:2.5rem;height:.2rem;margin-top:.65rem;border-radius:999px;background:linear-gradient(90deg,var(--adx-link),var(--adx-orange))}
+.admin-shell .admin-empty-state {display:flex;min-height:12rem;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;border:1px dashed var(--adx-border);border-radius:22px;background:rgba(255,255,255,.035);padding:2.5rem 1.5rem;text-align:center}
+.admin-shell table,.admin-shell .admin-table-wrap table {width:100%;border-collapse:separate;border-spacing:0;background:transparent!important;color:var(--adx-ink)}
+.admin-shell thead,.admin-shell .admin-table-wrap thead {position:sticky;top:0;z-index:2;background:rgba(4,18,20,.78)!important}
+.admin-shell th,.admin-shell .admin-table-wrap th {padding:14px 16px;color:var(--adx-muted)!important;font-size:12px;font-weight:650;letter-spacing:1px;text-transform:uppercase;text-align:left;border-bottom:1px solid var(--adx-line)!important}
+.admin-shell td,.admin-shell .admin-table-wrap td {padding:14px 16px;color:var(--adx-ink)!important;border-bottom:1px solid rgba(255,255,255,.08)!important}
+.admin-shell tbody tr,.admin-shell .admin-table-wrap tbody tr {background:transparent!important;transition:background-color .18s}
+.admin-shell tbody tr:hover,.admin-shell .admin-table-wrap tbody tr:hover {background:rgba(255,255,255,.055)!important}
+.admin-shell tbody tr[data-selected="true"],.admin-shell tbody tr[data-state="selected"] {background:rgba(127,230,217,.09)!important}
+.admin-shell tbody tr:last-child td {border-bottom:0!important}
+.admin-shell button[data-slot="button"],.admin-shell a[data-slot="button"] {
+  border-radius:14px;transition:transform .12s,background .18s,border-color .18s;
+}
+.admin-shell button[data-slot="button"]:active {transform:scale(.98)}
+.admin-shell button[data-slot="button"][data-variant="default"] {
+  background:linear-gradient(135deg,#ffb347,#f28c00)!important;color:#1c1200!important;border:1px solid rgba(255,255,255,.35)!important;
+  box-shadow:0 8px 24px rgba(242,140,0,.25),inset 0 1px 0 rgba(255,255,255,.45);
+}
+.admin-shell button[data-slot="button"][data-variant="outline"],.admin-shell button[data-slot="button"][data-variant="ghost"] {
+  color:var(--adx-ink)!important;border-color:var(--adx-border)!important;background:rgba(255,255,255,.055)!important;
+}
+.admin-shell button[data-slot="button"][data-variant="outline"]:hover,.admin-shell button[data-slot="button"][data-variant="ghost"]:hover {background:rgba(255,255,255,.12)!important}
+.admin-shell input,.admin-shell textarea,.admin-shell select,[data-radix-popper-content-wrapper] input {
+  color:var(--adx-ink)!important;background:rgba(255,255,255,.065)!important;border-color:var(--adx-border)!important;border-radius:15px;
+}
+.admin-shell input::placeholder,.admin-shell textarea::placeholder {color:#b9d2ce!important;opacity:1}
+.admin-shell select option {background:#0f2a2c;color:var(--adx-ink)}
+.admin-shell [role="dialog"],.admin-shell [data-slot="dialog-content"],.admin-shell [data-radix-popper-content-wrapper] > *,
+.admin-shell [data-slot="popover-content"],.admin-shell [data-slot="dropdown-menu-content"] {
+  color:var(--adx-ink)!important;background:rgba(8,28,30,.94)!important;border:1px solid var(--adx-border)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 30px 80px rgba(0,0,0,.5)!important;
+}
+.admin-shell [role="dialog"] .text-muted-foreground,.admin-shell [data-slot="dialog-description"] {color:var(--adx-muted)!important}
+.admin-shell .bg-slate-50,.admin-shell .bg-slate-100,.admin-shell .bg-gray-50,.admin-shell .bg-white {background:rgba(255,255,255,.055)!important}
+.admin-shell .text-slate-900,.admin-shell .text-slate-800,.admin-shell .text-gray-900,.admin-shell .text-gray-800 {color:var(--adx-ink)!important}
+.admin-shell .text-slate-700,.admin-shell .text-slate-600,.admin-shell .text-slate-500,.admin-shell .text-gray-700,.admin-shell .text-gray-600,.admin-shell .text-gray-500 {color:var(--adx-muted)!important}
+.admin-shell .border-slate-100,.admin-shell .border-slate-200,.admin-shell .border-slate-300 {border-color:var(--adx-line)!important}
+.admin-shell .bg-indigo-50,.admin-shell .bg-blue-50 {background:rgba(127,230,217,.10)!important}
+.admin-shell .text-indigo-700,.admin-shell .text-blue-700 {color:var(--adx-link)!important}
+.admin-shell .bg-emerald-50 {background:rgba(37,211,102,.10)!important}.admin-shell .text-emerald-700,.admin-shell .text-emerald-600 {color:#72e8a0!important}
+.admin-shell .bg-rose-50 {background:rgba(255,100,100,.10)!important}.admin-shell .text-rose-700,.admin-shell .text-rose-600 {color:#ffb4a8!important}
+.admin-shell .text-amber-700,.admin-shell .text-amber-600 {color:#ffdca3!important}
+.admin-shell a:not([class*="text-"]) {color:var(--adx-link)}.admin-shell a:not([class*="text-"]):hover {color:#fff}
+.admin-shell :focus-visible {outline:3px solid var(--adx-link);outline-offset:2px}
+.admin-shell ::selection {background:rgba(127,230,217,.28);color:#fff}
+@media (min-width:1024px) {
+ .admin-shell main {padding-left:306px!important}
+ .admin-shell .admin-sidebar {display:block}
+}
+@media (max-width:1023px) {
+ .admin-shell main {padding-left:0!important}
+ .admin-shell .admin-sidebar {top:10px;bottom:10px;left:10px;width:min(310px,86vw);height:auto;z-index:60;border-radius:24px}
+ .admin-shell header {padding:12px 16px!important}
+ .admin-shell .admin-page-content {padding:18px 16px 32px!important}
+}
+@media (max-width:520px) {
+ .admin-shell .admin-page-content {padding:14px 10px 28px!important}
+ .admin-shell [data-slot="card"] {border-radius:21px!important}
+ .admin-shell header {gap:8px}
+}
+@media (prefers-reduced-motion:reduce) {.admin-shell * {transition-duration:.01ms!important;animation-duration:.01ms!important}}
+/* Light mode remains available through the existing theme toggle. */
+.light .admin-shell,.admin-shell[data-theme="light"] {
+ --adx-bg:#e4f1ee;--adx-ink:#0d2a2b;--adx-muted:#3e5855;--adx-line:rgba(13,42,43,.14);
+ --adx-soft:rgba(10,116,105,.12);--adx-link:#0a6a60;--adx-border:rgba(255,255,255,.85);--adx-shadow:rgba(10,70,64,.16);
+ --adx-glass:linear-gradient(135deg,rgba(255,255,255,.48),rgba(255,255,255,.18)),rgba(255,255,255,.52);
+ background:var(--adx-bg)!important;color:var(--adx-ink)!important;
+}
+.light .admin-shell::before,.admin-shell[data-theme="light"]::before {
+ background:radial-gradient(ellipse 62vmax 62vmax at -8% -18%,rgba(95,214,200,.38),transparent 65%),
+ radial-gradient(ellipse 55vmax 55vmax at 105% 24%,rgba(255,184,102,.36),transparent 66%),
+ radial-gradient(ellipse 62vmax 62vmax at 26% 112%,rgba(150,200,240,.3),transparent 66%),#e4f1ee;
+}
+.light .admin-shell header,.admin-shell[data-theme="light"] header {background:linear-gradient(180deg,rgba(228,241,238,.96),rgba(228,241,238,.72))!important;border-bottom-color:var(--adx-line)!important}
+.light .admin-shell .admin-nav-item,.admin-shell[data-theme="light"] .admin-nav-item {color:#234744!important}
+.light .admin-shell .admin-nav-item[data-active="true"],.admin-shell[data-theme="light"] .admin-nav-item[data-active="true"] {color:#0d2a2b!important}
+.light .admin-shell [data-slot="card"],.light .admin-shell .admin-stat-card,.light .admin-shell .admin-table-wrap,
+.admin-shell[data-theme="light"] [data-slot="card"],.admin-shell[data-theme="light"] .admin-stat-card,.admin-shell[data-theme="light"] .admin-table-wrap {color:var(--adx-ink)!important}
+.light .admin-shell th,.light .admin-shell .admin-table-wrap th,.admin-shell[data-theme="light"] th,.admin-shell[data-theme="light"] .admin-table-wrap th {background:rgba(255,255,255,.55)!important;color:var(--adx-muted)!important}
+.light .admin-shell td,.light .admin-shell .admin-table-wrap td,.admin-shell[data-theme="light"] td,.admin-shell[data-theme="light"] .admin-table-wrap td {color:var(--adx-ink)!important}
+.light .admin-shell input,.light .admin-shell textarea,.light .admin-shell select,.admin-shell[data-theme="light"] input,.admin-shell[data-theme="light"] textarea,.admin-shell[data-theme="light"] select {color:var(--adx-ink)!important;background:rgba(255,255,255,.7)!important}
+.light .admin-shell [role="dialog"],.light .admin-shell [data-slot="dialog-content"],.admin-shell[data-theme="light"] [role="dialog"],.admin-shell[data-theme="light"] [data-slot="dialog-content"] {background:rgba(255,255,255,.94)!important;color:var(--adx-ink)!important}
+.light .admin-shell .text-slate-900,.light .admin-shell .text-slate-800,.light .admin-shell .text-slate-700,.light .admin-shell .text-slate-600,.light .admin-shell .text-slate-500,
+.admin-shell[data-theme="light"] .text-slate-900,.admin-shell[data-theme="light"] .text-slate-800,.admin-shell[data-theme="light"] .text-slate-700,.admin-shell[data-theme="light"] .text-slate-600,.admin-shell[data-theme="light"] .text-slate-500 {color:var(--adx-ink)!important}
