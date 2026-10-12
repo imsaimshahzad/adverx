@@ -47,20 +47,40 @@ export function HomepageHeroSettings() {
 
 export function HeroTrustStrip() {
   const config = useHomepageHero();
-  const [metrics, setMetrics] = useState({ users: 0, rewards: 0, averageHours: null as number | null });
-  useEffect(() => { void Promise.all([
-    db.from("profiles").select("id", { count: "exact", head: true }),
-    db.from("wallet_transactions").select("amount").in("type", ["TASK_REWARD", "REFERRAL_REWARD", "REFERRAL_COMMISSION"]).eq("status", "completed"),
-    db.from("withdrawals").select("requested_at, reviewed_at").in("status", ["paid", "approved"]),
-  ]).then(([users, rewards, withdrawals]: any[]) => {
-    const durations = (withdrawals.data ?? []).filter((row: any) => row.requested_at && row.reviewed_at).map((row: any) => (new Date(row.reviewed_at).getTime() - new Date(row.requested_at).getTime()) / 3600000).filter((hours: number) => hours >= 0);
-    setMetrics({ users: users.count ?? 0, rewards: (rewards.data ?? []).reduce((sum: number, row: any) => sum + Number(row.amount ?? 0), 0), averageHours: durations.length ? durations.reduce((a: number, b: number) => a + b, 0) / durations.length : null });
-  }).catch(() => undefined); }, []);
+  const [metrics, setMetrics] = useState({ users: null as number | null, rewards: null as number | null, averageHours: null as number | null });
+
+  useEffect(() => {
+    let active = true;
+    void db.rpc("get_public_homepage_stats").then(({ data, error }: any) => {
+      if (!active) return;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) {
+        // Do not misrepresent an unavailable public metric as a real zero.
+        setMetrics({ users: null, rewards: null, averageHours: null });
+        return;
+      }
+
+      const users = Number(row.members);
+      const rewards = Number(row.rewards_paid);
+      const averageHours = row.average_withdrawal_hours == null ? null : Number(row.average_withdrawal_hours);
+      setMetrics({
+        users: Number.isFinite(users) ? users : null,
+        rewards: Number.isFinite(rewards) ? rewards : null,
+        averageHours: averageHours !== null && Number.isFinite(averageHours) ? averageHours : null,
+      });
+    }).catch(() => {
+      if (active) setMetrics({ users: null, rewards: null, averageHours: null });
+    });
+
+    return () => { active = false; };
+  }, []);
+
   const stats = [
-    config.stats.members.visible && { value: metrics.users.toLocaleString(), title: config.stats.members.title },
-    config.stats.rewards.visible && { value: `Rs. ${metrics.rewards.toLocaleString("en-PK")}`, title: config.stats.rewards.title },
-    config.stats.withdrawalTime.visible && { value: metrics.averageHours === null ? "No history" : `${metrics.averageHours.toFixed(1)}h`, title: config.stats.withdrawalTime.title },
+    config.stats.members.visible && { value: metrics.users === null ? "—" : metrics.users.toLocaleString(), title: config.stats.members.title },
+    config.stats.rewards.visible && { value: metrics.rewards === null ? "—" : `Rs. ${metrics.rewards.toLocaleString("en-PK", { maximumFractionDigits: 2 })}`, title: config.stats.rewards.title },
+    config.stats.withdrawalTime.visible && { value: metrics.users === null ? "—" : metrics.averageHours === null ? "No history" : `${metrics.averageHours.toFixed(1)}h`, title: config.stats.withdrawalTime.title },
   ].filter(Boolean) as { value: string; title: string }[];
+
   return <section className="border-y border-border/70 bg-card"><div className="mx-auto grid max-w-7xl gap-4 px-5 py-5 sm:grid-cols-3 lg:px-8">{stats.map((stat) => <div key={stat.title}><p className="text-2xl font-semibold">{stat.value}</p><p className="text-xs text-muted-foreground">{stat.title}</p></div>)}</div></section>;
 }
 
