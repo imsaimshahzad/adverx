@@ -88,10 +88,6 @@ function PublicHome() {
       <HomepageTrustStrip />
       <Testimonials value={hero.testimonials} />
       <HowItWorks />
-      <section id="workspace" className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
-        <SectionIntro eyebrow="THE WORKSPACE" title="Everything in one workspace" text="A clear view of the information that matters: tasks, rewards, plans, network activity, and transaction history." />
-        <DashboardPreview />
-      </section>
       <FeatureSection />
       <PlansPreview plans={plans} />
       <WhyAdNet />
@@ -114,7 +110,6 @@ function PublicHeader() {
         <BrandLogo className="h-14 w-auto max-w-[15rem] object-contain sm:h-16 sm:max-w-[16rem]" />
       </Link>
       <nav className="hidden flex-1 items-center justify-center gap-5 text-sm font-medium text-muted-foreground md:flex">
-        <a href="#workspace" className="transition-colors hover:text-foreground">Workspace</a>
         <a href="#how-it-works" className="transition-colors hover:text-foreground">How it works</a>
         <a href="#plans" className="transition-colors hover:text-foreground">Plans</a>
         <a href="#faq" className="transition-colors hover:text-foreground">FAQ</a>
