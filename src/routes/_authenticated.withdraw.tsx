@@ -409,7 +409,7 @@ function WithdrawPage() {
               </div>
             );
           })() : null}
-          <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:gap-2">
             <Button type="button" variant="outline" size="sm" className="h-8 w-full px-1.5 text-[11px] sm:text-xs" onClick={saveReceiptImage}><Download className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Save Image</Button>
           </DialogFooter>
         </DialogContent>
