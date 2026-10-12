@@ -154,3 +154,50 @@ JOIN public.transactions canonical
 WHERE le.transaction_id = shadow_tx.id
   AND shadow_tx.source_type = 'ledger_entry'
   AND lower(coalesce(shadow_tx.metadata->>'entry_type', '')) LIKE '%withdrawal%';
+
+-- Keep the canonical activity row's status synchronized with its withdrawal request.
+CREATE OR REPLACE FUNCTION public.sync_withdrawal_canonical_transaction_status()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.transactions t
+  SET status = CASE
+      WHEN lower(NEW.status) IN ('paid','approved','completed','credited') THEN 'completed'
+      WHEN lower(NEW.status) IN ('rejected','failed') THEN 'failed'
+      WHEN lower(NEW.status) = 'cancelled' THEN 'cancelled'
+      ELSE 'pending'
+    END,
+    processed_at = CASE
+      WHEN lower(NEW.status) IN ('paid','approved','completed','credited','rejected','failed','cancelled')
+        THEN coalesce(NEW.reviewed_at, t.processed_at, now())
+      ELSE NULL
+    END
+  WHERE t.source_type = 'withdrawal'
+    AND t.source_id = NEW.id
+    AND t.user_id = NEW.user_id
+    AND t.kind = 'WITHDRAWAL';
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.sync_withdrawal_canonical_transaction_status() FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS withdrawals_canonical_transaction_status_sync ON public.withdrawals;
+CREATE TRIGGER withdrawals_canonical_transaction_status_sync
+AFTER INSERT OR UPDATE OF status ON public.withdrawals
+FOR EACH ROW EXECUTE FUNCTION public.sync_withdrawal_canonical_transaction_status();
+
+UPDATE public.transactions t
+SET status = CASE
+    WHEN lower(w.status) IN ('paid','approved','completed','credited') THEN 'completed'
+    WHEN lower(w.status) IN ('rejected','failed') THEN 'failed'
+    WHEN lower(w.status) = 'cancelled' THEN 'cancelled'
+    ELSE 'pending'
+  END
+FROM public.withdrawals w
+WHERE t.source_type = 'withdrawal'
+  AND t.source_id = w.id
+  AND t.user_id = w.user_id
+  AND t.kind = 'WITHDRAWAL';
