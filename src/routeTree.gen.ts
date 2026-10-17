@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as EarningsDisclaimerRouteImport } from './routes/earnings-disclaimer'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated.ads'
@@ -41,6 +44,10 @@ const RefundPolicyRoute = RefundPolicyRouteImport.update({
   path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+
+const TermsRoute = TermsRouteImport.update({ id: '/terms', path: '/terms', getParentRoute: () => rootRouteImport } as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({ id: '/privacy-policy', path: '/privacy-policy', getParentRoute: () => rootRouteImport } as any)
+const EarningsDisclaimerRoute = EarningsDisclaimerRouteImport.update({ id: '/earnings-disclaimer', path: '/earnings-disclaimer', getParentRoute: () => rootRouteImport } as any)
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -141,6 +148,9 @@ const JoinReferralCodeRoute = JoinReferralCodeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/terms': typeof TermsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/earnings-disclaimer': typeof EarningsDisclaimerRoute
   '/admin': typeof AdminRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
   '/auth': typeof AuthRoute
@@ -185,6 +195,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   '__root__': typeof rootRouteImport
   '/': typeof IndexRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/terms': typeof TermsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/earnings-disclaimer': typeof EarningsDisclaimerRoute
   '/admin': typeof AdminRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
@@ -210,6 +224,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/refund-policy'
+    | '/terms'
+    | '/privacy-policy'
+    | '/earnings-disclaimer'
     | '/admin'
     | '/ads'
     | '/auth'
@@ -250,6 +267,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/refund-policy'
+    | '/terms'
+    | '/privacy-policy'
+    | '/earnings-disclaimer'
     | '/admin'
     | '/_authenticated'
     | '/auth'
@@ -286,6 +307,27 @@ declare module '@tanstack/react-router' {
       path: '/refund-policy'
       fullPath: '/refund-policy'
       preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/earnings-disclaimer': {
+      id: '/earnings-disclaimer'
+      path: '/earnings-disclaimer'
+      fullPath: '/earnings-disclaimer'
+      preLoaderRoute: typeof EarningsDisclaimerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -465,6 +507,9 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(Authe
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  TermsRoute: TermsRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  EarningsDisclaimerRoute: EarningsDisclaimerRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
@@ -489,6 +534,10 @@ declare module '@tanstack/react-start' {
   }
 }export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
+  TermsRoute: typeof TermsRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  EarningsDisclaimerRoute: typeof EarningsDisclaimerRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
