@@ -168,8 +168,10 @@ export function AuthPage() {
           <div className="-mt-2 space-y-1 text-xs">
             {[
               { label: "At least 8 characters", valid: form.password.length >= 8 },
-              { label: "At least one letter", valid: /[A-Za-z]/.test(form.password) },
+              { label: "At least one uppercase letter", valid: /[A-Z]/.test(form.password) },
+              { label: "At least one lowercase letter", valid: /[a-z]/.test(form.password) },
               { label: "At least one number", valid: /[0-9]/.test(form.password) },
+              { label: "At least one special character", valid: /[^A-Za-z0-9]/.test(form.password) },
             ].map((rule) => (
               <p key={rule.label} className={rule.valid ? "text-emerald-600" : "text-muted-foreground"}>
                 {rule.valid ? "✓" : "○"} {rule.label}
