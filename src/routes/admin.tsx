@@ -582,9 +582,27 @@ export function AdminRoute() {
         const table = tableFor[active];
         if (!table) return;
 
-        let moduleRows = active === "ledger"
-          ? await queryAllRows(table)
-          : await queryRows(table);
+        let moduleRows: AdminRow[];
+        if (active === "fraud") {
+          const { data, error: fraudError } = await db
+            .from("fraud_flags")
+            .select("id, user_id, flag_type, severity, status, details, created_at")
+            .order("created_at", { ascending: false })
+            .limit(500);
+          if (fraudError) {
+            console.error("[AdverX Fraud & Risk] Failed to load fraud flags", fraudError);
+            throw new Error(
+              fraudError.message
+                ? `Fraud & Risk could not load records: ${fraudError.message}`
+                : "Fraud & Risk could not load records from Supabase.",
+            );
+          }
+          moduleRows = (data ?? []) as AdminRow[];
+        } else {
+          moduleRows = active === "ledger"
+            ? await queryAllRows(table)
+            : await queryRows(table);
+        }
 
         moduleRows = await enrichAdminRows(moduleRows);
 
@@ -638,11 +656,13 @@ export function AdminRoute() {
       });
     } catch (cause) {
       if (requestVersion !== loadVersion.current) return;
-      setError(
-        cause instanceof Error
+      console.error("[AdverX Admin] Module data load failed", cause);
+      const message = cause instanceof Error
+        ? cause.message
+        : cause && typeof cause === "object" && "message" in cause && typeof cause.message === "string"
           ? cause.message
-          : "Admin data could not be loaded.",
-      );
+          : "Admin data could not be loaded.";
+      setError(message);
     } finally {
       if (requestVersion === loadVersion.current) {
         setLoading(false);
@@ -1109,6 +1129,16 @@ export function AdminRoute() {
             <AdminEmailComposer />
           ) : active === "revenue" ? (
             <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} plans={revenuePlans} referrerRecoveryReserve={referrerRecoveryReserve} onRefresh={load} />
+          ) : active === "fraud" ? (
+            <FraudRiskDashboard
+              rows={currentRows}
+              query={query}
+              setQuery={(value) => { setQuery(value); setPage(1); }}
+              refreshing={refreshing}
+              error={error}
+              onRefresh={load}
+              onStatus={setStatus}
+            />
           ) : active === "reports" ? (
             <ReportsPanel />
           ) : (
@@ -1400,6 +1430,139 @@ export function AdminRoute() {
           </Dialog>
         </div>
       </main>
+    </div>
+  );
+}
+
+function FraudRiskDashboard({
+  rows,
+  query,
+  setQuery,
+  refreshing,
+  error,
+  onRefresh,
+  onStatus,
+}: {
+  rows: AdminRow[];
+  query: string;
+  setQuery: (value: string) => void;
+  refreshing: boolean;
+  error: string | null;
+  onRefresh: () => Promise<void>;
+  onStatus: (row: AdminRow, status: string) => void;
+}) {
+  const [statusFilter, setStatusFilter] = useState("all");
+  const statuses = ["open", "reviewed", "resolved", "false_positive"];
+  const countFor = (status: string) => rows.filter((row) => String(row.status ?? "open").toLowerCase() === status).length;
+  const filteredRows = rows.filter((row) => {
+    const status = String(row.status ?? "open").toLowerCase();
+    const text = [
+      row.flag_type,
+      row.severity,
+      row.status,
+      row.user_id_name,
+      row.user_id_uid,
+      row.details,
+      row.created_at,
+    ].map((value) => typeof value === "object" && value !== null ? JSON.stringify(value) : String(value ?? "")).join(" ").toLowerCase();
+    return (statusFilter === "all" || status === statusFilter) && (!query.trim() || text.includes(query.trim().toLowerCase()));
+  });
+  const dateLabel = (value: unknown) => {
+    if (!value) return "—";
+    const date = new Date(String(value));
+    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" });
+  };
+  const detailText = (value: unknown) => {
+    if (value === null || value === undefined || value === "") return "No additional details provided.";
+    const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    return text.length > 500 ? text.slice(0, 497) + "…" : text;
+  };
+  const severityClass = (value: unknown) => {
+    const severity = String(value ?? "medium").toLowerCase();
+    if (["critical", "high"].includes(severity)) return "border-rose-200 bg-rose-50 text-rose-700";
+    if (severity === "low") return "border-sky-200 bg-sky-50 text-sky-700";
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  };
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Fraud &amp; Risk</h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Review risk flags raised by platform activity. Empty results mean no flags are currently stored; they do not mean the system has scanned every account.</p>
+        </div>
+        <Button type="button" variant="outline" onClick={() => void onRefresh()} disabled={refreshing} className="shrink-0">
+          <RefreshCw className={`mr-2 size-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh records
+        </Button>
+      </div>
+
+      {error ? (
+        <Card className="border-destructive/50">
+          <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="font-medium text-destructive">Risk records could not be loaded</p><p className="mt-1 text-sm text-muted-foreground">{error}</p></div>
+            <Button type="button" variant="outline" onClick={() => void onRefresh()} disabled={refreshing}>Retry</Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <section className="grid gap-3 grid-cols-2 xl:grid-cols-5">
+        <Card><CardContent className="p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">All flags</p><p className="mt-2 text-2xl font-semibold tabular-nums">{rows.length}</p></CardContent></Card>
+        <Card className="border-amber-200/70"><CardContent className="p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Open</p><p className="mt-2 text-2xl font-semibold tabular-nums">{countFor("open")}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Reviewed</p><p className="mt-2 text-2xl font-semibold tabular-nums">{countFor("reviewed")}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Resolved</p><p className="mt-2 text-2xl font-semibold tabular-nums">{countFor("resolved")}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">False positives</p><p className="mt-2 text-2xl font-semibold tabular-nums">{countFor("false_positive")}</p></CardContent></Card>
+      </section>
+
+      <Card className="overflow-hidden">
+        <CardHeader className="gap-3 border-b bg-muted/20 p-4 sm:p-5">
+          <div><CardTitle className="text-base">Risk review queue</CardTitle><p className="mt-1 text-sm text-muted-foreground">{filteredRows.length} matching record{filteredRows.length === 1 ? "" : "s"} · latest flags first</p></div>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search user, UID, flag type or details…" />
+            </div>
+            <select aria-label="Filter fraud flags by status" className="h-10 rounded-md border bg-background px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="all">All statuses</option>
+              {statuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+            </select>
+          </div>
+        </CardHeader>
+        {refreshing && rows.length === 0 && !error ? (
+          <div className="flex min-h-40 items-center justify-center"><LoadingIndicator size="md" label="Loading risk records" /></div>
+        ) : filteredRows.length === 0 ? (
+          <div className="flex flex-col items-center px-5 py-12 text-center">
+            <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-muted"><ShieldCheck className="size-6 text-muted-foreground" /></div>
+            <p className="font-medium">{rows.length === 0 ? "No fraud flags recorded" : "No matching records"}</p>
+            <p className="mt-1 max-w-md text-sm text-muted-foreground">{rows.length === 0 ? "Supabase currently has no rows in fraud_flags. Flags will appear here when a risk event creates one." : "Try another search term or select a different status."}</p>
+            {rows.length === 0 && !error ? <p className="mt-2 text-xs text-muted-foreground">This is an empty queue, not a confirmation that all accounts are risk-free.</p> : null}
+          </div>
+        ) : (
+          <div className="divide-y">
+            {filteredRows.map((row) => {
+              const status = String(row.status ?? "open").toLowerCase();
+              const severity = String(row.severity ?? "medium").toLowerCase();
+              return (
+                <article key={String(row.id)} className="grid gap-3 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_auto]">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold capitalize">{String(row.flag_type ?? "Risk flag").replaceAll("_", " ")}</span>
+                      <Badge variant="outline" className={severityClass(severity)}>{severity} severity</Badge>
+                      <Badge variant="outline" className="capitalize">{status.replaceAll("_", " ")}</Badge>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">User: <span className="font-medium text-foreground">{String(row.user_id_name ?? "Unknown user")}</span> · UID {String(row.user_id_uid ?? "—")}</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted-foreground">{detailText(row.details)}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{dateLabel(row.created_at)}</p>
+                  </div>
+                  <div className="flex flex-wrap items-start gap-2 xl:justify-end">
+                    {statuses.filter((nextStatus) => nextStatus !== status).map((nextStatus) => (
+                      <Button key={nextStatus} type="button" size="sm" variant="outline" onClick={() => onStatus(row, nextStatus)} disabled={refreshing} className="capitalize">{nextStatus.replaceAll("_", " ")}</Button>
+                    ))}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
