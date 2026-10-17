@@ -12,7 +12,12 @@ export async function sha256Hex(value: string) {
 export function getTrustedDeviceToken(request: Request = getRequest()) {
   const cookie = request.headers.get("cookie") ?? "";
   const match = cookie.match(new RegExp(`(?:^|;\\s*)${ADMIN_TRUST_COOKIE}=([^;]+)`));
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
+  if (!match?.[1]) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
 }
 
 export async function isTrustedAdminDevice(userId: string, request: Request = getRequest()) {
@@ -46,11 +51,12 @@ export async function revokeTrustedAdminDevice(request: Request = getRequest()) 
   const token = getTrustedDeviceToken(request);
   if (token && /^[A-Za-z0-9_-]{40,100}$/.test(token)) {
     const tokenHash = await sha256Hex(token);
-    await (supabaseAdmin as any)
+    const { error } = await (supabaseAdmin as any)
       .from("admin_trusted_devices")
       .update({ revoked_at: new Date().toISOString() })
       .eq("token_hash", tokenHash)
       .is("revoked_at", null);
+    if (error) throw new Error("Unable to revoke trusted device.");
   }
 }
 
