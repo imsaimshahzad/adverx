@@ -1414,7 +1414,7 @@ function CashPaymentsDashboard({ overview, onRefresh }: { overview: Record<strin
   const availableCash = Number(overview.cash_available_total ?? cash);
   const difference = availableCash - remaining;
   const coverage = remaining > 0 ? (availableCash / remaining) * 100 : 100;
-  useEffect(() => { setCashInput(String(cash)); }, [cash]);
+  useEffect(() => { setCashInput(String(availableCash)); }, [availableCash]);
   async function saveCash() {
     const value = Number(cashInput);
     if (!Number.isFinite(value) || value < 0) { toast.error("Enter a valid cash amount."); return; }
