@@ -60,6 +60,7 @@ import { AdminEmailComposer } from "@/components/AdminEmailComposer";
 import "@/admin-design.css";
 import "@/morphic-system.css";
 import { isImpersonating, supabase } from "@/integrations/supabase/client";
+import { checkRouteAccess } from "@/lib/auth-guard.functions";
 import { formatDate, shortId } from "@/lib/display";
 import {
   AdminModule,
@@ -467,10 +468,20 @@ export function AdminRoute() {
 
         const { data: assurance, error: assuranceError } =
           await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (assuranceError || assurance.currentLevel !== "aal2") {
+        if (assuranceError) {
           setAuthorization("unauthorized");
           navigate({ to: "/admin/login", replace: true });
           return;
+        }
+        if (assurance.currentLevel !== "aal2") {
+          // The server accepts AAL1 only when the HttpOnly trusted-device
+          // token is valid, unexpired, and bound to this admin account.
+          const trustedAccess = await checkRouteAccess({ data: { admin: true } });
+          if (!trustedAccess.authenticated || !trustedAccess.admin || trustedAccess.userId !== auth.user.id) {
+            setAuthorization("unauthorized");
+            navigate({ to: "/admin/login", replace: true });
+            return;
+          }
         }
 
         const { data: profile, error: profileError } = await db

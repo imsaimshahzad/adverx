@@ -35,6 +35,7 @@ function AdminLoginPage() {
   const [challengeId, setChallengeId] = useState("");
   const [qrCode, setQrCode] = useState("");
   const [secret, setSecret] = useState("");
+  const [trustThisDevice, setTrustThisDevice] = useState(false);
 
   function continueToAdmin() {
     try {
@@ -56,6 +57,31 @@ function AdminLoginPage() {
     if (assurance.currentLevel === "aal2") {
       continueToAdmin();
       return;
+    }
+
+    // A trusted device is accepted only after the server checks its HttpOnly
+    // cookie against a non-reversible token hash stored in the database.
+    try {
+      const { data: currentSession } = await supabase.auth.getSession();
+      if (currentSession.session?.access_token) {
+        const trustedResponse = await fetch("/api/admin/trusted-device", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${currentSession.session.access_token}`,
+          },
+          body: JSON.stringify({ action: "validate" }),
+        });
+        if (trustedResponse.ok) {
+          const trustedResult = await trustedResponse.json();
+          if (trustedResult.trusted === true) {
+            continueToAdmin();
+            return;
+          }
+        }
+      }
+    } catch {
+      // A temporary trust-check failure falls back to normal TOTP verification.
     }
 
     const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
@@ -196,6 +222,24 @@ function AdminLoginPage() {
       if (step === "enroll") {
         toast.success("Two-factor authentication enabled.");
       }
+      if (trustThisDevice) {
+        try {
+          const { data: currentSession } = await supabase.auth.getSession();
+          if (!currentSession.session?.access_token) throw new Error("Missing verified session");
+          const trustResponse = await fetch("/api/admin/trusted-device", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${currentSession.session.access_token}`,
+            },
+            body: JSON.stringify({ action: "issue" }),
+          });
+          if (!trustResponse.ok) throw new Error("Trusted device registration failed");
+          toast.success("This device is trusted for 30 days.");
+        } catch {
+          toast.error("2FA succeeded, but this device could not be trusted. You can still continue securely.");
+        }
+      }
       continueToAdmin();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to verify the code. Please try again.");
@@ -214,7 +258,7 @@ function AdminLoginPage() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {step === "credentials"
-            ? "Enter your existing admin email and password. A one-time authenticator code is also required."
+            ? "Enter your existing admin email and password. New devices must verify with your authenticator app."
             : step === "enroll"
               ? "Scan this QR code with Google Authenticator, Microsoft Authenticator, or another TOTP app, then enter its 6-digit code."
               : "Open your authenticator app and enter the current 6-digit code to finish signing in."}
@@ -230,8 +274,44 @@ function AdminLoginPage() {
               <Label htmlFor="admin-password">Password</Label>
               <Input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.nativeEvent.isComposing && event.keyCode !== 229) void signIn(); }} />
             </div>
+            <label className="flex items-start gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-border accent-primary"
+                checked={trustThisDevice}
+                onChange={(event) => setTrustThisDevice(event.target.checked)}
+              />
+              <span>
+                <span className="font-medium text-foreground">Trust this device for 30 days</span>
+                <span className="block text-xs">Only select this on your personal device. You will still need your password.</span>
+              </span>
+            </label>
             <Button className="w-full" disabled={submitting} onClick={() => void signIn()}>
               {submitting ? "Checking…" : "Continue securely"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-sm"
+              disabled={submitting}
+              onClick={async () => {
+                setSubmitting(true);
+                try {
+                  const response = await fetch("/api/admin/trusted-device", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "revoke" }),
+                  });
+                  if (!response.ok) throw new Error("Unable to forget this device.");
+                  toast.success("This browser's trusted-device access has been revoked.");
+                } catch {
+                  toast.error("Unable to forget this device. Please try again.");
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              Forget this trusted device
             </Button>
           </div>
         ) : (

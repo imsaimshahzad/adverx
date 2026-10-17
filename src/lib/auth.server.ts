@@ -1,6 +1,7 @@
 import { getRequest } from "@tanstack/react-start/server";
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isTrustedAdminDevice } from "@/lib/admin-trusted-device.server";
 
 export const ADMIN_ROLES = new Set(["admin", "super_admin", "moderator"]);
 
@@ -26,9 +27,7 @@ export async function requireAdminUser() {
   }
   const token = getRequestBearerToken();
   const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
-  if (claimsError || claimsData?.claims?.aal !== "aal2") {
-    throw new Error("Two-factor authentication required");
-  }
+  if (claimsError) throw new Error("Unauthorized");
 
   const user = await requireAuthenticatedUser();
   const { data: profile, error } = await supabaseAdmin
@@ -39,6 +38,10 @@ export async function requireAdminUser() {
 
   if (error || !profile || !ADMIN_ROLES.has(String(profile.role))) {
     throw new Error("Forbidden");
+  }
+
+  if (claimsData?.claims?.aal !== "aal2" && !(await isTrustedAdminDevice(user.id))) {
+    throw new Error("Two-factor authentication required");
   }
 
   return user;
