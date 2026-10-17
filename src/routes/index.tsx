@@ -264,7 +264,7 @@ function PublicFooter() {
         </div>
         <div className="flex flex-col gap-5 sm:items-end">
           <nav className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground" aria-label="Footer navigation">
-            <Link to="/" className="hover:text-foreground">Home</Link><Link to="/plans" className="hover:text-foreground">Plans</Link><Link to="/refund-policy" className="hover:text-foreground">Refund Policy</Link><a href="#privacy" className="hover:text-foreground">Privacy Policy</a><a href="#terms" className="hover:text-foreground">Terms</a><a href="mailto:support@adverx.online" className="hover:text-foreground">Contact</a><Link to="/login" className="hover:text-foreground">Sign In</Link>
+            <Link to="/" className="hover:text-foreground">Home</Link><Link to="/plans" className="hover:text-foreground">Plans</Link><Link to="/refund-policy" className="hover:text-foreground">Refund Policy</Link><Link to="/terms" className="hover:text-foreground">Terms &amp; Conditions</Link><Link to="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link><Link to="/earnings-disclaimer" className="hover:text-foreground">Earnings Disclaimer</Link><a href="mailto:support@adverx.online" className="hover:text-foreground">Contact</a><Link to="/login" className="hover:text-foreground">Sign In</Link>
           </nav>
           <div className="flex items-center gap-3" aria-label="Social links">
             <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Linkedin className="size-4" /></a>
