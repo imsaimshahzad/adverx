@@ -72,14 +72,21 @@ function AdminLoginPage() {
       return;
     }
 
-    // Remove abandoned, unverified setup attempts so the owner can restart safely.
+    // Remove abandoned, unverified setup attempts. If Supabase refuses to
+    // remove an old pending factor, use a distinct setup label so enrollment
+    // can still proceed instead of trapping the owner on the credentials page.
+    let canReuseFriendlyName = true;
     for (const factor of factors.totp) {
       if (factor.status !== "verified") {
-        await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        if (unenrollError) canReuseFriendlyName = false;
       }
     }
     const { data: enrollment, error: enrollmentError } =
-      await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "AdverX Admin" });
+      await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: canReuseFriendlyName ? "AdverX Admin" : "AdverX Admin Setup",
+      });
     if (enrollmentError) throw enrollmentError;
     setFactorId(enrollment.id);
     setQrCode(enrollment.totp.qr_code);
