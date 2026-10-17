@@ -165,19 +165,19 @@ export function AuthPage() {
               </button>
             </div>
           </Field>
-          <div className="-mt-2 space-y-1 text-xs">
-            {[
-              { label: "At least 8 characters", valid: form.password.length >= 8 },
-              { label: "At least one uppercase letter", valid: /[A-Z]/.test(form.password) },
-              { label: "At least one lowercase letter", valid: /[a-z]/.test(form.password) },
-              { label: "At least one number", valid: /[0-9]/.test(form.password) },
-              { label: "At least one special character", valid: /[^A-Za-z0-9]/.test(form.password) },
-            ].map((rule) => (
-              <p key={rule.label} className={rule.valid ? "text-emerald-600" : "text-muted-foreground"}>
-                {rule.valid ? "✓" : "○"} {rule.label}
-              </p>
-            ))}
-          </div>
+          {form.password.length > 0 && (
+            <div className="-mt-2 space-y-1 text-xs text-muted-foreground" aria-live="polite">
+              {[
+                { label: "At least 8 characters", valid: form.password.length >= 8 },
+                { label: "At least one uppercase letter", valid: /[A-Z]/.test(form.password) },
+                { label: "At least one lowercase letter", valid: /[a-z]/.test(form.password) },
+                { label: "At least one number", valid: /[0-9]/.test(form.password) },
+                { label: "At least one special character", valid: /[^A-Za-z0-9]/.test(form.password) },
+              ].filter((rule) => !rule.valid).map((rule) => (
+                <p key={rule.label}>Missing: {rule.label}</p>
+              ))}
+            </div>
+          )}
           {signupErrors.password ? <p role="alert" className="-mt-2 text-xs text-destructive">{signupErrors.password}</p> : null}
           <Field label="Referral code (optional)">
             <Input
