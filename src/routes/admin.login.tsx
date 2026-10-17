@@ -14,66 +14,29 @@ export const Route = createFileRoute("/admin/login")({
   head: () => ({
     meta: [
       { title: "Admin login — AdverX" },
-      {
-        name: "description",
-        content: "Secure administrator sign in for AdverX.",
-      },
+      { name: "description", content: "Secure administrator sign in for AdverX." },
     ],
   }),
   component: AdminLoginPage,
 });
+
+type LoginStep = "credentials" | "challenge" | "enroll";
 
 function AdminLoginPage() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<LoginStep>("credentials");
+  const [factorId, setFactorId] = useState("");
+  const [challengeId, setChallengeId] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [secret, setSecret] = useState("");
 
-  async function signIn() {
-    if (isImpersonating()) {
-      setError("Admin login is disabled while viewing as another user.");
-      return;
-    }
-    if (!email.trim() || !password) {
-      toast.error("Enter your admin email and password.");
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    if (signInError) {
-      setSubmitting(false);
-      setError(signInError.message || "Unable to sign in. Check your credentials.");
-      return;
-    }
-    const { data: auth, error: userError } = await supabase.auth.getUser();
-    if (userError || !auth.user) {
-      setSubmitting(false);
-      setError("We could not verify your session. Please try again.");
-      return;
-    }
-    const { data: profile, error: profileError } = await (supabase as any)
-      .from("profiles")
-      .select("role")
-      .eq("id", auth.user.id)
-      .maybeSingle();
-    if (profileError) {
-      console.error("[v0] Admin profile lookup failed", profileError);
-      setSubmitting(false);
-      setError(`Signed in, but we could not load your profile: ${profileError.message}`);
-      return;
-    }
-    if (!["admin", "super_admin", "moderator"].includes(profile?.role)) {
-      setSubmitting(false);
-      setError("This account is not authorized to access the admin panel.");
-      return;
-    }
-    setSubmitting(false);
+  function continueToAdmin() {
     try {
       const target = new URL(redirect || "/admin", window.location.origin);
       if (target.origin !== window.location.origin) {
@@ -86,63 +49,165 @@ function AdminLoginPage() {
     }
   }
 
+  async function beginMfa() {
+    const { data: assurance, error: assuranceError } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assuranceError) throw assuranceError;
+    if (assurance.currentLevel === "aal2") {
+      continueToAdmin();
+      return;
+    }
+
+    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+    if (factorsError) throw factorsError;
+    const verified = factors.totp.find((factor) => factor.status === "verified");
+    if (verified) {
+      const { data: challenge, error: challengeError } =
+        await supabase.auth.mfa.challenge({ factorId: verified.id });
+      if (challengeError) throw challengeError;
+      setFactorId(verified.id);
+      setChallengeId(challenge.id);
+      setStep("challenge");
+      setCode("");
+      return;
+    }
+
+    // Remove abandoned, unverified setup attempts so the owner can restart safely.
+    for (const factor of factors.totp) {
+      if (factor.status !== "verified") {
+        await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      }
+    }
+    const { data: enrollment, error: enrollmentError } =
+      await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "AdverX Admin" });
+    if (enrollmentError) throw enrollmentError;
+    setFactorId(enrollment.id);
+    setQrCode(enrollment.totp.qr_code);
+    setSecret(enrollment.totp.secret);
+    setStep("enroll");
+    setCode("");
+  }
+
+  async function signIn() {
+    if (isImpersonating()) {
+      setError("Admin login is disabled while viewing as another user.");
+      return;
+    }
+    if (!email.trim() || !password) {
+      toast.error("Enter your admin email and password.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInError) throw signInError;
+
+      const { data: auth, error: userError } = await supabase.auth.getUser();
+      if (userError || !auth.user) throw new Error("We could not verify your session. Please try again.");
+
+      const { data: profile, error: profileError } = await (supabase as any)
+        .from("profiles")
+        .select("role")
+        .eq("id", auth.user.id)
+        .maybeSingle();
+      if (profileError) throw new Error("We could not verify your admin role. Please try again.");
+      if (!["admin", "super_admin", "moderator"].includes(profile?.role)) {
+        await supabase.auth.signOut();
+        throw new Error("This account is not authorized to access the admin panel.");
+      }
+      await beginMfa();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to sign in securely. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function verifyCode() {
+    if (!/^\d{6}$/.test(code.trim())) {
+      setError("Enter the 6-digit code from your authenticator app.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      let activeChallengeId = challengeId;
+      if (step === "enroll") {
+        const { data: challenge, error: challengeError } =
+          await supabase.auth.mfa.challenge({ factorId });
+        if (challengeError) throw challengeError;
+        activeChallengeId = challenge.id;
+      }
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId,
+        challengeId: activeChallengeId,
+        code: code.trim(),
+      });
+      if (verifyError) throw new Error("That code is incorrect or expired. Check your phone and try again.");
+      if (step === "enroll") {
+        toast.success("Two-factor authentication enabled.");
+      }
+      continueToAdmin();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to verify the code. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
       <section className="surface w-full max-w-md p-6 shadow-sm">
         <BrandLogo className="mb-5 max-w-[11.5rem] rounded bg-white p-2 sm:max-w-[15.75rem]" />
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-          AdverX
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold">Admin sign in</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">AdverX Security</p>
+        <h1 className="mt-3 text-2xl font-semibold">
+          {step === "credentials" ? "Admin sign in" : step === "enroll" ? "Set up two-factor authentication" : "Verify your login"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Only authorized admin, moderator, and super-admin accounts can access this panel.
+          {step === "credentials"
+            ? "Enter your existing admin email and password. A one-time authenticator code is also required."
+            : step === "enroll"
+              ? "Scan this QR code with Google Authenticator, Microsoft Authenticator, or another TOTP app, then enter its 6-digit code."
+              : "Open your authenticator app and enter the current 6-digit code to finish signing in."}
         </p>
-        {error ? (
-          <p
-            role="alert"
-            className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
-            {error}
-          </p>
-        ) : null}
-        <div className="mt-6 space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="admin-email">Email</Label>
-            <Input
-              id="admin-email"
-              type="email"
-              autoComplete="username"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="admin@mail.com"
-            />
+        {error ? <p role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+        {step === "credentials" ? (
+          <div className="mt-6 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-email">Email</Label>
+              <Input id="admin-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@mail.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-password">Password</Label>
+              <Input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.nativeEvent.isComposing && event.keyCode !== 229) void signIn(); }} />
+            </div>
+            <Button className="w-full" disabled={submitting} onClick={() => void signIn()}>
+              {submitting ? "Checking…" : "Continue securely"}
+            </Button>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="admin-password">Password</Label>
-            <Input
-              id="admin-password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  !event.nativeEvent.isComposing &&
-                  event.keyCode !== 229
-                )
-                  void signIn();
-              }}
-            />
+        ) : (
+          <div className="mt-6 space-y-4">
+            {step === "enroll" ? (
+              <div className="space-y-3 rounded-lg border border-border p-4">
+                {qrCode ? <img src={qrCode.startsWith("data:") ? qrCode : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrCode)}`} alt="Authenticator setup QR code" className="mx-auto h-52 w-52 max-w-full" /> : null}
+                <p className="text-xs text-muted-foreground">Agar QR scan nahi hota to authenticator app mein yeh setup key manually enter karein:</p>
+                <p className="break-all rounded bg-muted p-2 font-mono text-sm select-all">{secret}</p>
+              </div>
+            ) : null}
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-2fa-code">6-digit authenticator code</Label>
+              <Input id="admin-2fa-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} onKeyDown={(event) => { if (event.key === "Enter") void verifyCode(); }} placeholder="000000" />
+            </div>
+            <Button className="w-full" disabled={submitting || code.length !== 6} onClick={() => void verifyCode()}>
+              {submitting ? "Verifying…" : step === "enroll" ? "Enable 2FA and continue" : "Verify and sign in"}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">Code sirf login par chahiye hoga, har admin action par nahi.</p>
           </div>
-          <Button
-            className="w-full"
-            disabled={submitting}
-            onClick={() => void signIn()}
-          >
-            {submitting ? "Signing in…" : "Sign in to admin"}
-          </Button>
-        </div>
+        )}
       </section>
     </main>
   );

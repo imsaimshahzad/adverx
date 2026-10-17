@@ -24,6 +24,12 @@ export async function requireAdminUser() {
   if (getRequest().headers.get("x-adverx-impersonation") === "1") {
     throw new Error("Admin actions are disabled while impersonating a user.");
   }
+  const token = getRequestBearerToken();
+  const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
+  if (claimsError || claimsData?.claims?.aal !== "aal2") {
+    throw new Error("Two-factor authentication required");
+  }
+
   const user = await requireAuthenticatedUser();
   const { data: profile, error } = await supabaseAdmin
     .from("profiles")

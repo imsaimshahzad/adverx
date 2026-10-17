@@ -465,6 +465,14 @@ export function AdminRoute() {
           return;
         }
 
+        const { data: assurance, error: assuranceError } =
+          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assuranceError || assurance.currentLevel !== "aal2") {
+          setAuthorization("unauthorized");
+          navigate({ to: "/admin/login", replace: true });
+          return;
+        }
+
         const { data: profile, error: profileError } = await db
           .from("profiles")
           .select("id, role, full_name")
