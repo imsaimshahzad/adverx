@@ -141,7 +141,6 @@ const JoinReferralCodeRoute = JoinReferralCodeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/refund-policy': typeof RefundPolicyRoute
-  '/refund-policy': typeof RefundPolicyRoute
   '/admin': typeof AdminRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
   '/auth': typeof AuthRoute
