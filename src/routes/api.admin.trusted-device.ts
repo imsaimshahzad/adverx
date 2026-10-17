@@ -4,11 +4,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ADMIN_ROLES } from "@/lib/auth.server";
 import {
   clearTrustedDeviceCookie,
-  getTrustedDeviceToken,
   isTrustedAdminDevice,
   issueTrustedAdminDevice,
   revokeTrustedAdminDevice,
-  sha256Hex,
   trustedDeviceSetCookie,
 } from "@/lib/admin-trusted-device.server";
 import { enforceIpRateLimit } from "@/lib/api/rate-limit.server";
