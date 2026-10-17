@@ -207,7 +207,7 @@ export function AuthPage() {
               if (!username) nextErrors.username = "Choose a username.";
               else if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) nextErrors.username = "Username must be 3–24 characters and contain only letters, numbers, or underscores.";
               if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) nextErrors.email = "Enter a valid email address.";
-              if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password)) nextErrors.password = "Password must be at least 8 characters and include at least one letter and one number.";
+              if (form.password.length < 8 || !/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/[0-9]/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password)) nextErrors.password = "Use at least 8 characters with an uppercase letter, a lowercase letter, a number, and a special character.";
               setSignupErrors(nextErrors);
               setSignupError("");
               if (Object.values(nextErrors).some(Boolean)) {
@@ -443,7 +443,7 @@ function getSignupErrorMessage(rawMessage: string, code?: string): { text: strin
     return { field: "email", text: "Enter a valid email address." };
   }
   if (/password.*(weak|short|least|characters|contain)|weak password|password should/.test(message)) {
-    return { field: "password", text: "Password must be at least 8 characters and include at least one letter and one number." };
+    return { field: "password", text: "This password was rejected by the account security policy. Use at least 8 characters with an uppercase letter, a lowercase letter, a number, and a special character." };
   }
   if (/rate limit|too many requests/.test(message)) {
     return { text: "Too many signup attempts. Please wait a few minutes and try again." };
