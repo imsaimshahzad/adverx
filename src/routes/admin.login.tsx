@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { isImpersonating, supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,38 @@ function AdminLoginPage() {
     setCode("");
   }
 
+  async function cancelLoginFlow() {
+    // An unfinished MFA enrollment must not leave a usable admin session behind.
+    if (step === "enroll" && factorId) {
+      try {
+        await supabase.auth.mfa.unenroll({ factorId });
+      } catch {
+        // Continue clearing the local session even if cleanup of a pending factor fails.
+      }
+    }
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } finally {
+      setCode("");
+      setFactorId("");
+      setChallengeId("");
+      setQrCode("");
+      setSecret("");
+      setStep("credentials");
+      setPassword("");
+      setError(null);
+    }
+  }
+
+  useEffect(() => {
+    if (step === "credentials") return;
+    const handleBackNavigation = () => {
+      void cancelLoginFlow();
+    };
+    window.addEventListener("popstate", handleBackNavigation);
+    return () => window.removeEventListener("popstate", handleBackNavigation);
+  }, [step, factorId]);
+
   async function signIn() {
     if (isImpersonating()) {
       setError("Admin login is disabled while viewing as another user.");
@@ -128,6 +160,12 @@ function AdminLoginPage() {
       }
       await beginMfa();
     } catch (cause) {
+      // If credentials were accepted but MFA could not start, revoke this local session.
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // Keep the original, user-facing authentication error.
+      }
       setError(cause instanceof Error ? cause.message : "Unable to sign in securely. Please try again.");
     } finally {
       setSubmitting(false);
@@ -211,6 +249,9 @@ function AdminLoginPage() {
             </div>
             <Button className="w-full" disabled={submitting || code.length !== 6} onClick={() => void verifyCode()}>
               {submitting ? "Verifying…" : step === "enroll" ? "Enable 2FA and continue" : "Verify and sign in"}
+            </Button>
+            <Button type="button" variant="outline" className="w-full" disabled={submitting} onClick={() => void cancelLoginFlow()}>
+              Cancel setup and sign out
             </Button>
             <p className="text-center text-xs text-muted-foreground">Code sirf login par chahiye hoga, har admin action par nahi.</p>
           </div>
