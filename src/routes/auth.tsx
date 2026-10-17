@@ -59,6 +59,7 @@ export function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [signupErrors, setSignupErrors] = useState<Record<string, string>>({});
   const [signupError, setSignupError] = useState("");
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetRequested, setResetRequested] = useState(false);
@@ -139,19 +140,30 @@ export function AuthPage() {
           </Field>
           {signupErrors.email ? <p role="alert" className="-mt-2 text-xs text-destructive">{signupErrors.email}</p> : null}
           <Field label="Password">
-            <Input
-              className="auth-control w-full rounded-[10px] border-[1.5px] border-input bg-secondary/50 px-3 py-3 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
-              type="password"
-              value={form.password}
-              onChange={(e) => {
-                setForm({ ...form, password: e.target.value });
-                setSignupErrors((current) => ({ ...current, password: "" }));
-                setSignupError("");
-              }}
-              placeholder="At least 8 characters"
-              autoComplete="new-password"
-              aria-invalid={Boolean(signupErrors.password)}
-            />
+            <div className="relative">
+              <Input
+                className="auth-control w-full rounded-[10px] border-[1.5px] border-input bg-secondary/50 px-3 py-3 pr-16 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
+                type={showSignupPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(e) => {
+                  setForm({ ...form, password: e.target.value });
+                  setSignupErrors((current) => ({ ...current, password: "" }));
+                  setSignupError("");
+                }}
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+                aria-invalid={Boolean(signupErrors.password)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                onClick={() => setShowSignupPassword((visible) => !visible)}
+                aria-label={showSignupPassword ? "Hide password" : "Show password"}
+                aria-pressed={showSignupPassword}
+              >
+                {showSignupPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </Field>
           <div className="-mt-2 space-y-1 text-xs">
             {[
@@ -195,7 +207,7 @@ export function AuthPage() {
               if (!username) nextErrors.username = "Choose a username.";
               else if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) nextErrors.username = "Username must be 3–24 characters and contain only letters, numbers, or underscores.";
               if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) nextErrors.email = "Enter a valid email address.";
-              if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password)) nextErrors.password = "Use at least 8 characters, including a letter and a number.";
+              if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password)) nextErrors.password = "Password must be at least 8 characters and include at least one letter and one number.";
               setSignupErrors(nextErrors);
               setSignupError("");
               if (Object.values(nextErrors).some(Boolean)) {
@@ -419,10 +431,10 @@ function getSignupErrorMessage(rawMessage: string, code?: string): { text: strin
   const message = `${code ?? ""} ${rawMessage}`.toLowerCase();
 
   if (/username/.test(message) && /(already|taken|duplicate|unique|exists|registered|profiles_.*username)/.test(message)) {
-    return { field: "username", text: "This username is already taken. Please choose another one." };
+    return { field: "username", text: "Username already taken. Please choose another username." };
   }
   if (/username/.test(message) && /(invalid|format|constraint|check)/.test(message)) {
-    return { field: "username", text: "Use 3–24 characters with letters, numbers, or underscores only." };
+    return { field: "username", text: "Username must be 3–24 characters and contain only letters, numbers, or underscores." };
   }
   if (/already registered|user already exists|email.*(already|exists|registered)/.test(message)) {
     return { field: "email", text: "An account with this email already exists. Sign in or use another email." };
@@ -431,7 +443,7 @@ function getSignupErrorMessage(rawMessage: string, code?: string): { text: strin
     return { field: "email", text: "Enter a valid email address." };
   }
   if (/password.*(weak|short|least|characters|contain)|weak password|password should/.test(message)) {
-    return { field: "password", text: "Your password doesn't meet the requirements. Use at least 8 characters, including a letter and a number." };
+    return { field: "password", text: "Password must be at least 8 characters and include at least one letter and one number." };
   }
   if (/rate limit|too many requests/.test(message)) {
     return { text: "Too many signup attempts. Please wait a few minutes and try again." };
