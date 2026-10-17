@@ -1090,7 +1090,7 @@ export function AdminRoute() {
           </div>
         </header>
         <div className="admin-page-content morphic-expand min-w-0 space-y-5 p-4 sm:p-5 lg:space-y-6 lg:p-8">
-          {error ? (
+          {error && active !== "fraud" ? (
             <Card className="border-destructive">
               <CardContent className="flex items-center justify-between gap-4 p-4 text-sm">
                 <span>{error}</span>
