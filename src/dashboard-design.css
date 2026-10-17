@@ -1,4 +1,17 @@
-.dashboard-shell { --dashboard-accent:#087f7b; background:#f5f7f7; color:#102a2a; }
+.dashboard-shell { --dashboard-accent:#f28c00; position:relative; isolation:isolate; min-height:100vh; overflow:hidden; background:#041214; color:#eaf6f4; }
+.dashboard-shell::before { content:""; position:fixed; inset:0; z-index:-2; pointer-events:none; background:radial-gradient(circle at 10% 0%, rgba(10,154,141,.34), transparent 34%), radial-gradient(circle at 92% 20%, rgba(242,140,0,.18), transparent 28%), radial-gradient(circle at 16% 100%, rgba(27,127,158,.22), transparent 36%); }
+.dashboard-aurora { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; opacity:.7; }
+.dashboard-aurora i { position:absolute; display:block; border-radius:999px; filter:blur(18px); }
+.dashboard-aurora i:nth-child(1) { width:34rem; height:34rem; left:-18rem; top:-18rem; background:rgba(20,184,166,.12); }
+.dashboard-aurora i:nth-child(2) { width:28rem; height:28rem; right:-14rem; top:18%; background:rgba(242,140,0,.09); }
+.dashboard-aurora i:nth-child(3) { width:32rem; height:32rem; left:18%; bottom:-22rem; background:rgba(38,138,189,.12); }
+.dashboard-shell .app-sidebar,.dashboard-shell .dashboard-header { background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(8,28,30,.62); border-color:rgba(255,255,255,.2); box-shadow:inset 0 1px rgba(255,255,255,.18),0 18px 50px rgba(0,0,0,.28); backdrop-filter:blur(24px) saturate(160%); }
+.dashboard-shell .surface,.dashboard-shell .glass-panel,.dashboard-shell [data-slot="card"],.dashboard-shell .bg-white,.dashboard-shell .bg-card { background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(6,26,28,.5); border-color:rgba(255,255,255,.2); box-shadow:inset 0 1px rgba(255,255,255,.14),0 14px 44px rgba(0,0,0,.24); backdrop-filter:blur(20px) saturate(150%); }
+.dashboard-shell .app-nav-item { color:#dff1ee; }
+.dashboard-shell .app-nav-item:hover { background:rgba(255,255,255,.1); color:#8ff0e3; }
+.dashboard-shell .app-nav-item[aria-current="page"] { background:linear-gradient(135deg,#ffb347,#f28c00); color:#1c1200; box-shadow:0 8px 22px rgba(242,140,0,.32); }
+.dashboard-shell .morphic-hero { background:linear-gradient(135deg,rgba(7,95,88,.98),rgba(10,116,105,.94)); box-shadow:inset 0 1px rgba(255,255,255,.28),0 20px 56px rgba(10,116,105,.35); }
+.dashboard-shell main { position:relative; z-index:0; }
 .dashboard-shell .app-sidebar { position:sticky; top:1.25rem; height:calc(100vh - 2.5rem); margin:1.25rem 0 1.25rem 1.25rem; border:1px solid #d9e5e3; border-radius:1.5rem; overflow:hidden; background:rgba(251,253,252,.86); box-shadow:0 18px 45px rgba(16,42,42,.08); backdrop-filter:blur(18px); }
 .dashboard-shell .app-nav-item { color:#58706f; transition:background-color 160ms ease, color 160ms ease, transform 160ms ease; }
 .dashboard-shell .app-nav-item:hover { background:#e8f2f0; color:#08645f; transform:translateX(2px); }
