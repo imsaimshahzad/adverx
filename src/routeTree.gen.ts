@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated.ads'
@@ -32,6 +33,12 @@ import { Route as AuthenticatedUsersDetailPublicUidRouteImport } from './routes/
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -133,6 +140,8 @@ const JoinReferralCodeRoute = JoinReferralCodeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/admin': typeof AdminRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
   '/auth': typeof AuthRoute
@@ -154,6 +163,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/admin': typeof AdminRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
   '/auth': typeof AuthRoute
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/refund-policy'
     | '/admin'
     | '/ads'
     | '/auth'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/refund-policy'
     | '/admin'
     | '/ads'
     | '/auth'
@@ -268,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -446,6 +465,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(Authe
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
