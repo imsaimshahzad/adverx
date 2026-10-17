@@ -57,6 +57,8 @@ export function AuthPage() {
     terms: false,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [signupErrors, setSignupErrors] = useState<Record<string, string>>({});
+  const [signupError, setSignupError] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetRequested, setResetRequested] = useState(false);
@@ -100,33 +102,69 @@ export function AuthPage() {
           <Field label="Full name">
             <Input
               value={form.fullName}
-              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, fullName: e.target.value });
+                setSignupErrors((current) => ({ ...current, fullName: "" }));
+                setSignupError("");
+              }}
               placeholder="Ahmed Raza"
+              aria-invalid={Boolean(signupErrors.fullName)}
             />
           </Field>
+          {signupErrors.fullName ? <p role="alert" className="-mt-2 text-xs text-destructive">{signupErrors.fullName}</p> : null}
           <Field label="Username">
             <Input
               value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, username: e.target.value });
+                setSignupErrors((current) => ({ ...current, username: "" }));
+                setSignupError("");
+              }}
               placeholder="ahmedraza"
+              aria-invalid={Boolean(signupErrors.username)}
             />
           </Field>
+          {signupErrors.username ? <p role="alert" className="-mt-2 text-xs text-destructive">{signupErrors.username}</p> : <p className="-mt-2 text-xs text-muted-foreground">3–24 characters; use letters, numbers, and underscores only.</p>}
           <Field label="Email or phone">
             <Input
               value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, email: e.target.value });
+                setSignupErrors((current) => ({ ...current, email: "" }));
+                setSignupError("");
+              }}
               placeholder="ahmed@example.com"
+              aria-invalid={Boolean(signupErrors.email)}
             />
           </Field>
+          {signupErrors.email ? <p role="alert" className="-mt-2 text-xs text-destructive">{signupErrors.email}</p> : null}
           <Field label="Password">
             <Input
               className="auth-control w-full rounded-[10px] border-[1.5px] border-input bg-secondary/50 px-3 py-3 shadow-sm placeholder:text-muted-foreground focus-visible:ring-2"
               type="password"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••••"
+              onChange={(e) => {
+                setForm({ ...form, password: e.target.value });
+                setSignupErrors((current) => ({ ...current, password: "" }));
+                setSignupError("");
+              }}
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              aria-invalid={Boolean(signupErrors.password)}
             />
           </Field>
+          <div className="-mt-2 space-y-1 text-xs">
+            {[
+              { label: "At least 8 characters", valid: form.password.length >= 8 },
+              { label: "At least one letter", valid: /[A-Za-z]/.test(form.password) },
+              { label: "At least one number", valid: /[0-9]/.test(form.password) },
+            ].map((rule) => (
+              <p key={rule.label} className={rule.valid ? "text-emerald-600" : "text-muted-foreground"}>
+                {rule.valid ? "✓" : "○"} {rule.label}
+              </p>
+            ))}
+          </div>
+          {signupErrors.password ? <p role="alert" className="-mt-2 text-xs text-destructive">{signupErrors.password}</p> : null}
           <Field label="Referral code (optional)">
             <Input
               value={form.referral}
@@ -146,19 +184,22 @@ export function AuthPage() {
               platform capacity and are not a guaranteed return.
             </span>
           </label>
+          {signupError ? <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{signupError}</p> : null}
           <Button
             className="mt-2 w-full"
             disabled={submitting}
             onClick={() => {
-              if (
-                !form.fullName ||
-                !form.username ||
-                !form.email ||
-                form.password.length < 8
-              ) {
-                toast.error(
-                  "Use a name, username, valid email, and password of at least 8 characters.",
-                );
+              const nextErrors: Record<string, string> = {};
+              if (!form.fullName.trim()) nextErrors.fullName = "Enter your full name.";
+              const username = form.username.trim();
+              if (!username) nextErrors.username = "Choose a username.";
+              else if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) nextErrors.username = "Username must be 3–24 characters and contain only letters, numbers, or underscores.";
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) nextErrors.email = "Enter a valid email address.";
+              if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password)) nextErrors.password = "Use at least 8 characters, including a letter and a number.";
+              setSignupErrors(nextErrors);
+              setSignupError("");
+              if (Object.values(nextErrors).some(Boolean)) {
+                toast.error("Please fix the highlighted fields.");
                 return;
               }
               if (!form.terms) {
@@ -181,16 +222,25 @@ export function AuthPage() {
                     password: form.password,
                     options: {
                       data: {
-                        full_name: form.fullName,
-                        username: form.username,
+                        full_name: form.fullName.trim(),
+                        username: form.username.trim(),
                         referral_code: referral || null,
                       },
                     },
                   });
                   if (error) {
-                    console.error("[v0] Signup failed", error);
-                    console.error("[AdverX] signup failed", error);
-      toast.error("Unable to create your account. Please check your details.");
+                    console.error("[AdverX] signup failed", { code: error.code, message: error.message, status: error.status });
+                    const message = getSignupErrorMessage(error.message, error.code);
+                    if (message.field === "username") {
+                      setSignupErrors((current) => ({ ...current, username: message.text }));
+                    } else if (message.field === "email") {
+                      setSignupErrors((current) => ({ ...current, email: message.text }));
+                    } else if (message.field === "password") {
+                      setSignupErrors((current) => ({ ...current, password: message.text }));
+                    } else {
+                      setSignupError(message.text);
+                    }
+                    toast.error(message.text);
                     return;
                   }
                   if (!data.user) {
@@ -201,9 +251,12 @@ export function AuthPage() {
                   toast.success(data.session ? "Account created successfully." : "Account created. Check your email to confirm before signing in.");
                   if (data.session) navigate({ to: "/", replace: true });
                 } catch (error) {
-                  console.error("[v0] Signup request failed", error);
                   console.error("[AdverX] signup flow failed", error);
-      toast.error("Unable to create your account. Please try again.");
+                  const message = error instanceof Error && /fetch|network|load failed/i.test(error.message)
+                    ? "Network issue. Check your connection and try again."
+                    : "We couldn't finish creating your account. Please try again. If the problem continues, contact support.";
+                  setSignupError(message);
+                  toast.error(message);
                 } finally {
                   setSubmitting(false);
                 }
@@ -360,6 +413,36 @@ export function AuthPage() {
       </div>
     </main>
   );
+}
+
+function getSignupErrorMessage(rawMessage: string, code?: string): { text: string; field?: "username" | "email" | "password" } {
+  const message = `${code ?? ""} ${rawMessage}`.toLowerCase();
+
+  if (/username/.test(message) && /(already|taken|duplicate|unique|exists|registered|profiles_.*username)/.test(message)) {
+    return { field: "username", text: "This username is already taken. Please choose another one." };
+  }
+  if (/username/.test(message) && /(invalid|format|constraint|check)/.test(message)) {
+    return { field: "username", text: "Use 3–24 characters with letters, numbers, or underscores only." };
+  }
+  if (/already registered|user already exists|email.*(already|exists|registered)/.test(message)) {
+    return { field: "email", text: "An account with this email already exists. Sign in or use another email." };
+  }
+  if (/invalid email|email.*invalid/.test(message)) {
+    return { field: "email", text: "Enter a valid email address." };
+  }
+  if (/password.*(weak|short|least|characters|contain)|weak password|password should/.test(message)) {
+    return { field: "password", text: "Your password doesn't meet the requirements. Use at least 8 characters, including a letter and a number." };
+  }
+  if (/rate limit|too many requests/.test(message)) {
+    return { text: "Too many signup attempts. Please wait a few minutes and try again." };
+  }
+  if (/network|fetch failed|failed to fetch/.test(message)) {
+    return { text: "Network issue. Check your connection and try again." };
+  }
+  if (/database error saving new user|error creating user|profile|trigger/.test(message)) {
+    return { text: "Your account details were accepted, but account setup failed. Please try again later or contact support if it continues." };
+  }
+  return { text: "We couldn't create your account with these details. Check the highlighted fields and try again. If it continues, contact support." };
 }
 
 function Field({
