@@ -510,7 +510,6 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   EarningsDisclaimerRoute: EarningsDisclaimerRoute,
-  RefundPolicyRoute: RefundPolicyRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
@@ -535,6 +534,10 @@ declare module '@tanstack/react-start' {
   }
 }export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
+  TermsRoute: typeof TermsRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  EarningsDisclaimerRoute: typeof EarningsDisclaimerRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
