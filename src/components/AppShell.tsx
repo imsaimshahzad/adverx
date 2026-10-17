@@ -162,13 +162,13 @@ export function AppShell({
   );
 
   return (
-    <div className="dashboard-shell flex min-h-screen w-full">
-      <div aria-hidden="true" className="dashboard-aurora"><i /><i /><i /></div>
-      <aside className="app-sidebar hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">{navigation}</aside>
+    <div className="dashboard-shell min-h-screen w-full">
+      <div aria-hidden="true" className="aurora dashboard-aurora"><i /><i /><i /></div>
+      <div className="app-desktop-sidebar app-sidebar hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">{navigation}</div>
       {mobileOpen ? <button aria-label="Close navigation" className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
       <aside className={`app-mobile-sidebar fixed inset-y-0 left-0 z-40 w-72 bg-sidebar shadow-xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>{navigation}<button className="absolute right-4 top-6 rounded-md p-1 text-muted-foreground" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button></aside>
       <div className="min-w-0 flex-1">
-        <header className="dashboard-header sticky top-0 z-20 flex h-20 items-center justify-between gap-2 border-b px-3 sm:gap-4 sm:px-6 lg:px-8">
+        <header className="dashboard-header top sticky top-0 z-20 flex h-20 items-center justify-between gap-2 border-b px-3 sm:gap-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-2"><Button variant="ghost" size="icon" aria-label="Open menu" className="shrink-0 lg:hidden" onClick={() => setMobileOpen(true)}><Menu /></Button><div className="min-w-0"><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1><p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p></div></div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <select aria-label="Display currency" value={displayCurrency} onChange={(event) => changeCurrency(event.target.value as "PKR" | "USD")} className="h-9 rounded-md border border-border bg-background px-2 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-primary/20"><option value="PKR">PKR</option><option value="USD">USD</option></select>
@@ -206,6 +206,20 @@ export function AppShell({
             </div>
           </div>
         ) : null}
+        <nav className="reference-tabs" aria-label="Primary navigation">
+          {[
+            { to: "/", label: "Home", icon: Home },
+            { to: "/ads", label: "Tasks", icon: MonitorPlay },
+            { to: "/withdraw", label: "Wallet", icon: Wallet },
+            { to: "/network", label: "Network", icon: Users },
+            { to: "/profile", label: "Profile", icon: BadgeCheck },
+          ].map(({ to, label, icon: Icon }) => (
+            <Link key={to} to={to} activeOptions={{ exact: to === "/" }} className="reference-tab" activeProps={{ className: "reference-tab is-active" }}>
+              <Icon aria-hidden="true" />
+              <span>{label}</span>
+            </Link>
+          ))}
+        </nav>
       </div>
     </div>
   );

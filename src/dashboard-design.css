@@ -85,3 +85,22 @@ a { text-underline-offset:3px; }
 @keyframes adverx-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 639px) { .dashboard-shell .dashboard-header { border-radius: 1rem; } .dashboard-shell main { padding-inline: .875rem; } .dashboard-shell .morphic-hero { border-radius: 1.25rem; } }
 @media (prefers-reduced-motion: reduce) { .dashboard-shell main > * { animation: none; } }
+
+/* Reference UI: AdverX mobile-first glass shell */
+.dashboard-shell { --ref-bg:#041214; --ref-ink:#eaf6f4; --ref-muted:#b4cdc9; --ref-line:rgba(255,255,255,.16); background:var(--ref-bg); color:var(--ref-ink); padding-bottom:104px; overflow-x:hidden; }
+.dashboard-shell::before { background:radial-gradient(circle at 8% -10%,rgba(10,154,141,.34),transparent 32%),radial-gradient(circle at 96% 14%,rgba(242,140,0,.18),transparent 28%),radial-gradient(circle at 14% 100%,rgba(27,127,158,.22),transparent 38%); }
+.dashboard-shell .dashboard-header { margin:0; height:auto; min-height:68px; padding:10px 16px; border:0; border-radius:0; background:linear-gradient(180deg,#041214 35%,transparent); box-shadow:none; }
+.dashboard-shell .dashboard-header h1 { color:var(--ref-ink); font-size:1.05rem; }
+.dashboard-shell .dashboard-header p,.dashboard-shell .dashboard-header select { color:var(--ref-muted); }
+.dashboard-shell main { max-width:1120px; padding:6px 16px 24px; }
+.dashboard-shell .surface,.dashboard-shell .glass-panel,.dashboard-shell [data-slot="card"] { border:1px solid var(--ref-line); border-radius:26px; background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(6,26,28,.5); box-shadow:inset 0 1px rgba(255,255,255,.14),0 14px 44px rgba(0,0,0,.28); backdrop-filter:blur(22px) saturate(170%); }
+.dashboard-shell .surface:hover,.dashboard-shell [data-slot="card"]:hover { border-color:rgba(255,255,255,.28); transform:translateY(-3px); }
+.dashboard-shell .morphic-hero { border-radius:26px; background:linear-gradient(135deg,rgba(7,95,88,.97),rgba(10,116,105,.95)); box-shadow:inset 0 1px rgba(255,255,255,.34),0 20px 56px rgba(10,116,105,.38); }
+.dashboard-shell .app-desktop-sidebar { display:none; }
+.dashboard-shell .reference-tabs { position:fixed; left:50%; bottom:calc(14px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:min(94vw,440px); display:flex; padding:6px; border:1px solid rgba(255,255,255,.2); border-radius:26px; background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(6,26,28,.72); box-shadow:inset 0 1px rgba(255,255,255,.24),0 18px 44px rgba(0,0,0,.38); backdrop-filter:blur(28px) saturate(170%); z-index:50; }
+.dashboard-shell .reference-tab { display:flex; flex:1; min-height:56px; flex-direction:column; align-items:center; justify-content:center; gap:2px; border-radius:20px; color:#cfe3df; font-size:12.5px; font-weight:500; }
+.dashboard-shell .reference-tab svg { width:20px; height:20px; }
+.dashboard-shell .reference-tab.is-active { background:linear-gradient(135deg,#ffb347,#f28c00); color:#1c1200; font-weight:700; box-shadow:0 6px 18px rgba(242,140,0,.45); }
+.dashboard-shell input,.dashboard-shell textarea,.dashboard-shell select { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.2); color:var(--ref-ink); }
+@media (min-width:900px) { .dashboard-shell { padding-bottom:40px; } .dashboard-shell .app-desktop-sidebar { display:block; } .dashboard-shell .dashboard-header { margin:1.25rem 1.25rem 0; min-height:5.25rem; padding-inline:1.25rem; border:1px solid rgba(255,255,255,.2); border-radius:1.25rem; background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(8,28,30,.62); box-shadow:inset 0 1px rgba(255,255,255,.18),0 18px 50px rgba(0,0,0,.28); } .dashboard-shell .reference-tabs { position:static; transform:none; width:auto; margin:0 auto; border-radius:99px; } .dashboard-shell .reference-tab { flex:none; flex-direction:row; gap:8px; min-height:46px; padding:0 16px; border-radius:99px; font-size:15px; } .dashboard-shell main { padding:24px 32px; } }
+@media (prefers-reduced-motion:reduce) { .dashboard-shell .surface:hover,.dashboard-shell [data-slot="card"]:hover { transform:none; } }
