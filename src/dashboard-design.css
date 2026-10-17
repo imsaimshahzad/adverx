@@ -61,3 +61,27 @@ a { text-underline-offset:3px; }
 .dark .dashboard-shell td { color:#f8fafc; border-color:#1e293b; }
 .dark .dashboard-shell tbody tr:hover { background:#1e293b; }
 .dark .dashboard-shell input,.dark .dashboard-shell textarea,.dark .dashboard-shell select { background:#0f172a; color:#f8fafc; border-color:#475569; }
+
+/* Premium AdverX dashboard polish: quiet surfaces, stronger hierarchy, and responsive rhythm. */
+.dashboard-shell {
+  --dashboard-line: #d8e6e3;
+  background: #f5faf9;
+  color: #102a2a;
+}
+.dashboard-shell::before { background: radial-gradient(circle at 8% -10%, rgba(8,127,123,.12), transparent 30%), radial-gradient(circle at 96% 8%, rgba(242,140,0,.08), transparent 24%); }
+.dashboard-shell .dashboard-header { border-color: var(--dashboard-line); background: rgba(255,255,255,.9); box-shadow: 0 10px 28px rgba(16,42,42,.05); }
+.dashboard-shell .app-sidebar { border-color: var(--dashboard-line); background: rgba(255,255,255,.92); box-shadow: 0 18px 44px rgba(16,42,42,.07); }
+.dashboard-shell main { max-width: 1400px; }
+.dashboard-shell main > * { animation: adverx-enter 420ms ease both; }
+.dashboard-shell .surface,.dashboard-shell .glass-panel,.dashboard-shell [data-slot="card"] { border-color: var(--dashboard-line); border-radius: 1.15rem; box-shadow: 0 1px 2px rgba(16,42,42,.025), 0 12px 30px rgba(16,42,42,.045); }
+.dashboard-shell .surface:hover,.dashboard-shell [data-slot="card"]:hover { transform: translateY(-2px); border-color: #a7d4ce; box-shadow: 0 12px 30px rgba(8,127,123,.10); }
+.dashboard-shell .morphic-hero { border: 0; background: linear-gradient(120deg, #075e5b 0%, #087f7b 62%, #d77b35 145%); box-shadow: 0 20px 42px rgba(8,127,123,.2); }
+.dashboard-shell .morphic-tools { border-color: var(--dashboard-line); background: #edf7f5; }
+.dashboard-shell .morphic-search { border-color: var(--dashboard-line); box-shadow: inset 0 1px rgba(255,255,255,.8); }
+.dashboard-shell .app-nav-item { min-height: 42px; border: 1px solid transparent; }
+.dashboard-shell .app-nav-item[aria-current="page"] { border-color: #c6e7e2; }
+.dashboard-shell .dashboard-header select { min-width: 4.25rem; }
+.dashboard-shell .dashboard-header button,.dashboard-shell .dashboard-header a[aria-label="Profile"] { border-radius: .8rem; }
+@keyframes adverx-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 639px) { .dashboard-shell .dashboard-header { border-radius: 1rem; } .dashboard-shell main { padding-inline: .875rem; } .dashboard-shell .morphic-hero { border-radius: 1.25rem; } }
+@media (prefers-reduced-motion: reduce) { .dashboard-shell main > * { animation: none; } }
