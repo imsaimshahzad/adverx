@@ -47,6 +47,7 @@ REVOKE ALL ON FUNCTION public.record_automatic_fraud_flag(uuid, text, text, json
 CREATE OR REPLACE FUNCTION public.detect_fraud_self_referral()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
@@ -69,6 +70,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.detect_fraud_fast_ad_completion()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
@@ -100,6 +102,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.detect_fraud_fast_task_completion()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
@@ -197,6 +200,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.detect_fraud_withdrawal_burst()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
