@@ -41,7 +41,7 @@ function RefundPolicyPage() {
           <section><h2 className="text-lg font-semibold text-foreground">6. Contact support</h2><p className="mt-2">For payment-related questions, email <a className="font-medium text-primary underline underline-offset-4" href="mailto:support@adverx.online">support@adverx.online</a>. Include your registered account details, transaction reference, payment date, and a brief explanation of the issue. Never send your password or one-time security codes.</p></section>
         </div>
         <div className="mt-10 border-t border-border pt-6 text-xs leading-5 text-muted-foreground">By purchasing a plan, you acknowledge that you have read and understood this Refund Policy, subject to any non-waivable rights under applicable law.</div>
-        <footer className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground"><Link to="/" className="hover:text-foreground">Home</Link><Link to="/plans" className="hover:text-foreground">Plans</Link><a href="mailto:support@adverx.online" className="hover:text-foreground">Contact Support</a></footer>
+        <footer className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground"><Link to="/" className="hover:text-foreground">Home</Link><Link to="/terms" className="hover:text-foreground">Terms &amp; Conditions</Link><Link to="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link><Link to="/earnings-disclaimer" className="hover:text-foreground">Earnings Disclaimer</Link><a href="mailto:support@adverx.online" className="hover:text-foreground">Contact Support</a></footer>
       </section>
     </main>
   );
