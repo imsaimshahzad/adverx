@@ -2564,15 +2564,18 @@ export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginA
       </section>
 
       <Card>
-        <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-2 p-3.5 text-sm">
-          <span><b>Referral:</b> {String(profile.referral_code ?? "—")}</span>
-          <span className="inline-flex flex-col items-start gap-1">
-            <b>Referred by:</b>
+        <CardContent className="grid grid-cols-2 gap-4 p-4 text-sm sm:grid-cols-3 lg:grid-cols-5">
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Referral</p>
+            <p className="break-all font-semibold">{String(profile.referral_code ?? "—")}</p>
+          </div>
+          <div className="col-span-2 min-w-0 space-y-1 sm:col-span-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Referred by</p>
             {profile.referred_by_referrer ? (
-              <>
+              <div className="min-w-0 space-y-1">
                 <button
                   type="button"
-                  className="font-medium text-primary underline-offset-4 hover:underline"
+                  className="block max-w-full break-words text-left font-semibold text-primary underline-offset-4 hover:underline"
                   onClick={() => {
                     const referrerUid = String((profile.referred_by_referrer as AdminRow).public_uid ?? "").trim();
                     if (referrerUid) onOpenReferrer?.(referrerUid);
@@ -2581,16 +2584,27 @@ export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginA
                 >
                   @{String((profile.referred_by_referrer as AdminRow).username ?? (profile.referred_by_referrer as AdminRow).full_name ?? "Unknown user")}
                 </button>
-                <span className="text-xs text-muted-foreground">UID: {String((profile.referred_by_referrer as AdminRow).public_uid ?? "—")}</span>
-                <span className="text-xs text-muted-foreground">Code: {String((profile.referred_by_referrer as AdminRow).referral_code ?? profile.referred_by ?? "—")}</span>
-              </>
+                <p className="break-words text-xs text-muted-foreground">UID: {String((profile.referred_by_referrer as AdminRow).public_uid ?? "—")}</p>
+                <p className="break-all text-xs text-muted-foreground">Code: {String((profile.referred_by_referrer as AdminRow).referral_code ?? profile.referred_by ?? "—")}</p>
+              </div>
             ) : (
-              <span>{String(profile.referred_by ?? "—")}</span>
+              <p className="break-all font-medium">{String(profile.referred_by ?? "—")}</p>
             )}
-          </span>
-          <span><b>Role:</b> {status(profile.role)}</span>
-          <span><b>Verified:</b> {profile.verified ? "Yes" : "No"}</span>
-          {profile.plan_activated_at ? <span><b>Plan active:</b> {date(profile.plan_activated_at)}</span> : null}
+          </div>
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Role</p>
+            <p className="font-semibold capitalize">{status(profile.role)}</p>
+          </div>
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Verified</p>
+            <p className="font-semibold">{profile.verified ? "Yes" : "No"}</p>
+          </div>
+          {profile.plan_activated_at ? (
+            <div className="min-w-0 space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Plan active</p>
+              <p className="font-semibold">{date(profile.plan_activated_at)}</p>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
