@@ -2545,17 +2545,20 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
         </div>
       </div>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
           ["Balance", money(summary.balance)],
           ["Invested", money(summary.total_invest)],
           ["Deposits", money(summary.deposits)],
           ["Withdrawals", money(summary.withdrawals)],
           ["Commission", `+${money(summary.referral_commission)}`],
+          // Reporting-only total: paid withdrawals plus the current available ledger balance.
+          ["Total Earnings", money(Number(summary.withdrawals ?? 0) + Number(summary.balance ?? 0))],
         ].map(([label, value]) => (
           <Card key={label}><CardContent className="p-3.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
+            {label === "Total Earnings" ? <p className="mt-1 text-[10px] text-muted-foreground">Withdrawals + balance</p> : null}
           </CardContent></Card>
         ))}
       </section>

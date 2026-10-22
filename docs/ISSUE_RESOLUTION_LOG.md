@@ -33,6 +33,7 @@
 | AX-FIN-027 | `27`, buyer UID `341355`, referrer UID `622644`, reward budget `522`, `549`, purchase `cb592147-7ce5-4978-ae28-542a12b13a05` | PKR 27 commission overpayment was reserve-funded; buyer's reward budget reconciled 522→549 | **RESOLVED — LIVE DB VERIFIED 2026-10-11** | Do not repeat reserve debit or reward-budget reconciliation; do not debit either member wallet |
 | AX-FIN-024 | `24`, buyer UID `341355`, recipient UID `411613`, indirect/L2 commission, purchase `cb592147-7ce5-4978-ae28-542a12b13a05`, Pro pool `24 → 54`, admin settlement `30` | The Rs. 24 was paid from the purchase-time Rs. 24 Pro pool; later policy raised the pool to Rs. 54 and settled the Rs. 30 remainder to admin | **RESOLVED — HISTORICAL RULE VERIFIED 2026-10-11** | No refund, debit, reversal, or re-distribution; preserve the original commission and the one-time Rs. 30 settlement |
 | AX-DOC-BASELINE | plan allocation, `5/8/30`, `5/7/9`, direct commission | Financial baseline created; several live implementation items still need verification | **OPEN / VERIFICATION BACKLOG** | Follow Section 11 in `FINANCIAL_RULES_AND_ALLOCATION.md`; do not assume target rules are live rules |
+| AX-ADMIN-001 | Admin User Details, total earnings, withdrawals + balance | Add a display-only lifetime total using paid withdrawals plus current ledger balance | **IMPLEMENTED IN BRANCH — BUILD/DEPLOY VERIFICATION PENDING** | Verify build, PR merge, and production rendering; do not treat this display metric as a ledger/accounting change |
 
 ---
 
@@ -78,6 +79,28 @@ Items that must not be repeatedly described as newly discovered without checking
 These remain verification tasks until evidence is added; documenting a concern does not mean it is fixed.
 
 ---
+
+## AX-ADMIN-001 — Admin User Details lifetime total
+
+**Status:** IMPLEMENTED IN BRANCH — BUILD/DEPLOY VERIFICATION PENDING
+
+- **First reported:** 2026-10-22
+- **Last reviewed:** 2026-10-22
+- **Search terms:** Admin User Details; Total Earnings; paid withdrawals; available balance; lifetime total.
+- **Affected layer:** Admin UI/reporting only.
+- **Observed symptom:** User Details showed Balance, Invested, Deposits, Withdrawals, and Commission separately, but no lifetime total.
+- **Expected behavior / approved display formula:** Total Earnings = paid withdrawals + current available ledger balance.
+- **Source audit:** `getUserDetails()` in `src/lib/admin-service.ts` derives `summary.withdrawals` from withdrawals with status `paid`, and derives `summary.balance` from qualifying ledger entries while treating withdrawal entries as debits. `UserDetailPage` in `src/routes/admin.tsx` renders the summary cards.
+- **Resolution/action taken:** Add a Total Earnings card displaying `Number(summary.withdrawals ?? 0) + Number(summary.balance ?? 0)`, with the formula visible as helper text. No ledger rows, balances, RPCs, database schema, commission calculations, or withdrawal logic are changed.
+- **Financial impact:** None; display-only.
+- **Duplicate-correction guard:** Do not create or modify any financial entry to implement this display.
+- **Tests/reconciliation performed:** Source-level formula audit only. Build, CI, merge, and production verification remain pending until evidenced.
+- **Commit / PR / migration / RPC reference:** Branch `fix/admin-user-total-earnings`; PR pending.
+- **Remaining uncertainty:** This metric follows the specifically requested formula; it is not an independent accounting reconciliation and should not be represented as a ledger-verified profit figure.
+- **Next action / owner:** Run lint/build checks, inspect the PR diff, merge if checks pass, and verify Vercel production deployment.
+- **Status-change history:**
+  - 2026-10-22 — OPEN — missing UI total reported.
+  - 2026-10-22 — IMPLEMENTED IN BRANCH — reporting-only card added; validation and deployment pending.
 
 ## New issue template
 
