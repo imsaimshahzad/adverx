@@ -2573,17 +2573,19 @@ export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginA
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Referred by</p>
             {profile.referred_by_referrer ? (
               <div className="min-w-0 space-y-1">
-                <button
-                  type="button"
-                  className="block max-w-full break-words text-left font-semibold text-primary underline-offset-4 hover:underline"
-                  onClick={() => {
-                    const referrerUid = String((profile.referred_by_referrer as AdminRow).public_uid ?? "").trim();
-                    if (referrerUid) onOpenReferrer?.(referrerUid);
-                  }}
-                  disabled={!String((profile.referred_by_referrer as AdminRow).public_uid ?? "").trim() || !onOpenReferrer}
-                >
-                  @{String((profile.referred_by_referrer as AdminRow).username ?? (profile.referred_by_referrer as AdminRow).full_name ?? "Unknown user")}
-                </button>
+                {String((profile.referred_by_referrer as AdminRow).public_uid ?? "").trim() ? (
+                  <a
+                    href={`/admin/users/detail/${encodeURIComponent(String((profile.referred_by_referrer as AdminRow).public_uid).trim())}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block max-w-full break-words text-left font-semibold text-primary underline-offset-4 hover:underline"
+                    aria-label={`Open @${String((profile.referred_by_referrer as AdminRow).username ?? (profile.referred_by_referrer as AdminRow).full_name ?? "Unknown user")} user details in a new tab`}
+                  >
+                    @{String((profile.referred_by_referrer as AdminRow).username ?? (profile.referred_by_referrer as AdminRow).full_name ?? "Unknown user")}
+                  </a>
+                ) : (
+                  <p className="break-words font-semibold">{String((profile.referred_by_referrer as AdminRow).username ?? (profile.referred_by_referrer as AdminRow).full_name ?? "Unknown user")}</p>
+                )}
                 <p className="break-words text-xs text-muted-foreground">UID: {String((profile.referred_by_referrer as AdminRow).public_uid ?? "—")}</p>
                 <p className="break-all text-xs text-muted-foreground">Code: {String((profile.referred_by_referrer as AdminRow).referral_code ?? profile.referred_by ?? "—")}</p>
               </div>
