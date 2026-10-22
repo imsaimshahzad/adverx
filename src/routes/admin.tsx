@@ -1125,7 +1125,7 @@ export function AdminRoute() {
             </Card>
           ) : null}
           {detailUserId ? (
-            <UserDetailPage data={detailData} loading={detailLoading} onBack={closeUserDetails} onLoginAsUser={(userId) => { void (async () => {
+            <UserDetailPage data={detailData} loading={detailLoading} onBack={closeUserDetails} onOpenReferrer={(publicUid) => { void navigate({ to: "/admin/$", params: { _splat: `users/detail/${encodeURIComponent(publicUid)}` } }); }} onLoginAsUser={(userId) => { void (async () => {
               try {
                 const tab = window.open("about:blank", "_blank");
                 if (!tab) throw new Error("Please allow pop-ups for AdverX.");
@@ -2484,7 +2484,7 @@ function ManagementEditDialog({
     </Dialog>
   );
 }
-export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data: AdminRow | null; loading: boolean; onBack: () => void; onLoginAsUser?: (userId: string) => void }) {
+export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginAsUser }: { data: AdminRow | null; loading: boolean; onBack: () => void; onOpenReferrer?: (publicUid: string) => void; onLoginAsUser?: (userId: string) => void }) {
   if (loading) {
     return <div className="flex min-h-64 items-center justify-center"><LoadingIndicator size="md" label="Loading user details" /></div>;
   }
@@ -2564,7 +2564,28 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
       <Card>
         <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-2 p-3.5 text-sm">
           <span><b>Referral:</b> {String(profile.referral_code ?? "—")}</span>
-          <span><b>Referred by:</b> {String(profile.referred_by ?? "—")}</span>
+          <span className="inline-flex flex-wrap items-center gap-x-1.5">
+            <b>Referred by:</b>
+            {profile.referred_by_referrer ? (
+              <>
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() => {
+                    const referrerUid = String((profile.referred_by_referrer as AdminRow).public_uid ?? "").trim();
+                    if (referrerUid) onOpenReferrer?.(referrerUid);
+                  }}
+                  disabled={!String((profile.referred_by_referrer as AdminRow).public_uid ?? "").trim() || !onOpenReferrer}
+                >
+                  @{String((profile.referred_by_referrer as AdminRow).username ?? (profile.referred_by_referrer as AdminRow).full_name ?? "Unknown user")}
+                </button>
+                <span className="text-muted-foreground">· UID {String((profile.referred_by_referrer as AdminRow).public_uid ?? "—")}</span>
+                <span className="text-muted-foreground">· Code {String((profile.referred_by_referrer as AdminRow).referral_code ?? profile.referred_by ?? "—")}</span>
+              </>
+            ) : (
+              <span>{String(profile.referred_by ?? "—")}</span>
+            )}
+          </span>
           <span><b>Role:</b> {status(profile.role)}</span>
           <span><b>Verified:</b> {profile.verified ? "Yes" : "No"}</span>
           {profile.plan_activated_at ? <span><b>Plan active:</b> {date(profile.plan_activated_at)}</span> : null}
