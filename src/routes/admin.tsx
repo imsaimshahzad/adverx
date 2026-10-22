@@ -2566,7 +2566,7 @@ export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginA
       <Card>
         <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-2 p-3.5 text-sm">
           <span><b>Referral:</b> {String(profile.referral_code ?? "—")}</span>
-          <span className="inline-flex flex-wrap items-center gap-x-1.5">
+          <span className="inline-flex flex-col items-start gap-1">
             <b>Referred by:</b>
             {profile.referred_by_referrer ? (
               <>
@@ -2581,8 +2581,8 @@ export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginA
                 >
                   @{String((profile.referred_by_referrer as AdminRow).username ?? (profile.referred_by_referrer as AdminRow).full_name ?? "Unknown user")}
                 </button>
-                <span className="text-muted-foreground">· UID {String((profile.referred_by_referrer as AdminRow).public_uid ?? "—")}</span>
-                <span className="text-muted-foreground">· Code {String((profile.referred_by_referrer as AdminRow).referral_code ?? profile.referred_by ?? "—")}</span>
+                <span className="text-xs text-muted-foreground">UID: {String((profile.referred_by_referrer as AdminRow).public_uid ?? "—")}</span>
+                <span className="text-xs text-muted-foreground">Code: {String((profile.referred_by_referrer as AdminRow).referral_code ?? profile.referred_by ?? "—")}</span>
               </>
             ) : (
               <span>{String(profile.referred_by ?? "—")}</span>
