@@ -610,6 +610,21 @@ export async function getUserDetails(identifier: string) {
   }
   if (profileResult.error || !profileResult.data) throw new Error("User not found.");
   const profile = profileResult.data as AdminRow;
+
+  // Resolve the stored referral code to its owning profile for Admin display only.
+  // Keep profiles.referred_by and all referral/commission calculations unchanged.
+  const referredByCode = String(profile.referred_by ?? "").trim();
+  if (referredByCode) {
+    const { data: referrer } = await db
+      .from("profiles")
+      .select("id, public_uid, username, full_name, referral_code")
+      .eq("referral_code", referredByCode)
+      .maybeSingle();
+    (profile as AdminRow).referred_by_referrer = referrer ?? null;
+  } else {
+    (profile as AdminRow).referred_by_referrer = null;
+  }
+
   const userId = String(profile.id);
   const [{ data: userPlans, error: userPlansError }, { data: planRows, error: planRowsError }, { data: deposits, error: depositsError }, { data: withdrawals, error: withdrawalsError }, { data: commissions, error: commissionsError }, { data: ledger, error: ledgerError }] = await Promise.all([
     db.from("user_plans").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
