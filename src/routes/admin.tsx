@@ -2545,9 +2545,10 @@ export function UserDetailPage({ data, loading, onBack, onLoginAsUser }: { data:
         </div>
       </div>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
         {[
           ["Balance", money(summary.balance)],
+          ["Total Earnings", money(Number(summary.balance ?? 0) + Number(summary.withdrawals ?? 0))],
           ["Invested", money(summary.total_invest)],
           ["Deposits", money(summary.deposits)],
           ["Withdrawals", money(summary.withdrawals)],
