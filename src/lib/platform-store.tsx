@@ -252,7 +252,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
 ]);
   const COMPLETED_REWARD_STATUSES = new Set(["completed", "credited", "paid", "approved"]);
   
-  async function loadCatalog() {
+  async function loadCatalog(after?: Promise<unknown>) {
   const requestVersion = ++catalogRequestVersion;
   const [{ data: ads, error: adsError }, { data: plans, error: plansError }, { data: depositMethods, error: methodsError }, { data: withdrawalMethods, error: withdrawalMethodsError }, { data: publicMinWithdrawal, error: publicMinWithdrawalError }] = await Promise.all([
     db
@@ -268,6 +268,7 @@ const isToday = (value: number) => pakistanDate(value) === pakistanDate();
     db.from("public_min_withdrawal").select("min_withdrawal_pkr").maybeSingle(),
   ]);
 
+  if (after) await after;
   if (requestVersion !== catalogRequestVersion) return;
 
   // Keep the availability list independent from account/catalog data. A failure in
@@ -356,7 +357,7 @@ async function loadState(user: {
   id: string;
   email?: string | null;
   user_metadata?: Record<string, unknown>;
-}): Promise<State> {
+}, isCurrent: () => boolean): Promise<State> {
   const uid = user.id;
   const [
     { data: profile, error: profileError },
@@ -441,9 +442,10 @@ async function loadState(user: {
     console.error("[AdverX] wallet transactions query failed", walletTransactionsError);
     throw new Error("Unable to load your wallet activity.");
   }
+  const planRows = (plans ?? []) as any[];
+  const applyAccountCatalogWrites = () => {
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, accountTitle: method.account_title, accountNumber: method.account_number, instructions: method.instructions ?? "" })));
   WITHDRAWAL_METHODS.splice(0, WITHDRAWAL_METHODS.length, ...((withdrawalMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, type: method.destination_label ?? method.name, instructions: method.instructions ?? "", isActive: Boolean(method.is_active), minWithdrawal: num(method.min_withdrawal_pkr), maxWithdrawal: num(method.max_withdrawal_pkr) })));
-  const planRows = (plans ?? []) as any[];
   PLANS.splice(
     0,
     PLANS.length,
@@ -492,6 +494,7 @@ async function loadState(user: {
       htmlCode: a.html_code ?? undefined,
     })),
   );
+  };
   const profileRow = profile as any;
   const snapshotRow = userPlanSnapshot as any;
   const roleValue = profileRow?.role;
@@ -539,8 +542,12 @@ async function loadState(user: {
   // Read network members through a narrowly scoped authenticated RPC. Direct
   // profiles SELECT is restricted by RLS, which previously hid names while the
   // referral graph still made the total-member count appear populated.
-  const { data: secureNetworkData, error: secureNetworkError } = await db.rpc("get_my_network_members");
+  const [{ data: secureNetworkData, error: secureNetworkError }, { data: commissions }] = await Promise.all([
+    db.rpc("get_my_network_members"),
+    db.from("referral_commissions").select("source_user_id, amount, created_at, status, level").eq("user_id", uid).in("status", ["completed", "locked"]),
+  ]);
   if (secureNetworkError) {
+    if (isCurrent()) applyAccountCatalogWrites();
     console.error("[AdverX] secure network query failed", {
       code: secureNetworkError.code,
       message: secureNetworkError.message,
@@ -580,12 +587,11 @@ async function loadState(user: {
   const allTimeNetwork = networkRows.length;
   const graphIds = networkRows.map((row) => row.referred_id).filter(Boolean);
   const referredIds = graphIds;
-  const [{ data: referredPlans }, { data: commissions }] = await Promise.all([
+  const { data: referredPlans } = await (
     referredIds.length
       ? db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active")
-      : Promise.resolve({ data: [] }),
-    db.from("referral_commissions").select("source_user_id, amount, created_at, status, level").eq("user_id", uid).in("status", ["completed", "locked"]),
-  ]);
+      : Promise.resolve({ data: [] })
+  );
   const paidReferralIds = new Set<string>((referredPlans ?? []).map((row: any) => row.user_id));
   // RLS can hide another member's user_plans row from the client. The profile's
   // active plan_id is maintained when a plan is activated, so use it as a
@@ -643,7 +649,7 @@ async function loadState(user: {
       console.error("[v0] Admin profit summary failed", error);
     }
   }
-  return {
+  const result: State = {
     walletTransactions: (walletTransactions ?? []) as any[],
     user: {
       id: uid,
@@ -776,9 +782,9 @@ async function loadState(user: {
       const activePlanRow = activePlanRowByUserId.get(r.referred_id);
       const memberPlanId = member?.plan_id;
       const plan = activePlanRow
-        ? PLANS.find((catalogPlan) => catalogPlan.id === activePlanRow.plan_id)
+        ? planRows.find((catalogPlan) => catalogPlan.id === activePlanRow.plan_id)
         : memberPlanId
-          ? PLANS.find((catalogPlan) => catalogPlan.id === memberPlanId)
+          ? planRows.find((catalogPlan) => catalogPlan.id === memberPlanId)
           : null;
       return {
         id: r.referred_id,
@@ -824,6 +830,8 @@ async function loadState(user: {
     })),
     adminProfitSummary,
   };
+  if (isCurrent()) applyAccountCatalogWrites();
+  return result;
 }
 
 type Ctx = {
@@ -885,6 +893,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return window.localStorage.getItem("adverx-display-currency") === "USD" ? "USD" : "PKR";
   });
   const refreshVersion = useRef(0);
+  const refreshTasksRef = useRef(new Set<Promise<void>>());
+  const forceRefreshRequestRef = useRef(0);
   const lastLiveRefreshRef = useRef(0);
 
   useEffect(() => {
@@ -898,65 +908,115 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("adverx-currency-change", onCurrencyChange);
   }, []);
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refresh = useCallback(
+  const refresh: (
+    user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null,
+    options?: { background?: boolean; force?: boolean },
+  ) => Promise<void> = useCallback(
     async (
       user: {
         id: string;
         email?: string | null;
         user_metadata?: Record<string, unknown>;
       } | null,
-  ) => {
-  const version = ++refreshVersion.current;
-  setDataError(null);
-  if (!user) {
-    setState(EMPTY as unknown as State);
-    setReady(true);
-    return;
-  }
-  // Let the authenticated shell open as soon as Supabase confirms a user.
-  // The full account snapshot includes many independent queries; waiting for all
-  // of them before exposing state leaves the login screen spinning unnecessarily.
-  setState((current) => {
-    if (current.user?.id === user.id) return current;
-    return {
-      ...(EMPTY as unknown as State),
-      user: {
-        id: user.id,
-        fullName: String(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Member"),
-        username: String(user.user_metadata?.username ?? user.email?.split("@")[0] ?? "member"),
-        email: user.email ?? "",
-        phone: String(user.user_metadata?.phone ?? ""),
-        publicUid: "",
-        referralCode: "",
-        verified: true,
-        planId: null,
-        planActivatedAt: null,
-        status: "active",
-        role: "user",
-        createdAt: Date.now(),
-      },
-    } as State;
-  });
-  setReady(true);
-  try {
-  const nextState = await loadState(user);
-  if (version === refreshVersion.current) setState(nextState);
-  } catch (error) {
-  console.error("[v0] Supabase data sync failed", error);
-  if (version === refreshVersion.current) {
-    setDataError("Unable to load your account data. Please try again.");
-  }
-  } finally {
-  if (version === refreshVersion.current) setReady(true);
-  }
-  },
+      options: { background?: boolean; force?: boolean } = {},
+    ) => {
+      if (options.background && refreshTasksRef.current.size > 0) return;
+
+      if (!user) {
+        ++refreshVersion.current;
+        ++forceRefreshRequestRef.current;
+        setDataError(null);
+        setState(EMPTY as unknown as State);
+        setReady(true);
+        return;
+      }
+
+      // Required financial refreshes are never dropped. If a snapshot is already
+      // running, wait for it and then run one fresh follow-up for the latest request.
+      if (options.force && refreshTasksRef.current.size > 0) {
+        const requestId = ++forceRefreshRequestRef.current;
+
+        // Invalidate the in-flight snapshot immediately. It may finish loading, but
+        // its version guard must prevent it from committing pre-action financial data.
+        ++refreshVersion.current;
+
+        while (refreshTasksRef.current.size > 0) {
+          await Promise.all([...refreshTasksRef.current]);
+          if (requestId !== forceRefreshRequestRef.current) return;
+        }
+        if (requestId !== forceRefreshRequestRef.current) return;
+
+        const { data } = await supabase.auth.getUser();
+        // A newer financial request or session transition may have happened while
+        // checking auth; never let this older queued request take precedence.
+        if (requestId !== forceRefreshRequestRef.current) return;
+        if (!data.user || data.user.id !== user.id) return;
+
+        // If another refresh started during getUser(), wait for it too. Pass the
+        // verified current user, not the stale user object captured by the caller.
+        // This request was queued because an earlier required refresh could not
+        // safely commit. Keep it required even if the task set is currently empty.
+        return refresh(data.user, { force: true });
+      }
+
+      const version = ++refreshVersion.current;
+      setDataError(null);
+      // Let the authenticated shell open as soon as Supabase confirms a user.
+      // The full account snapshot includes many independent queries; waiting for all
+      // of them before exposing state leaves the login screen spinning unnecessarily.
+      setState((current) => {
+        if (current.user?.id === user.id) return current;
+        return {
+          ...(EMPTY as unknown as State),
+          user: {
+            id: user.id,
+            fullName: String(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Member"),
+            username: String(user.user_metadata?.username ?? user.email?.split("@")[0] ?? "member"),
+            email: user.email ?? "",
+            phone: String(user.user_metadata?.phone ?? ""),
+            publicUid: "",
+            referralCode: "",
+            verified: true,
+            planId: null,
+            planActivatedAt: null,
+            status: "active",
+            role: "user",
+            createdAt: Date.now(),
+          },
+        } as State;
+      });
+      setReady(true);
+
+      const task = (async () => {
+        try {
+          const nextState = await loadState(user, () => version === refreshVersion.current);
+          if (version === refreshVersion.current) setState(nextState);
+        } catch (error) {
+          console.error("[v0] Supabase data sync failed", error);
+          if (version === refreshVersion.current) {
+            setDataError("Unable to load your account data. Please try again.");
+          }
+        } finally {
+          if (version === refreshVersion.current) setReady(true);
+        }
+      })();
+      refreshTasksRef.current.add(task);
+      try {
+        await task;
+      } finally {
+        refreshTasksRef.current.delete(task);
+      }
+    },
     [],
   );
-  const refreshNow = useCallback(async () => {
+  const refreshNow = useCallback(async (background = false) => {
+    if (background && refreshTasksRef.current.size > 0) return;
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) return;
-    await Promise.all([refresh(user), loadCatalog()]);
+    if (background && refreshTasksRef.current.size > 0) return;
+    const accountLoad = refresh(user, background ? { background: true } : { force: true });
+    await Promise.all([accountLoad, loadCatalog(accountLoad)]);
     setCatalogRevision((value) => value + 1);
     setCatalogReady(true);
   }, [refresh]);
@@ -966,14 +1026,12 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   setCatalogReady(false);
   setCatalogError(null);
   try {
-    // Resolve the auth session first so the catalog query runs with the same
-    // authenticated context as the account state. Running both requests in
-    // parallel could mark the catalog ready while PLANS was still empty,
-    // briefly (and sometimes persistently) showing "No plans".
+    // Resolve the auth session first. Catalog and account reads now start together,
+    // while catalog writes wait for the account snapshot so the existing final write
+    // order remains deterministic and PLANS is ready before the catalog is exposed.
     const { data } = await ensureSupabaseSessionReady();
-    if (mounted) await refresh(data.session?.user ?? null);
-
-    await loadCatalog();
+    const accountLoad = mounted ? refresh(data.session?.user ?? null) : Promise.resolve();
+    await Promise.all([accountLoad, loadCatalog(accountLoad)]);
     if (mounted) setCatalogReady(true);
   } catch (error) {
     console.error("[v0] Public catalog/account bootstrap failed", error);
@@ -1014,14 +1072,15 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.user) return;
     const refreshIfDue = (includeCatalog: boolean) => {
+      if (refreshTasksRef.current.size > 0) return;
       const now = Date.now();
       if (now - lastLiveRefreshRef.current < 10_000) return;
       lastLiveRefreshRef.current = now;
       if (includeCatalog) {
-        void refreshNow();
+        void refreshNow(true);
       } else {
         void supabase.auth.getUser().then(({ data }) => {
-          if (data.user) return refresh(data.user);
+          if (data.user) return refresh(data.user, { background: true });
         });
       }
     };
@@ -1172,11 +1231,23 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     if (data.user) await refresh(data.user);
   }, [refresh, state.user]);
   const logout = useCallback(async () => {
+    // Invalidate in-flight snapshots before awaiting sign-out so old account data
+    // cannot commit while the auth request is still pending.
+    ++refreshVersion.current;
+    ++forceRefreshRequestRef.current;
+
     const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) { console.error("[AdverX] sign out failed", error); throw new Error("Unable to sign out. Please try again."); }
+    if (error) {
+      console.error("[AdverX] sign out failed", error);
+      // Sign-out failed, so preserve the still-authenticated account by reloading
+      // its current session instead of leaving the invalidated snapshot stale.
+      const { data } = await supabase.auth.getUser();
+      if (data.user) await refresh(data.user, { force: true });
+      throw new Error("Unable to sign out. Please try again.");
+    }
     setState(EMPTY as unknown as State);
     setDataError(null);
-  }, []);
+  }, [refresh]);
   const submitDeposit = useCallback(async (input: any) => {
     const parsedInput = depositSchema.safeParse(input);
     if (!parsedInput.success) throw new Error(parsedInput.error.issues[0]?.message ?? "Invalid deposit details.");
@@ -1215,7 +1286,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       ];
       throw new Error(knownMessages.includes(message) ? message : "Unable to submit the deposit request. Please check your details and try again.");
     }
-    await refresh(auth.user);
+    await refresh(auth.user, { force: true });
   if (input.imageHash) {
     const { error: hashError } = await db.from("deposits").update({ image_hash: input.imageHash }).eq("user_id", auth.user.id).eq("transaction_id", input.transactionId).is("image_hash", null);
     if (hashError) { console.error("[AdverX] receipt hash update failed", hashError); throw new Error("Unable to finish saving the payment receipt."); }
@@ -1291,7 +1362,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       throw new Error(error.message || "Unable to submit the withdrawal request.");
     }
     const { data } = await supabase.auth.getUser();
-    if (data.user) await refresh(data.user);
+    if (data.user) await refresh(data.user, { force: true });
   }, [refresh]);
   const markNotificationsRead = useCallback(async () => {
     if (!state.user) return;
