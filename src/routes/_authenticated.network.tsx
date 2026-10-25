@@ -45,8 +45,9 @@ function NetworkPage() {
   const members = state.network
     .filter((member) => (tab === "direct" ? member.level === 1 : member.level > 1))
     .sort((a, b) => Number(b.active) - Number(a.active));
-  const code = state.user?.referralCode ?? "—";
-  const link = referralUrl(code);
+  const code = state.user?.referralCode?.trim() ?? "";
+  const displayCode = code || (dataError ? "Unavailable" : "Loading…");
+  const link = code ? referralUrl(code) : "";
   const notSubscribed = state.unpaidReferrals;
   const currentPaid = tab === "direct" ? state.paidDirectReferrals : state.paidIndirectReferrals;
   const currentUnpaid = tab === "direct" ? state.unpaidDirectReferrals : state.unpaidIndirectReferrals;
@@ -116,10 +117,11 @@ function NetworkPage() {
             <span className="text-xs text-muted-foreground">Share it with friends</span>
           </div>
           <div className="mt-3 flex min-h-12 items-center justify-between gap-2 rounded-xl bg-muted px-3">
-            <span className="num truncate text-base font-bold tracking-[0.14em]">{code}</span>
+            <span className="num truncate text-base font-bold tracking-[0.14em]">{displayCode}</span>
             <Button
               variant="ghost"
               className="min-h-10 px-3"
+              disabled={!code}
               onClick={() => copy(code, "Referral code copied")}
             >
               <Copy className="size-4" /> Copy
@@ -127,6 +129,7 @@ function NetworkPage() {
           </div>
           <Button
             className="mt-3 min-h-12 w-full text-base font-semibold"
+            disabled={!code}
             onClick={() => copy(link, "Invite link copied")}
           >
             <Share2 className="size-5" /> Invite friends
