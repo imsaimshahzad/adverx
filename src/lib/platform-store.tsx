@@ -942,6 +942,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         if (requestId !== forceRefreshRequestRef.current) return;
         const { data } = await supabase.auth.getUser();
         if (!data.user || data.user.id !== user.id) return;
+        // A session-change refresh may have started while getUser() was pending.
+        // Re-queue rather than overlap so this financial follow-up remains last.
+        if (refreshTasksRef.current.size > 0) return refresh(user, { force: true });
         return refresh(user);
       }
 
