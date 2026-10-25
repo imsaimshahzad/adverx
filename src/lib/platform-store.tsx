@@ -542,7 +542,10 @@ async function loadState(user: {
   // Read network members through a narrowly scoped authenticated RPC. Direct
   // profiles SELECT is restricted by RLS, which previously hid names while the
   // referral graph still made the total-member count appear populated.
-  const { data: secureNetworkData, error: secureNetworkError } = await db.rpc("get_my_network_members");
+  const [{ data: secureNetworkData, error: secureNetworkError }, { data: commissions }] = await Promise.all([
+    db.rpc("get_my_network_members"),
+    db.from("referral_commissions").select("source_user_id, amount, created_at, status, level").eq("user_id", uid).in("status", ["completed", "locked"]),
+  ]);
   if (secureNetworkError) {
     console.error("[AdverX] secure network query failed", {
       code: secureNetworkError.code,
@@ -583,12 +586,11 @@ async function loadState(user: {
   const allTimeNetwork = networkRows.length;
   const graphIds = networkRows.map((row) => row.referred_id).filter(Boolean);
   const referredIds = graphIds;
-  const [{ data: referredPlans }, { data: commissions }] = await Promise.all([
+  const { data: referredPlans } = await (
     referredIds.length
       ? db.from("user_plans").select("user_id, plan_id, status, purchased_at").in("user_id", referredIds).eq("status", "active")
-      : Promise.resolve({ data: [] }),
-    db.from("referral_commissions").select("source_user_id, amount, created_at, status, level").eq("user_id", uid).in("status", ["completed", "locked"]),
-  ]);
+      : Promise.resolve({ data: [] })
+  );
   const paidReferralIds = new Set<string>((referredPlans ?? []).map((row: any) => row.user_id));
   // RLS can hide another member's user_plans row from the client. The profile's
   // active plan_id is maintained when a plan is activated, so use it as a
