@@ -954,10 +954,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
 
         // If another refresh started during getUser(), wait for it too. Pass the
         // verified current user, not the stale user object captured by the caller.
-        if (refreshTasksRef.current.size > 0) {
-          return refresh(data.user, { force: true });
-        }
-        return refresh(data.user);
+        // This request was queued because an earlier required refresh could not
+        // safely commit. Keep it required even if the task set is currently empty.
+        return refresh(data.user, { force: true });
       }
 
       const version = ++refreshVersion.current;
@@ -1232,13 +1231,23 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     if (data.user) await refresh(data.user);
   }, [refresh, state.user]);
   const logout = useCallback(async () => {
-    const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) { console.error("[AdverX] sign out failed", error); throw new Error("Unable to sign out. Please try again."); }
+    // Invalidate in-flight snapshots before awaiting sign-out so old account data
+    // cannot commit while the auth request is still pending.
     ++refreshVersion.current;
     ++forceRefreshRequestRef.current;
+
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) {
+      console.error("[AdverX] sign out failed", error);
+      // Sign-out failed, so preserve the still-authenticated account by reloading
+      // its current session instead of leaving the invalidated snapshot stale.
+      const { data } = await supabase.auth.getUser();
+      if (data.user) await refresh(data.user, { force: true });
+      throw new Error("Unable to sign out. Please try again.");
+    }
     setState(EMPTY as unknown as State);
     setDataError(null);
-  }, []);
+  }, [refresh]);
   const submitDeposit = useCallback(async (input: any) => {
     const parsedInput = depositSchema.safeParse(input);
     if (!parsedInput.success) throw new Error(parsedInput.error.issues[0]?.message ?? "Invalid deposit details.");
