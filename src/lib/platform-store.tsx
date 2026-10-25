@@ -935,17 +935,29 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       // running, wait for it and then run one fresh follow-up for the latest request.
       if (options.force && refreshTasksRef.current.size > 0) {
         const requestId = ++forceRefreshRequestRef.current;
+
+        // Invalidate the in-flight snapshot immediately. It may finish loading, but
+        // its version guard must prevent it from committing pre-action financial data.
+        ++refreshVersion.current;
+
         while (refreshTasksRef.current.size > 0) {
           await Promise.all([...refreshTasksRef.current]);
           if (requestId !== forceRefreshRequestRef.current) return;
         }
         if (requestId !== forceRefreshRequestRef.current) return;
+
         const { data } = await supabase.auth.getUser();
+        // A newer financial request or session transition may have happened while
+        // checking auth; never let this older queued request take precedence.
+        if (requestId !== forceRefreshRequestRef.current) return;
         if (!data.user || data.user.id !== user.id) return;
-        // A session-change refresh may have started while getUser() was pending.
-        // Re-queue rather than overlap so this financial follow-up remains last.
-        if (refreshTasksRef.current.size > 0) return refresh(user, { force: true });
-        return refresh(user);
+
+        // If another refresh started during getUser(), wait for it too. Pass the
+        // verified current user, not the stale user object captured by the caller.
+        if (refreshTasksRef.current.size > 0) {
+          return refresh(data.user, { force: true });
+        }
+        return refresh(data.user);
       }
 
       const version = ++refreshVersion.current;
