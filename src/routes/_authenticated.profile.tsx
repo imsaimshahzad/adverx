@@ -99,7 +99,7 @@ function ProfilePage() {
             <div className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
               <Row label="Full name" value={user?.fullName ?? "—"} /><Row label="Username" value={user?.username ? `@${user.username}` : "—"} />
               <Row label="Email" value={user?.email ?? "—"} /><Row label="Phone Number" value={user?.phone || "Not added"} />
-              <Row label="Referral code" value={user?.referralCode ?? "—"} /><Row label="Member since" value={new Date(user?.createdAt ?? 0).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })} />
+              <Row label="Referral code" value={user?.referralCode || "Loading…"} /><Row label="Member since" value={new Date(user?.createdAt ?? 0).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })} />
               <div className="flex items-center justify-between gap-3 py-1.5"><span className="text-xs text-muted-foreground">Public UID</span><span className="flex items-center gap-2 text-sm font-medium"><span>{user?.publicUid || "—"}</span>{user?.publicUid ? <Button variant="ghost" size="icon" className="size-8" aria-label="Copy Public UID" onClick={() => { void navigator.clipboard.writeText(user.publicUid!); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? <Check /> : <Copy />}</Button> : null}</span></div>
             </div>
           )}
