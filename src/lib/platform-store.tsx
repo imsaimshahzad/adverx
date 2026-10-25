@@ -905,7 +905,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("adverx-currency-change", onCurrencyChange);
   }, []);
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refresh = useCallback(
+  const refresh: (
+    user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null,
+    options?: { background?: boolean; force?: boolean },
+  ) => Promise<void> = useCallback(
     async (
       user: {
         id: string;
@@ -1006,10 +1009,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   setCatalogReady(false);
   setCatalogError(null);
   try {
-    // Resolve the auth session first so the catalog query runs with the same
-    // authenticated context as the account state. Running both requests in
-    // parallel could mark the catalog ready while PLANS was still empty,
-    // briefly (and sometimes persistently) showing "No plans".
+    // Resolve the auth session first. Catalog and account reads now start together,
+    // while catalog writes wait for the account snapshot so the existing final write
+    // order remains deterministic and PLANS is ready before the catalog is exposed.
     const { data } = await ensureSupabaseSessionReady();
     const accountLoad = mounted ? refresh(data.session?.user ?? null) : Promise.resolve();
     await Promise.all([accountLoad, loadCatalog(accountLoad)]);
