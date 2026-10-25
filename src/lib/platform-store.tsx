@@ -547,6 +547,7 @@ async function loadState(user: {
     db.from("referral_commissions").select("source_user_id, amount, created_at, status, level").eq("user_id", uid).in("status", ["completed", "locked"]),
   ]);
   if (secureNetworkError) {
+    if (isCurrent()) applyAccountCatalogWrites();
     console.error("[AdverX] secure network query failed", {
       code: secureNetworkError.code,
       message: secureNetworkError.message,
