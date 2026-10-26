@@ -414,20 +414,6 @@ function Dashboard() {
           <span className="mt-2 flex items-baseline justify-between gap-3"><span className="text-xl font-bold">{activityLevel}</span><span className="text-xs text-muted-foreground">Tap for tips</span></span>
           <Progress value={activityScore} className="mt-3" />
         </summary>
-        <div className="morphic-quick-actions mt-3 grid grid-cols-2 gap-3">
-          <Link to="/ads" className="morphic-quick-action group flex items-center gap-3 rounded-2xl border px-4 py-3 transition">
-            <span className="morphic-quick-icon flex size-10 shrink-0 items-center justify-center rounded-xl"><ListChecks className="size-5" /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold">Start earning</span><span className="block text-xs opacity-70">View ad tasks</span></span>
-            <ArrowRight className="ml-auto size-4 shrink-0 opacity-60 transition group-hover:translate-x-0.5" />
-          </Link
-          <Link to="/network" className="morphic-quick-action group flex items-center gap-3 rounded-2xl border px-4 py-3 transition">
-            <span className="morphic-quick-icon flex size-10 shrink-0 items-center justify-center rounded-xl"><Network className="size-5" /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold">Invite friends</span><span className="block text-xs opacity-70">Grow your network</span></span>
-            <ArrowRight className="ml-auto size-4 shrink-0 opacity-60 transition group-hover:translate-x-0.5" />
-          </Link
-        </div>
-
-
         <div className="morphic-level-tip mt-4 flex items-center gap-3 border-t border-border pt-3">
           <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Complete today&apos;s ads</span><span className="block text-xs text-muted-foreground">{adsCompletedToday} of {dailyAdLimit || 0} completed</span></span>
           <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full"><Link to="/ads">Start</Link></Button>
