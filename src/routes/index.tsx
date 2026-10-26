@@ -275,6 +275,18 @@ function PublicFooter() {
   );
 }
 
+function DashboardStat({ icon: Icon, label, value, hint }: { icon: typeof ListChecks; label: string; value: string; hint: string }) {
+  return (
+    <div className="morphic-stat surface min-w-0 rounded-2xl p-4">
+      <div className="flex items-center gap-2">
+        <span className="morphic-stat-icon flex size-8 shrink-0 items-center justify-center rounded-xl"><Icon className="size-4" /></span>
+        <span className="truncate text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">{label}</span>
+      </div>
+      <p className="num mt-3 break-words text-xl font-extrabold tracking-tight sm:text-2xl">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
 function Dashboard() {
   const {
     state,
@@ -386,18 +398,10 @@ function Dashboard() {
       )}
 
       <div className="morphic-stats mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile
-          label="Ads"
-          value={`${adsCompletedToday} / ${dailyAdLimit || "—"}`}
-          hint="Completed today"
-        />
-        <StatTile
-          label="Network"
-          value={`${activeMembers}`}
-          hint={`${state.network.length} total members`}
-        />
-        <StatTile label="Today" value={money(todaysEarnings)} hint="Rewards credited" />
-        <StatTile label="Withdrawn" value={money(totalWithdrawn)} hint="Successfully paid" />
+        <DashboardStat icon={ListChecks} label="Ads" value={`${adsCompletedToday} / ${dailyAdLimit || "—"}`} hint="Completed today" />
+        <DashboardStat icon={Network} label="Network" value={`${activeMembers}`} hint={`${state.network.length} total members`} />
+        <DashboardStat icon={CircleDollarSign} label="Today" value={money(todaysEarnings)} hint="Rewards credited" />
+        <DashboardStat icon={ReceiptText} label="Withdrawn" value={money(totalWithdrawn)} hint="Successfully paid" />
       </div>
 
       <div className="morphic-quick-actions mt-3 grid grid-cols-2 gap-3">
@@ -413,20 +417,24 @@ function Dashboard() {
         </Link>
       </div>
 
-      <div className="surface mt-3 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="size-4 text-primary" />
-            <p className="text-sm font-medium">Activity level</p>
-          </div>
-          <Badge variant="secondary">{activityLevel}</Badge>
+      <details className="morphic-level surface mt-3 p-4">
+        <summary className="cursor-pointer list-none">
+          <span className="flex min-h-11 items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm font-semibold"><TrendingUp className="size-4 text-primary" />Activity level</span>
+            <span className="flex items-center gap-2"><Badge variant="secondary">{activityScore}% activity</Badge><ChevronDown className="morphic-level-chevron size-4 text-muted-foreground" /></span>
+          </span>
+          <span className="mt-2 flex items-baseline justify-between gap-3"><span className="text-xl font-bold">{activityLevel}</span><span className="text-xs text-muted-foreground">Tap for tips</span></span>
+          <Progress value={activityScore} className="mt-3" />
+        </summary>
+        <div className="morphic-level-tip mt-4 flex items-center gap-3 border-t border-border pt-3">
+          <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Complete today&apos;s ads</span><span className="block text-xs text-muted-foreground">{adsCompletedToday} of {dailyAdLimit || 0} completed</span></span>
+          <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full"><Link to="/ads">Start</Link></Button>
         </div>
-        <Progress value={activityScore} className="mt-3" />
-        <p className="mt-2 text-xs text-muted-foreground">
-          Keep completing daily tasks and growing an active network to improve
-          your level.
-        </p>
-      </div>
+        <div className="morphic-level-tip mt-3 flex items-center gap-3 border-t border-border pt-3">
+          <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Grow your network</span><span className="block text-xs text-muted-foreground">{state.network.length} members in your network</span></span>
+          <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full"><Link to="/network">Invite</Link></Button>
+        </div>
+      </details>
 
       {plan && (
         <div className="surface mt-3 p-4">
