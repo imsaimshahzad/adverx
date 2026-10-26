@@ -8,7 +8,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, "/vercel/share/v0-project", "");
+  const env = loadEnv(mode, process.cwd(), "");
   const supabaseUrl =
     env.NEXT_PUBLIC_SUPABASE_URL ||
     env.SUPABASE_URL ||
