@@ -2505,11 +2505,21 @@ function UserAccessSignals({ userId }: { userId: string }) {
     setLoading(true);
     setError("");
     try {
+      // Admin API routes authenticate using the Supabase access token in the
+      // Authorization header; same-origin cookies alone are not sufficient.
+      const { data: sessionResult, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionResult.session?.access_token;
+      if (sessionError || !accessToken) {
+        throw new Error("Your admin session has expired. Please sign in again.");
+      }
       const response = await fetch(`/api/admin/user-access-signals?userId=${encodeURIComponent(userId)}`, {
         method: "GET",
         credentials: "same-origin",
         cache: "no-store",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
       if (!response.ok) {
         if (response.status === 404) throw new Error("IP activity endpoint is not available in this deployment.");
