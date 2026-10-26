@@ -989,10 +989,31 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
 
       const task = (async () => {
         try {
-          const nextState = await loadState(user, () => version === refreshVersion.current);
-          if (version === refreshVersion.current) setState(nextState);
+          let nextState: State;
+          try {
+            nextState = await loadState(user, () => version === refreshVersion.current);
+          } catch (firstError) {
+            // A long-idle tab can resume while Supabase is refreshing an expired
+            // access token. Re-check the session and retry one complete snapshot
+            // before showing a blocking account-data error.
+            if (version !== refreshVersion.current) return;
+            await new Promise((resolve) => setTimeout(resolve, 750));
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            if (version !== refreshVersion.current) return;
+            if (authError || !authData.user || authData.user.id !== user.id) {
+              throw firstError;
+            }
+            nextState = await loadState(
+              authData.user,
+              () => version === refreshVersion.current,
+            );
+          }
+          if (version === refreshVersion.current) {
+            setState(nextState);
+            setDataError(null);
+          }
         } catch (error) {
-          console.error("[v0] Supabase data sync failed", error);
+          console.error("[AdverX] account data sync failed after retry", error);
           if (version === refreshVersion.current) {
             setDataError("Unable to load your account data. Please try again.");
           }
