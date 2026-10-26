@@ -6,12 +6,12 @@
   border-radius: 1.75rem;
   padding: 1.35rem;
   color: #fffaf5;
-  background: linear-gradient(135deg, #c86b45 0%, #a84f57 48%, #6f5aa8 100%);
-  box-shadow: 0 22px 48px rgba(141, 76, 68, .22);
+  background: linear-gradient(135deg, #0f766e 0%, #176b5e 48%, #71834b 100%);
+  box-shadow: 0 22px 48px rgba(15, 118, 110, .20);
   isolation: isolate;
   transition: min-height .5s cubic-bezier(.2,.8,.2,1), border-radius .5s, background .7s;
 }
-.morphic-hero.is-expanded { min-height: 270px; border-radius: 2rem; background: linear-gradient(135deg, #b85d46 0%, #8e526c 52%, #4f76a2 100%); }
+.morphic-hero.is-expanded { min-height: 270px; border-radius: 2rem; background: linear-gradient(135deg, #0d6f67 0%, #397b65 52%, #77834c 100%); }
 .morphic-orb { position:absolute; border-radius:999px; filter:blur(2px); opacity:.28; pointer-events:none; transition:transform .8s cubic-bezier(.2,.8,.2,1); }
 .morphic-orb-one { width:180px;height:180px;right:-52px;top:-88px;background:#ffd8b7; }
 .morphic-orb-two { width:120px;height:120px;left:42%;bottom:-90px;background:#b9dbff; }
@@ -20,4 +20,4 @@
 .morphic-eyebrow,.morphic-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; opacity:.72; }
 .morphic-number { margin-top:.25rem; font-size:2.35rem; font-weight:700; letter-spacing:-.06em; }
 .morphic-caption { margin-top:.2rem; font-size:11px; opacity:.68; }
-.morphic-icon-button { display:flex; align-items:center; justify-content:center; w¶»§q«^
+.morphic-icon-button { display:flex; align-items:center; justify-content:center; wÂ¶Â»Â§qÂ«^
