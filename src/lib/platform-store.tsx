@@ -1069,6 +1069,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     console.error("[v0] Public catalog/account bootstrap failed", error);
     if (mounted) {
       setCatalogError("Unable to load available plans. Please try again.");
+      setDataError("AdverX could not finish starting. Check your connection and retry.");
+      // Never leave the app-wide loader running forever if session bootstrap fails.
+      setReady(true);
     }
   }
 };
