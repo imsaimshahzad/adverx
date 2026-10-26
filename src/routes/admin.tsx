@@ -385,7 +385,6 @@ export function AdminRoute() {
     holder: string;
     number: string;
   } | null>(null);
-  const [selectedUser, setSelectedUser] = useState<AdminRow | null>(null);
   const [balanceTarget, setBalanceTarget] = useState<AdminRow | null>(null);
   const [balanceMode, setBalanceMode] = useState<"add" | "deduct">("add");
   const [balanceAmount, setBalanceAmount] = useState("");
@@ -1004,7 +1003,6 @@ export function AdminRoute() {
                 <button key={key} data-active={active === key} className="admin-nav-item group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors" onClick={() => {
                   setQuery("");
                   setPage(1);
-                  setSelectedUser(null);
                   setMobileMenuOpen(false);
                   if (key === "overview") {
                     void navigate({ to: "/admin" });
@@ -1039,7 +1037,6 @@ export function AdminRoute() {
               onClick={() => {
                 setQuery("");
                 setPage(1);
-                setSelectedUser(null);
                 if (key === "overview") {
                   void navigate({ to: "/admin" });
                 } else {
@@ -1172,8 +1169,6 @@ export function AdminRoute() {
               }}
               page={page}
               setPage={setPage}
-              selectedUser={selectedUser}
-              setSelectedUser={setSelectedUser}
               actions={statusActions[active] ?? []}
               statusPartition={statusPartition}
               userPartition={userPartition}
@@ -2839,8 +2834,6 @@ function ModuleTable({
   setQuery,
   page,
   setPage,
-  selectedUser,
-  setSelectedUser,
   actions,
   statusPartition,
   userPartition,
@@ -2869,8 +2862,6 @@ function ModuleTable({
   setQuery: (value: string) => void;
   page: number;
   setPage: (value: number) => void;
-  selectedUser: AdminRow | null;
-  setSelectedUser: (row: AdminRow | null) => void;
   actions: string[];
   statusPartition?: "pending" | "approved" | "rejected";
   userPartition?: "all" | "paid" | "unpaid" | "starter" | "growth" | "pro";
@@ -3285,7 +3276,7 @@ function ModuleTable({
                   <tr
                     className={`border-b border-slate-100 transition-colors hover:bg-[#fff8f2] ${index % 2 ? "bg-slate-50/35" : "bg-white/30"}`}
                     key={String(row.id ?? index)}
-                    onClick={() => active === "users" ? setSelectedUser(row) : active === "transactions" ? setTransactionDetail(row) : undefined}
+                    onClick={() => active === "transactions" ? setTransactionDetail(row) : undefined}
                   >
                     {columns.map((column) => (
                       <td
@@ -3611,30 +3602,6 @@ function ModuleTable({
             </div>
           </div>
         )}
-        {selectedUser ? (
-          <Card className="mt-4">
-            <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>User details</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedUser(null)}
-              >
-                Close
-              </Button>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              {Object.entries(selectedUser).map(([key, value]) => (
-                <div key={key}>
-                  <p className="text-xs uppercase text-muted-foreground">
-                    {key.replaceAll("_", " ")}
-                  </p>
-                  <p className="text-sm">{formatValue(value)}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ) : null}
         <Dialog open={Boolean(transactionDetail)} onOpenChange={(open) => !open && setTransactionDetail(null)}>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
