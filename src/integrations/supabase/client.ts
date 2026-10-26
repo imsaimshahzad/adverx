@@ -103,7 +103,9 @@ function env(name: string) {
                 ? import.meta.env.SUPABASE_PUBLISHABLE_KEY
                 : name === "SUPABASE_ANON_KEY"
                   ? import.meta.env.SUPABASE_ANON_KEY
-                  : undefined;
+                  : name === "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+                    ? import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+                    : undefined;
 
   return (
     viteEnv ??
