@@ -24,11 +24,21 @@ import { AppShell, StatTile } from "@/components/AppShell";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { BrandLogo } from "@/components/BrandLogo";
-import { HeroTrustStrip, HomepageTrustStrip, useHomepageHero } from "@/components/HomepageHeroSettings";
+import {
+  HeroTrustStrip,
+  HomepageTrustStrip,
+  useHomepageHero,
+} from "@/components/HomepageHeroSettings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { money, PLANS, PUBLIC_MIN_WITHDRAWAL, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
+import {
+  money,
+  PLANS,
+  PUBLIC_MIN_WITHDRAWAL,
+  WITHDRAWAL_METHODS,
+  usePlatform,
+} from "@/lib/platform-store";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import "@/morphic-dashboard.css";
@@ -73,10 +83,18 @@ function PublicHome() {
               {hero.subtext}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="shadow-sm transition-transform hover:-translate-y-0.5">
-                <Link to={hero.ctaLink}>{hero.ctaText} <ArrowRight className="size-4" /></Link>
+              <Button
+                asChild
+                size="lg"
+                className="shadow-sm transition-transform hover:-translate-y-0.5"
+              >
+                <Link to={hero.ctaLink}>
+                  {hero.ctaText} <ArrowRight className="size-4" />
+                </Link>
               </Button>
-              <Button asChild variant="outline" size="lg"><Link to="/login">Sign In</Link></Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/login">Sign In</Link>
+              </Button>
             </div>
           </div>
           <div className="relative lg:translate-y-1">
@@ -95,8 +113,27 @@ function PublicHome() {
       <Faq />
       <section className="mx-auto max-w-7xl px-5 pb-16 lg:px-8 lg:pb-20">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-violet-600 to-primary px-6 py-10 text-primary-foreground shadow-[0_24px_70px_-30px_hsl(var(--primary)/0.65)] sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14 lg:py-11">
-          <div><p className="text-3xl font-semibold tracking-tight sm:text-4xl">Ready to get started?</p><p className="mt-3 max-w-xl text-primary-foreground/75">Create your AdverX account and explore your available tasks.</p></div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0"><Button asChild variant="secondary" size="lg"><Link to="/signup">Create Account</Link></Button><Button asChild variant="outline" size="lg" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/login">Sign In</Link></Button></div>
+          <div>
+            <p className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Ready to get started?
+            </p>
+            <p className="mt-3 max-w-xl text-primary-foreground/75">
+              Create your AdverX account and explore your available tasks.
+            </p>
+          </div>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0">
+            <Button asChild variant="secondary" size="lg">
+              <Link to="/signup">Create Account</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            >
+              <Link to="/login">Sign In</Link>
+            </Button>
+          </div>
         </div>
       </section>
       <PublicFooter />
@@ -107,118 +144,441 @@ function PublicHome() {
 function PublicHeader() {
   return (
     <header className="mx-auto flex min-h-[4rem] w-full max-w-7xl items-center justify-between gap-4 px-5 py-2 lg:px-8">
-      <Link to="/" aria-label="AdverX home" className="shrink-0 rounded-md py-1 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+      <Link
+        to="/"
+        aria-label="AdverX home"
+        className="shrink-0 rounded-md py-1 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
         <BrandLogo className="h-14 w-auto max-w-[15rem] object-contain sm:h-16 sm:max-w-[16rem]" />
       </Link>
       <nav className="hidden flex-1 items-center justify-center gap-5 text-sm font-medium text-muted-foreground md:flex">
-        <a href="#how-it-works" className="transition-colors hover:text-foreground">How it works</a>
-        <a href="#plans" className="transition-colors hover:text-foreground">Plans</a>
-        <a href="#faq" className="transition-colors hover:text-foreground">FAQ</a>
+        <a
+          href="#how-it-works"
+          className="transition-colors hover:text-foreground"
+        >
+          How it works
+        </a>
+        <a href="#plans" className="transition-colors hover:text-foreground">
+          Plans
+        </a>
+        <a href="#faq" className="transition-colors hover:text-foreground">
+          FAQ
+        </a>
       </nav>
       <div className="flex shrink-0 items-center gap-2">
-        <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/login">Sign In</Link></Button>
-        <Button asChild size="sm"><Link to="/signup">Get Started</Link></Button>
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="hidden sm:inline-flex"
+        >
+          <Link to="/login">Sign In</Link>
+        </Button>
+        <Button asChild size="sm">
+          <Link to="/signup">Get Started</Link>
+        </Button>
       </div>
     </header>
   );
 }
 
+function SectionIntro({
+  eyebrow,
+  title,
+  text,
+}: {
+  eyebrow: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="max-w-2xl">
+      <p className="text-xs font-semibold tracking-[0.18em] text-primary">
+        {eyebrow}
+      </p>
+      <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+        {title}
+      </h2>
+      <p className="mt-4 text-base leading-7 text-muted-foreground">{text}</p>
+    </div>
+  );
+}
 
-
-function SectionIntro({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) { return <div className="max-w-2xl"><p className="text-xs font-semibold tracking-[0.18em] text-primary">{eyebrow}</p><h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h2><p className="mt-4 text-base leading-7 text-muted-foreground">{text}</p></div>; }
-
-function Testimonials({ value }: { value: string }) { let items: Array<{ name: string; quote: string }> = []; try { items = JSON.parse(value); } catch { items = []; } return <section className="mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-[4.5rem]"><SectionIntro eyebrow="CUSTOMER STORIES" title="Built for confidence" text="A clearer workspace helps members stay focused on the work that matters." /><div className="mt-7 grid gap-4 md:grid-cols-2">{items.slice(0, 3).map((item) => <figure key={item.name} className="surface p-6"><blockquote className="text-sm leading-6 text-muted-foreground">“{item.quote}”</blockquote><figcaption className="mt-5 text-sm font-semibold">{item.name}</figcaption></figure>)}</div></section>; }
+function Testimonials({ value }: { value: string }) {
+  let items: Array<{ name: string; quote: string }> = [];
+  try {
+    items = JSON.parse(value);
+  } catch {
+    items = [];
+  }
+  return (
+    <section className="mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-[4.5rem]">
+      <SectionIntro
+        eyebrow="CUSTOMER STORIES"
+        title="Built for confidence"
+        text="A clearer workspace helps members stay focused on the work that matters."
+      />
+      <div className="mt-7 grid gap-4 md:grid-cols-2">
+        {items.slice(0, 3).map((item) => (
+          <figure key={item.name} className="surface p-6">
+            <blockquote className="text-sm leading-6 text-muted-foreground">
+              “{item.quote}”
+            </blockquote>
+            <figcaption className="mt-5 text-sm font-semibold">
+              {item.name}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function HowItWorks() {
-  const steps = [["01", "Choose a plan", "Select an available plan that matches your needs."], ["02", "Complete tasks", "Complete eligible verified ad tasks according to the available limits."], ["03", "Track & withdraw", "Monitor your rewards and request withdrawals from your wallet when eligible."]];
-  return <section id="how-it-works" className="border-y border-border/70 bg-muted/20"><div className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20"><SectionIntro eyebrow="HOW IT WORKS" title="A straightforward way to use your workspace" text="The important steps stay visible, so you can make decisions from current account information." /><div className="mt-8 grid gap-4 md:grid-cols-3">{steps.map(([number, title, text]) => <div key={number} className="surface border-t-2 border-t-primary p-6"><p className="font-mono text-sm text-primary">{number}</p><h3 className="mt-7 font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p></div>)}</div></div></section>;
+  const steps = [
+    [
+      "01",
+      "Choose a plan",
+      "Select an available plan that matches your needs.",
+    ],
+    [
+      "02",
+      "Complete tasks",
+      "Complete eligible verified ad tasks according to the available limits.",
+    ],
+    [
+      "03",
+      "Track & withdraw",
+      "Monitor your rewards and request withdrawals from your wallet when eligible.",
+    ],
+  ];
+  return (
+    <section
+      id="how-it-works"
+      className="border-y border-border/70 bg-muted/20"
+    >
+      <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+        <SectionIntro
+          eyebrow="HOW IT WORKS"
+          title="A straightforward way to use your workspace"
+          text="The important steps stay visible, so you can make decisions from current account information."
+        />
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {steps.map(([number, title, text]) => (
+            <div
+              key={number}
+              className="surface border-t-2 border-t-primary p-6"
+            >
+              <p className="font-mono text-sm text-primary">{number}</p>
+              <h3 className="mt-7 font-semibold">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function DashboardPreview({ compact = false }: { compact?: boolean }) {
-  return <div className={`surface overflow-hidden border-primary/15 bg-card/95 shadow-[0_24px_80px_-34px_hsl(var(--foreground)/0.35)] ${compact ? "p-3 sm:p-5" : "mt-10 p-3 sm:p-5"}`}><div className="flex items-center justify-between border-b border-border/70 px-2 pb-4"><div className="flex items-center gap-2"><span className="size-2 rounded-full bg-success" /><span className="text-xs font-medium text-muted-foreground">Overview</span></div><span className="text-xs text-muted-foreground">AdverX workspace</span></div><div className="grid gap-3 p-1 pt-4 sm:grid-cols-2 lg:grid-cols-4"><PreviewMetric icon={Wallet} label="Wallet balance" value="PKR 24,850" /><PreviewMetric icon={CircleDollarSign} label="Today&apos;s rewards" value="PKR 1,250" /><PreviewMetric icon={ListChecks} label="Available tasks" value="8 tasks" /><PreviewMetric icon={ShieldCheck} label="Active plan" value="Lifetime Access" /></div><div className="mt-3 grid gap-3 lg:grid-cols-[1.1fr_.9fr]"><div className="rounded-2xl border border-border/70 p-4"><div className="flex items-center justify-between"><p className="text-sm font-medium">Today&apos;s tasks</p><span className="text-xs text-muted-foreground">3 of 8 complete</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full w-[38%] rounded-full bg-primary" /></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><TaskRow label="Brand survey" status="Completed" done /><TaskRow label="Product review" status="Available" /><TaskRow label="Video verification" status="Available" /></div></div><div className="rounded-2xl border border-border/70 p-4"><p className="text-sm font-medium">Recent activity</p><div className="mt-3 space-y-3"><ActivityRow label="Ad reward credited" detail="Today, 10:42" amount="+ PKR 250" positive /><ActivityRow label="Referral reward" detail="Yesterday, 16:20" amount="+ PKR 120" positive /><ActivityRow label="Withdrawal requested" detail="Mon, 09:15" amount="PKR 3,000" /></div></div></div></div>;
+  return (
+    <div
+      className={`surface overflow-hidden border-primary/15 bg-card/95 shadow-[0_24px_80px_-34px_hsl(var(--foreground)/0.35)] ${compact ? "p-3 sm:p-5" : "mt-10 p-3 sm:p-5"}`}
+    >
+      <div className="flex items-center justify-between border-b border-border/70 px-2 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="size-2 rounded-full bg-success" />
+          <span className="text-xs font-medium text-muted-foreground">
+            Overview
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground">AdverX workspace</span>
+      </div>
+      <div className="grid gap-3 p-1 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+        <PreviewMetric
+          icon={Wallet}
+          label="Wallet balance"
+          value="PKR 24,850"
+        />
+        <PreviewMetric
+          icon={CircleDollarSign}
+          label="Today's rewards"
+          value="PKR 1,250"
+        />
+        <PreviewMetric
+          icon={ListChecks}
+          label="Available tasks"
+          value="8 tasks"
+        />
+        <PreviewMetric
+          icon={ShieldCheck}
+          label="Active plan"
+          value="Lifetime Access"
+        />
+      </div>
+      <div className="mt-3 grid gap-3 lg:grid-cols-[1.1fr_.9fr]">
+        <div className="rounded-2xl border border-border/70 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Today&apos;s tasks</p>
+            <span className="text-xs text-muted-foreground">
+              3 of 8 complete
+            </span>
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-[38%] rounded-full bg-primary" />
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <TaskRow label="Brand survey" status="Completed" done />
+            <TaskRow label="Product review" status="Available" />
+            <TaskRow label="Video verification" status="Available" />
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border/70 p-4">
+          <p className="text-sm font-medium">Recent activity</p>
+          <div className="mt-3 space-y-3">
+            <ActivityRow
+              label="Ad reward credited"
+              detail="Today, 10:42"
+              amount="+ PKR 250"
+              positive
+            />
+            <ActivityRow
+              label="Referral reward"
+              detail="Yesterday, 16:20"
+              amount="+ PKR 120"
+              positive
+            />
+            <ActivityRow
+              label="Withdrawal requested"
+              detail="Mon, 09:15"
+              amount="PKR 3,000"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function PreviewMetric({ icon: Icon, label, value }: { icon: typeof Wallet; label: string; value: string }) { return <div className="rounded-2xl bg-muted/45 p-4"><Icon className="size-4 text-primary" /><p className="mt-5 text-xs text-muted-foreground">{label}</p><p className="mt-1 text-base font-semibold">{value}</p></div>; }
-function TaskRow({ label, status, done = false }: { label: string; status: string; done?: boolean }) { return <div className="flex items-center gap-2 text-xs"><CheckCircle2 className={done ? "size-4 text-success" : "size-4 text-muted-foreground/40"} /><span className="min-w-0 flex-1 truncate text-muted-foreground">{label}</span><span className="text-[10px] text-muted-foreground">{status}</span></div>; }
-function ActivityRow({ label, detail, amount, positive = false }: { label: string; detail: string; amount: string; positive?: boolean }) { return <div className="flex items-center gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"><ReceiptText className="size-3.5 text-muted-foreground" /></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-medium">{label}</p><p className="text-[10px] text-muted-foreground">{detail}</p></div><span className={positive ? "text-xs font-medium text-success" : "text-xs text-muted-foreground"}>{amount}</span></div>; }
+function PreviewMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Wallet;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-muted/45 p-4">
+      <Icon className="size-4 text-primary" />
+      <p className="mt-5 text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-base font-semibold">{value}</p>
+    </div>
+  );
+}
+function TaskRow({
+  label,
+  status,
+  done = false,
+}: {
+  label: string;
+  status: string;
+  done?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <CheckCircle2
+        className={
+          done ? "size-4 text-success" : "size-4 text-muted-foreground/40"
+        }
+      />
+      <span className="min-w-0 flex-1 truncate text-muted-foreground">
+        {label}
+      </span>
+      <span className="text-[10px] text-muted-foreground">{status}</span>
+    </div>
+  );
+}
+function ActivityRow({
+  label,
+  detail,
+  amount,
+  positive = false,
+}: {
+  label: string;
+  detail: string;
+  amount: string;
+  positive?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+        <ReceiptText className="size-3.5 text-muted-foreground" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium">{label}</p>
+        <p className="text-[10px] text-muted-foreground">{detail}</p>
+      </div>
+      <span
+        className={
+          positive
+            ? "text-xs font-medium text-success"
+            : "text-xs text-muted-foreground"
+        }
+      >
+        {amount}
+      </span>
+    </div>
+  );
+}
 
 function FeatureSection() {
-  const features: Array<[typeof ListChecks, string, string]> = [[ListChecks, "Daily Tasks", "See eligible tasks and completion status in one place."], [TrendingUp, "Reward Tracking", "Track credited rewards and your available balance."], [Network, "Network", "View referral activity and eligible network rewards."], [CreditCard, "Withdrawals", "Submit and monitor withdrawal requests with clear status history."]];
-  return <section className="border-y border-border/70 bg-muted/20"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-20"><SectionIntro eyebrow="FEATURES" title="Designed around the information you need" text="Keep an eye on daily activity without losing the context behind your account." /><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{features.map(([Icon, title, text]) => <div key={title as string} className="surface p-5"><Icon className="size-5 text-primary" /><h3 className="mt-5 text-sm font-semibold">{title as string}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{text as string}</p></div>)}</div></div></section>;
+  const features: Array<[typeof ListChecks, string, string]> = [
+    [
+      ListChecks,
+      "Daily Tasks",
+      "See eligible tasks and completion status in one place.",
+    ],
+    [
+      TrendingUp,
+      "Reward Tracking",
+      "Track credited rewards and your available balance.",
+    ],
+    [
+      Network,
+      "Network",
+      "View referral activity and eligible network rewards.",
+    ],
+    [
+      CreditCard,
+      "Withdrawals",
+      "Submit and monitor withdrawal requests with clear status history.",
+    ],
+  ];
+  return (
+    <section className="border-y border-border/70 bg-muted/20">
+      <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-20">
+        <SectionIntro
+          eyebrow="FEATURES"
+          title="Designed around the information you need"
+          text="Keep an eye on daily activity without losing the context behind your account."
+        />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {features.map(([Icon, title, text]) => (
+            <div key={title as string} className="surface p-5">
+              <Icon className="size-5 text-primary" />
+              <h3 className="mt-5 text-sm font-semibold">{title as string}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {text as string}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function PlansPreview({ plans }: { plans: typeof PLANS }) {
-  const minimumWithdrawal = PUBLIC_MIN_WITHDRAWAL ?? WITHDRAWAL_METHODS
-    .filter((method) => method.isActive && method.minWithdrawal > 0)
-    .reduce((minimum, method) => Math.min(minimum, method.minWithdrawal), Number.POSITIVE_INFINITY);
+  const minimumWithdrawal =
+    PUBLIC_MIN_WITHDRAWAL ??
+    WITHDRAWAL_METHODS.filter(
+      (method) => method.isActive && method.minWithdrawal > 0,
+    ).reduce(
+      (minimum, method) => Math.min(minimum, method.minWithdrawal),
+      Number.POSITIVE_INFINITY,
+    );
 
   return (
-    <section id="plans" className="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+    <section
+      id="plans"
+      className="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20"
+    >
       <SectionIntro
         eyebrow="PLANS"
         title="Choose your plan"
         text="Review the plans currently available in your account system."
       />
       <div className="mt-8 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {plans.length ? plans.map((plan) => (
-          <div
-            key={plan.id}
-            className={[
-              "relative flex h-full flex-col overflow-hidden rounded-xl border bg-background p-6 shadow-sm transition-all duration-200",
-              "hover:-translate-y-1 hover:shadow-lg",
-              plan.highlight
-                ? "border-primary/50 ring-2 ring-primary/15"
-                : "border-border",
-            ].join(" ")}
-          >
-            {plan.highlight && (
-              <div className="absolute right-4 top-4">
-                <Badge>Popular</Badge>
-              </div>
-            )}
-
-            <div className="mb-5">
-              <div className="flex items-center gap-2 pr-20">
-                <h3 className="text-xl font-medium text-muted-foreground">{plan.name}</h3>
-              </div>
-
-              <div className="mt-3 flex items-baseline text-foreground">
-                <span className="text-2xl font-semibold">Rs.</span>
-                <span className="num text-5xl font-extrabold tracking-tight">
-                  {money(plan.price).replace(/^Rs\.?\s?/, "")}
-                </span>
-                <span className="ml-2 text-lg font-normal text-muted-foreground">
-                  one-time
-                </span>
-              </div>
-
-              <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
-            </div>
-
-            <ul className="my-5 flex-1 space-y-4">
-              <PlanFeature>{plan.dailyAdLimit} ad tasks per day</PlanFeature>
-              <PlanFeature>{plan.durationDays ? `${plan.durationDays} days validity` : "Lifetime access"}</PlanFeature>
-              <PlanFeature>Direct referral: {plan.referrerCommissionPct}%</PlanFeature>
-              <PlanFeature>
-                {plan.indirectReferralPct > 0
-                  ? `Indirect referral: ${plan.indirectReferralPct}% · Up to Level 6 earnings`
-                  : "Indirect referral not included"}
-              </PlanFeature>
-              <PlanFeature>Minimum withdrawal {Number.isFinite(minimumWithdrawal) ? money(minimumWithdrawal) : "Not set"}</PlanFeature>
-              {plan.networkEligible ? (
-                <PlanFeature>Network rewards enabled</PlanFeature>
-              ) : (
-                <PlanFeature muted>No network rewards</PlanFeature>
+        {plans.length ? (
+          plans.map((plan) => (
+            <div
+              key={plan.id}
+              className={[
+                "relative flex h-full flex-col overflow-hidden rounded-xl border bg-background p-6 shadow-sm transition-all duration-200",
+                "hover:-translate-y-1 hover:shadow-lg",
+                plan.highlight
+                  ? "border-primary/50 ring-2 ring-primary/15"
+                  : "border-border",
+              ].join(" ")}
+            >
+              {plan.highlight && (
+                <div className="absolute right-4 top-4">
+                  <Badge>Popular</Badge>
+                </div>
               )}
-            </ul>
 
-            <Button asChild className="mt-2 w-full rounded-lg">
-              <Link to="/plans">
-                View Plan <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          </div>
-        )) : (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 pr-20">
+                  <h3 className="text-xl font-medium text-muted-foreground">
+                    {plan.name}
+                  </h3>
+                </div>
+
+                <div className="mt-3 flex items-baseline text-foreground">
+                  <span className="text-2xl font-semibold">Rs.</span>
+                  <span className="num text-5xl font-extrabold tracking-tight">
+                    {money(plan.price).replace(/^Rs\.?\s?/, "")}
+                  </span>
+                  <span className="ml-2 text-lg font-normal text-muted-foreground">
+                    one-time
+                  </span>
+                </div>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {plan.description}
+                </p>
+              </div>
+
+              <ul className="my-5 flex-1 space-y-4">
+                <PlanFeature>{plan.dailyAdLimit} ad tasks per day</PlanFeature>
+                <PlanFeature>
+                  {plan.durationDays
+                    ? `${plan.durationDays} days validity`
+                    : "Lifetime access"}
+                </PlanFeature>
+                <PlanFeature>
+                  Direct referral: {plan.referrerCommissionPct}%
+                </PlanFeature>
+                <PlanFeature>
+                  {plan.indirectReferralPct > 0
+                    ? `Indirect referral: ${plan.indirectReferralPct}% · Up to Level 6 earnings`
+                    : "Indirect referral not included"}
+                </PlanFeature>
+                <PlanFeature>
+                  Minimum withdrawal{" "}
+                  {Number.isFinite(minimumWithdrawal)
+                    ? money(minimumWithdrawal)
+                    : "Not set"}
+                </PlanFeature>
+                {plan.networkEligible ? (
+                  <PlanFeature>Network rewards enabled</PlanFeature>
+                ) : (
+                  <PlanFeature muted>No network rewards</PlanFeature>
+                )}
+              </ul>
+
+              <Button asChild className="mt-2 w-full rounded-lg">
+                <Link to="/plans">
+                  View Plan <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          ))
+        ) : (
           <div className="surface p-8 text-sm text-muted-foreground md:col-span-3">
             No plans are currently available.
           </div>
@@ -236,7 +596,9 @@ function PlanFeature({
   muted?: boolean;
 }) {
   return (
-    <li className={`flex items-start gap-3 ${muted ? "line-through decoration-muted-foreground/60" : ""}`}>
+    <li
+      className={`flex items-start gap-3 ${muted ? "line-through decoration-muted-foreground/60" : ""}`}
+    >
       <CheckCircle2
         className={`mt-0.5 size-5 shrink-0 ${muted ? "text-muted-foreground" : "text-primary"}`}
       />
@@ -249,28 +611,168 @@ function PlanFeature({
   );
 }
 
-function WhyAdNet() { return <section className="border-y border-border/70 bg-gradient-to-br from-violet-500/[0.06] via-muted/20 to-primary/[0.05]"><div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 lg:grid-cols-[.8fr_1.2fr] lg:px-8 lg:py-20"><SectionIntro eyebrow="WHY ADVERX" title="Built around clarity" text="A structured account experience makes it easier to understand what is available and what has already happened." /><div className="grid gap-3 sm:grid-cols-2">{["Clear task eligibility", "Visible reward history", "Wallet transaction history", "Structured withdrawal flow", "Protected account access"].map((item) => <div key={item} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background p-4 text-sm"><CheckCircle2 className="size-4 text-primary" />{item}</div>)}</div></div></section>; }
+function WhyAdNet() {
+  return (
+    <section className="border-y border-border/70 bg-gradient-to-br from-violet-500/[0.06] via-muted/20 to-primary/[0.05]">
+      <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 lg:grid-cols-[.8fr_1.2fr] lg:px-8 lg:py-20">
+        <SectionIntro
+          eyebrow="WHY ADVERX"
+          title="Built around clarity"
+          text="A structured account experience makes it easier to understand what is available and what has already happened."
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            "Clear task eligibility",
+            "Visible reward history",
+            "Wallet transaction history",
+            "Structured withdrawal flow",
+            "Protected account access",
+          ].map((item) => (
+            <div
+              key={item}
+              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background p-4 text-sm"
+            >
+              <CheckCircle2 className="size-4 text-primary" />
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-function Faq() {   const items: Array<[string, string]> = [["How do tasks work?", "Available tasks are shown in your workspace when your account has an eligible plan. Completion and daily limits are tracked by the system."], ["How are rewards calculated?", "Rewards are credited after a verified task is completed and are subject to the limits and reserve available to your plan."], ["When can I request a withdrawal?", "You can request a withdrawal when your account meets the current eligibility rules and has sufficient available wallet balance."], ["How do referrals work?", "Referral activity and eligible network rewards are tracked in your account workspace according to the active referral rules."], ["Are plans lifetime or time-limited?", "The available plan card identifies whether a plan provides lifetime access or a time-limited duration."], ["Where can I see my transaction history?", "Your wallet and transaction history are available after signing in to your account."]]; return <section id="faq" className="mx-auto max-w-3xl px-5 py-16 lg:py-20"><SectionIntro eyebrow="FAQ" title="Common questions" text="Straight answers about using the AdverX workspace." /><div className="mt-10 divide-y divide-border rounded-2xl border border-border/70 bg-card">{items.map(([question, answer]) => <details key={question} className="group p-5"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium"><span>{question}</span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{answer}</p></details>)}</div></section>; }
+function Faq() {
+  const items: Array<[string, string]> = [
+    [
+      "How do tasks work?",
+      "Available tasks are shown in your workspace when your account has an eligible plan. Completion and daily limits are tracked by the system.",
+    ],
+    [
+      "How are rewards calculated?",
+      "Rewards are credited after a verified task is completed and are subject to the limits and reserve available to your plan.",
+    ],
+    [
+      "When can I request a withdrawal?",
+      "You can request a withdrawal when your account meets the current eligibility rules and has sufficient available wallet balance.",
+    ],
+    [
+      "How do referrals work?",
+      "Referral activity and eligible network rewards are tracked in your account workspace according to the active referral rules.",
+    ],
+    [
+      "Are plans lifetime or time-limited?",
+      "The available plan card identifies whether a plan provides lifetime access or a time-limited duration.",
+    ],
+    [
+      "Where can I see my transaction history?",
+      "Your wallet and transaction history are available after signing in to your account.",
+    ],
+  ];
+  return (
+    <section id="faq" className="mx-auto max-w-3xl px-5 py-16 lg:py-20">
+      <SectionIntro
+        eyebrow="FAQ"
+        title="Common questions"
+        text="Straight answers about using the AdverX workspace."
+      />
+      <div className="mt-10 divide-y divide-border rounded-2xl border border-border/70 bg-card">
+        {items.map(([question, answer]) => (
+          <details key={question} className="group p-5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium">
+              <span>{question}</span>
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {answer}
+            </p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function PublicFooter() {
   return (
     <footer className="border-t border-border/70 bg-background">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 sm:py-12 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div className="min-w-0">
-          <Link to="/" aria-label="AdverX home" className="inline-flex rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <BrandLogo compact className="max-h-14 max-w-[10.5rem] sm:max-h-16 sm:max-w-[13rem]" />
+          <Link
+            to="/"
+            aria-label="AdverX home"
+            className="inline-flex rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <BrandLogo
+              compact
+              className="max-h-14 max-w-[10.5rem] sm:max-h-16 sm:max-w-[13rem]"
+            />
           </Link>
-          <p className="mt-4 max-w-xs text-xs leading-5 text-muted-foreground">A clear workspace for verified tasks and rewards.</p>
+          <p className="mt-4 max-w-xs text-xs leading-5 text-muted-foreground">
+            A clear workspace for verified tasks and rewards.
+          </p>
         </div>
         <div className="flex flex-col gap-5 sm:items-end">
-          <nav className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground" aria-label="Footer navigation">
-            <Link to="/" className="hover:text-foreground">Home</Link><Link to="/plans" className="hover:text-foreground">Plans</Link><Link to="/refund-policy" className="hover:text-foreground">Refund Policy</Link><Link to="/terms" className="hover:text-foreground">Terms &amp; Conditions</Link><Link to="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link><Link to="/earnings-disclaimer" className="hover:text-foreground">Earnings Disclaimer</Link><a href="mailto:support@adverx.online" className="hover:text-foreground">Contact</a><Link to="/login" className="hover:text-foreground">Sign In</Link>
+          <nav
+            className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground"
+            aria-label="Footer navigation"
+          >
+            <Link to="/" className="hover:text-foreground">
+              Home
+            </Link>
+            <Link to="/plans" className="hover:text-foreground">
+              Plans
+            </Link>
+            <Link to="/refund-policy" className="hover:text-foreground">
+              Refund Policy
+            </Link>
+            <Link to="/terms" className="hover:text-foreground">
+              Terms &amp; Conditions
+            </Link>
+            <Link to="/privacy-policy" className="hover:text-foreground">
+              Privacy Policy
+            </Link>
+            <Link to="/earnings-disclaimer" className="hover:text-foreground">
+              Earnings Disclaimer
+            </Link>
+            <a
+              href="mailto:support@adverx.online"
+              className="hover:text-foreground"
+            >
+              Contact
+            </a>
+            <Link to="/login" className="hover:text-foreground">
+              Sign In
+            </Link>
           </nav>
           <div className="flex items-center gap-3" aria-label="Social links">
-            <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Linkedin className="size-4" /></a>
-            <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter" className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Twitter className="size-4" /></a>
-            <a href="https://www.facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook" className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Facebook className="size-4" /></a>
+            <a
+              href="https://www.linkedin.com"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="LinkedIn"
+              className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            >
+              <Linkedin className="size-4" />
+            </a>
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Twitter"
+              className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            >
+              <Twitter className="size-4" />
+            </a>
+            <a
+              href="https://www.facebook.com"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Facebook"
+              className="rounded-md border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            >
+              <Facebook className="size-4" />
+            </a>
           </div>
         </div>
       </div>
@@ -330,7 +832,10 @@ function Dashboard() {
   if (!ready) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-5 text-sm text-muted-foreground">
-        <span className="flex flex-col items-center gap-3"><LoadingIndicator size="md" label="Loading your account" /><span>Loading your account…</span></span>
+        <span className="flex flex-col items-center gap-3">
+          <LoadingIndicator size="md" label="Loading your account" />
+          <span>Loading your account…</span>
+        </span>
       </main>
     );
   }
@@ -341,25 +846,96 @@ function Dashboard() {
 
   return (
     <AppShell title={`Hi, ${state.user?.fullName?.split(" ")[0] ?? "there"}`}>
-      <section className={`morphic-hero relative overflow-hidden ${expanded ? "is-expanded" : ""}`}>
+      <section
+        className={`morphic-hero relative overflow-hidden ${expanded ? "is-expanded" : ""}`}
+      >
         <div className="morphic-orb morphic-orb-one" />
         <div className="morphic-orb morphic-orb-two" />
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div>
             <p className="morphic-eyebrow">Available earnings</p>
-            <p className="morphic-number num" aria-live="polite">{balanceVisible ? <AnimatedNumber value={Number(availableBalance) || 0} format={money} /> : "••••••"}</p>
-            <p className="morphic-caption">Available now · rewards are credited instantly</p>
+            <p className="morphic-number num" aria-live="polite">
+              {balanceVisible ? (
+                <AnimatedNumber
+                  value={Number(availableBalance) || 0}
+                  format={money}
+                />
+              ) : (
+                "••••••"
+              )}
+            </p>
+            <p className="morphic-caption">
+              Available now · rewards are credited instantly
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" aria-label={balanceVisible ? "Hide available earnings" : "Show available earnings"} className="morphic-icon-button" onClick={() => setBalanceVisible((value) => !value)}>{balanceVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}</button>
-            <button type="button" aria-label={expanded ? "Collapse earnings details" : "Expand earnings details"} className="morphic-icon-button" onClick={() => setExpanded((value) => !value)}><Maximize2 className="size-4" /></button>
+            <button
+              type="button"
+              aria-label={
+                balanceVisible
+                  ? "Hide available earnings"
+                  : "Show available earnings"
+              }
+              className="morphic-icon-button"
+              onClick={() => setBalanceVisible((value) => !value)}
+            >
+              {balanceVisible ? (
+                <Eye className="size-4" />
+              ) : (
+                <EyeOff className="size-4" />
+              )}
+            </button>
+            <button
+              type="button"
+              aria-label={
+                expanded
+                  ? "Collapse earnings details"
+                  : "Expand earnings details"
+              }
+              className="morphic-icon-button"
+              onClick={() => setExpanded((value) => !value)}
+            >
+              <Maximize2 className="size-4" />
+            </button>
           </div>
         </div>
         <div className="relative z-10 mt-6 flex flex-wrap items-end justify-between gap-4">
-          <div><p className="morphic-label">Today</p><p className="num text-xl font-semibold">{money(todaysEarnings)}</p></div>
-          <Button asChild variant="secondary" size="sm" className="morphic-action morphic-pressable"><Link to="/withdraw">Withdraw <ArrowRight className="size-4" /></Link></Button>
+          <div>
+            <p className="morphic-label">Today</p>
+            <p className="num text-xl font-semibold">{money(todaysEarnings)}</p>
+          </div>
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="morphic-action morphic-pressable"
+          >
+            <Link to="/withdraw">
+              Withdraw <ArrowRight className="size-4" />
+            </Link>
+          </Button>
         </div>
-        <div className={`morphic-detail ${expanded ? "is-visible" : ""}`} aria-hidden={!expanded}><div><p className="morphic-label">Momentum</p><p className="text-sm font-semibold">{activityLevel} · {activityScore}% active</p></div><div><p className="morphic-label">Next focus</p><p className="text-sm font-semibold">{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1 ? "" : "s"} remaining</p></div></div>
+        <div
+          className={`morphic-detail ${expanded ? "is-visible" : ""}`}
+          aria-hidden={!expanded}
+        >
+          <div>
+            <p className="morphic-label">Momentum</p>
+            <p className="text-sm font-semibold">
+              {activityLevel} · {activityScore}% active
+            </p>
+          </div>
+          <div>
+            <p className="morphic-label">Next focus</p>
+            <p className="text-sm font-semibold">
+              {Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task
+              {Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1
+                ? ""
+                : "s"}{" "}
+              remaining
+            </p>
+          </div>
+        </div>
       </section>
 
       {!plan && (
@@ -403,9 +979,21 @@ function Dashboard() {
           value={`${activeMembers}`}
           hint={`${state.network.length} total members`}
         />
-        <StatTile label="Today" value={money(todaysEarnings)} hint="Rewards credited" />
-        <StatTile label="Total Withdrawn" value={money(totalWithdrawn)} hint="Successfully paid" />
-        <StatTile label="Level" value={activityLevel} hint={`${activityScore}% activity`} />
+        <StatTile
+          label="Today"
+          value={money(todaysEarnings)}
+          hint="Rewards credited"
+        />
+        <StatTile
+          label="Total Withdrawn"
+          value={money(totalWithdrawn)}
+          hint="Successfully paid"
+        />
+        <StatTile
+          label="Level"
+          value={activityLevel}
+          hint={`${activityScore}% activity`}
+        />
       </div>
 
       <div className="surface mt-3 p-4">
@@ -453,8 +1041,6 @@ function Dashboard() {
           </Button>
         </div>
       )}
-
-
     </AppShell>
   );
 }

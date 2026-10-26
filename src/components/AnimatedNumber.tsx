@@ -8,14 +8,24 @@ type AnimatedNumberProps = {
   "aria-label"?: string;
 };
 
-export function AnimatedNumber({ value, format, duration = 650, className, "aria-label": ariaLabel }: AnimatedNumberProps) {
+export function AnimatedNumber({
+  value,
+  format,
+  duration = 650,
+  className,
+  "aria-label": ariaLabel,
+}: AnimatedNumberProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const previousValue = useRef(value);
 
   useEffect(() => {
     const startValue = previousValue.current;
     const delta = value - startValue;
-    if (!delta || typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (
+      !delta ||
+      typeof window === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
       previousValue.current = value;
       setDisplayValue(value);
       return;
@@ -35,5 +45,9 @@ export function AnimatedNumber({ value, format, duration = 650, className, "aria
     return () => cancelAnimationFrame(frame);
   }, [duration, value]);
 
-  return <span className={className} aria-label={ariaLabel}>{format(displayValue)}</span>;
+  return (
+    <span className={className} aria-label={ariaLabel}>
+      {format(displayValue)}
+    </span>
+  );
 }
