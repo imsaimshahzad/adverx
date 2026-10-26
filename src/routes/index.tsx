@@ -340,6 +340,7 @@ function Dashboard() {
     accountLoading,
     catalogReady,
     catalogError,
+    dataError,
   } = usePlatform();
 
   const pendingDeposit = state.deposits.find((d) => d.status === "pending");
@@ -381,6 +382,18 @@ function Dashboard() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-5 text-sm text-muted-foreground">
         <span className="flex flex-col items-center gap-3"><LoadingIndicator size="md" label="Loading your account" /><span>Loading your account…</span></span>
+      </main>
+    );
+  }
+
+  if (!state.user && dataError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-5 text-foreground">
+        <section role="alert" className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <h1 className="text-lg font-semibold">AdverX couldn’t finish loading</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{dataError}</p>
+          <Button className="mt-5" onClick={() => window.location.reload()}>Try again</Button>
+        </section>
       </main>
     );
   }
