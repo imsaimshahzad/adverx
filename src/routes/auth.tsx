@@ -81,6 +81,9 @@ export function AuthPage() {
         const response = await fetch("/api/access-signal", {
           method: "POST",
           headers: { Authorization: `Bearer ${accessToken}` },
+          // The auth effect redirects immediately below; keep this telemetry
+          // request alive when the browser navigates away from the auth page.
+          keepalive: true,
         });
         if (response.ok) sessionStorage.setItem(key, "1");
       } catch {
