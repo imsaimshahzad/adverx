@@ -88,11 +88,42 @@ function resilientStorage(primary: Storage | undefined): Storage {
 }
 
 function env(name: string) {
+  const viteEnv =
+    name === "VITE_SUPABASE_URL"
+      ? import.meta.env.VITE_SUPABASE_URL
+      : name === "VITE_SUPABASE_PUBLISHABLE_KEY"
+        ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        : name === "NEXT_PUBLIC_SUPABASE_URL"
+          ? import.meta.env.NEXT_PUBLIC_SUPABASE_URL
+          : name === "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+            ? import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+            : name === "SUPABASE_URL"
+              ? import.meta.env.SUPABASE_URL
+              : name === "SUPABASE_PUBLISHABLE_KEY"
+                ? import.meta.env.SUPABASE_PUBLISHABLE_KEY
+                : name === "SUPABASE_ANON_KEY"
+                  ? import.meta.env.SUPABASE_ANON_KEY
+                  : undefined;
+
   return (
-    import.meta.env[name] ??
+    viteEnv ??
     (typeof process !== "undefined" ? process.env[name] : undefined) ??
     ""
   );
+}
+
+function createUnavailableClient() {
+  const unavailable = {
+    auth: {
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      getSession: async () => ({ data: { session: null }, error: null }),
+      getUser: async () => ({ data: { user: null }, error: null }),
+      signInWithPassword: async () => ({ data: { user: null, session: null }, error: new Error("Supabase is not configured in this preview.") }),
+      signOut: async () => ({ error: null }),
+    },
+    from: () => new Proxy({}, { get: () => () => Promise.resolve({ data: [], error: null }) }),
+  };
+  return unavailable as unknown as ReturnType<typeof createClient<Database>>;
 }
 
 function createBrowserClient(impersonating: boolean) {
@@ -108,7 +139,7 @@ function createBrowserClient(impersonating: boolean) {
     env("SUPABASE_ANON_KEY");
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    throw new Error("Missing Supabase URL or publishable key.");
+    return createUnavailableClient();
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
