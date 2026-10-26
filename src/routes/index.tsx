@@ -29,7 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { money, PLANS, PUBLIC_MIN_WITHDRAWAL, WITHDRAWAL_METHODS, usePlatform } from "@/lib/platform-store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import "@/morphic-dashboard.css";
 
 export const Route = createFileRoute("/")({
@@ -294,6 +295,37 @@ function Dashboard() {
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTotalWithdrawn() {
+      if (!state.user?.id) {
+        setTotalWithdrawn(0);
+        return;
+      }
+      const db = supabase as any;
+      const { data, error } = await db
+        .from("withdrawals")
+        .select("amount")
+        .eq("user_id", state.user.id)
+        .eq("status", "paid");
+      if (error) {
+        console.error("[AdverX] Failed to load total withdrawn:", error);
+        return;
+      }
+      const total = (data ?? []).reduce(
+        (sum: number, row: { amount: number | string | null }) =>
+          sum + (Number(row.amount) || 0),
+        0,
+      );
+      if (!cancelled) setTotalWithdrawn(total);
+    }
+    void loadTotalWithdrawn();
+    return () => {
+      cancelled = true;
+    };
+  }, [state.user?.id]);
 
   if (!ready) {
     return (
@@ -375,6 +407,7 @@ function Dashboard() {
           hint={`${state.network.length} total members`}
         />
         <StatTile label="Today" value={money(todaysEarnings)} hint="Rewards credited" />
+        <StatTile label="Total Withdrawn" value={money(totalWithdrawn)} hint="Successfully paid" />
         <StatTile label="Level" value={activityLevel} hint={`${activityScore}% activity`} />
       </div>
 
