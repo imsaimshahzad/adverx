@@ -136,6 +136,7 @@ function createBrowserClient(impersonating: boolean) {
     env("VITE_SUPABASE_PUBLISHABLE_KEY") ||
     env("SUPABASE_PUBLISHABLE_KEY") ||
     env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
+    env("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
     env("SUPABASE_ANON_KEY");
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
