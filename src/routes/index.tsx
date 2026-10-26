@@ -414,14 +414,6 @@ function Dashboard() {
           <span className="mt-2 flex items-baseline justify-between gap-3"><span className="text-xl font-bold">{activityLevel}</span><span className="text-xs text-muted-foreground">Tap for tips</span></span>
           <Progress value={activityScore} className="mt-3" />
         </summary>
-        <div className="morphic-level-tip mt-4 flex items-center gap-3 border-t border-border pt-3">
-          <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Complete today&apos;s ads</span><span className="block text-xs text-muted-foreground">{adsCompletedToday} of {dailyAdLimit || 0} completed</span></span>
-          <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full"><Link to="/ads">Start</Link></Button>
-        </div>
-        <div className="morphic-level-tip mt-3 flex items-center gap-3 border-t border-border pt-3">
-          <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Grow your network</span><span className="block text-xs text-muted-foreground">{state.network.length} members in your network</span></span>
-          <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full"><Link to="/network">Invite</Link></Button>
-        </div>
       </details>
 
       {plan && (
