@@ -67,6 +67,25 @@ export function AuthPage() {
   useEffect(() => {
     if (!ready || !state.user) return;
 
+    // Record one IP-derived access signal per signed-in user per browser session.
+    // This is best-effort and must never block login or redirect.
+    void (async () => {
+      try {
+        const key = `adverx-access-signal:${state.user!.id}`;
+        if (sessionStorage.getItem(key) === "1") return;
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) return;
+        const response = await fetch("/api/access-signal", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (response.ok) sessionStorage.setItem(key, "1");
+      } catch {
+        // Fraud telemetry is non-critical; authentication must continue normally.
+      }
+    })();
+
     try {
       const target = new URL(redirect || "/", window.location.origin);
       if (target.origin !== window.location.origin) {
