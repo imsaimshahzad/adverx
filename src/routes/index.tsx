@@ -276,6 +276,44 @@ function PublicFooter() {
   );
 }
 
+
+function DashboardSkeleton() {
+  return (
+    <div aria-label="Loading dashboard values" aria-busy="true" className="space-y-4 animate-pulse">
+      <section className="morphic-hero relative overflow-hidden">
+        <div className="relative z-10 space-y-3">
+          <div className="h-3 w-32 rounded bg-white/15" />
+          <div className="h-10 w-52 max-w-full rounded-lg bg-white/20" />
+          <div className="h-3 w-60 max-w-full rounded bg-white/10" />
+        </div>
+        <div className="relative z-10 mt-6 flex items-end justify-between gap-4">
+          <div className="space-y-2"><div className="h-3 w-12 rounded bg-white/15" /><div className="h-6 w-28 rounded bg-white/20" /></div>
+          <div className="h-9 w-24 rounded-lg bg-white/20" />
+        </div>
+      </section>
+      <div className="morphic-stats grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="surface min-h-28 rounded-2xl p-4">
+            <div className="mb-4 size-8 rounded-lg bg-muted/70" />
+            <div className="mb-2 h-3 w-16 rounded bg-muted/70" />
+            <div className="mb-2 h-6 w-24 max-w-full rounded bg-muted/70" />
+            <div className="h-2.5 w-20 rounded bg-muted/50" />
+          </div>
+        ))}
+      </div>
+      <div className="surface rounded-2xl p-4">
+        <div className="mb-4 h-4 w-36 rounded bg-muted/70" />
+        <div className="mb-3 h-6 w-28 rounded bg-muted/70" />
+        <div className="h-2.5 w-full rounded-full bg-muted/50" />
+      </div>
+      <div className="surface rounded-2xl p-4">
+        <div className="mb-4 h-4 w-32 rounded bg-muted/70" />
+        {Array.from({ length: 3 }).map((_, index) => <div key={index} className="mb-3 h-4 w-3/4 rounded bg-muted/60 last:mb-0" />)}
+      </div>
+    </div>
+  );
+}
+
 function DashboardStat({ icon: Icon, label, value, hint }: { icon: LucideIcon; label: string; value: string; hint: string }) {
   return (
     <div className="morphic-stat surface min-w-0 rounded-2xl p-4">
@@ -299,6 +337,9 @@ function Dashboard() {
     activityLevel,
     activityScore,
     ready,
+    accountLoading,
+    catalogReady,
+    catalogError,
   } = usePlatform();
 
   const pendingDeposit = state.deposits.find((d) => d.status === "pending");
@@ -346,6 +387,14 @@ function Dashboard() {
 
   if (!state.user) {
     return <PublicHome />;
+  }
+
+  if (accountLoading || (!catalogReady && !catalogError)) {
+    return (
+      <AppShell title="Dashboard">
+        <DashboardSkeleton />
+      </AppShell>
+    );
   }
 
   return (
