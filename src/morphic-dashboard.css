@@ -82,3 +82,21 @@
   .morphic-quick-action .text-sm { font-size: .78rem; }
   .morphic-quick-action .text-xs { font-size: .68rem; }
 }
+/* Reference dashboard polish: compact teal stat cards and an accessible expandable activity panel. */
+.morphic-hero { border-radius: 1.75rem; padding: 1.35rem; background: linear-gradient(145deg, #075f5b 0%, #0a7a73 55%, #5e8466 100%); box-shadow: 0 14px 30px rgba(7, 95, 91, .22); }
+.morphic-number { font-size: clamp(2rem, 8vw, 2.75rem); line-height: 1.08; }
+.morphic-caption { font-size: 11px; }
+.morphic-stats { align-items: stretch; }
+.morphic-stat { border: 1px solid hsl(var(--border) / .8); background: hsl(var(--card)); box-shadow: 0 1px 2px rgba(16, 48, 46, .04), 0 4px 14px rgba(16, 48, 46, .045); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.morphic-stat:hover { transform: translateY(-2px); border-color: hsl(var(--primary) / .28); box-shadow: 0 8px 20px rgba(16, 48, 46, .08); }
+.morphic-stat-icon { color: hsl(var(--primary)); background: hsl(var(--primary) / .09); }
+.morphic-level { border-radius: 1.25rem; }
+.morphic-level > summary::-webkit-details-marker { display: none; }
+.morphic-level > summary { outline-offset: 4px; }
+.morphic-level-chevron { transition: transform .2s ease; }
+.morphic-level[open] .morphic-level-chevron { transform: rotate(180deg); }
+.morphic-level-tip { min-height: 3.25rem; }
+.dark .morphic-stat { border-color: hsl(var(--border)); box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+.dark .morphic-stat-icon { color: #5eead4; background: rgba(20,184,166,.12); }
+@media (max-width: 380px) { .morphic-stat { padding: .75rem; } .morphic-stat .num { font-size: 1.05rem; } .morphic-stat-icon { width: 1.8rem; height: 1.8rem; } }
+@media (prefers-reduced-motion: reduce) { .morphic-stat, .morphic-level-chevron { transition: none !important; } }
