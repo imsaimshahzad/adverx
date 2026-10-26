@@ -3,26 +3,36 @@ import { createCsrfMiddleware } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { enforceIpRateLimit } from "@/lib/api/rate-limit.server";
 
-function headerValue(request: Request, name: string) {
-  const value = request.headers.get(name)?.trim();
-  if (!value) return null;
-  try {
-    return decodeURIComponent(value).slice(0, 120);
-  } catch {
-    return value.slice(0, 120);
+function headerValue(request: Request, ...names: string[]) {
+  for (const name of names) {
+    const value = request.headers.get(name)?.trim();
+    if (!value) continue;
+    try {
+      return decodeURIComponent(value).slice(0, 120);
+    } catch {
+      return value.slice(0, 120);
+    }
   }
+  return null;
 }
 
 function getClientIp(request: Request): string | null {
-  // Use the single-IP proxy header supplied by the hosting platform; do not
-  // trust a browser-provided query/body value for the client's IP.
-  const candidate = request.headers.get("x-real-ip")?.trim();
-  if (!candidate || candidate.length > 64) return null;
-  // PostgreSQL inet accepts IPv4/IPv6. Reject commas, whitespace and hostnames.
-  if (candidate.includes(",") || /\s/.test(candidate) || !/^[0-9a-fA-F:.]+$/.test(candidate)) {
-    return null;
+  // Cloudflare's CF-Connecting-IP identifies the visitor, unlike x-real-ip
+  // which may identify the Cloudflare edge. Only accept a single IP literal.
+  const candidates = [
+    request.headers.get("cf-connecting-ip"),
+    request.headers.get("x-real-ip"),
+    request.headers.get("x-forwarded-for")?.split(",")[0],
+  ];
+  for (const raw of candidates) {
+    const candidate = raw?.trim();
+    if (!candidate || candidate.length > 64 || candidate.includes(",") || /\s/.test(candidate)) continue;
+    if (!/^[0-9a-fA-F:.]+$/.test(candidate)) continue;
+    // Reject malformed colon/dot-only values; PostgreSQL validates inet too.
+    if (!/[0-9a-fA-F]/.test(candidate)) continue;
+    return candidate;
   }
-  return candidate;
+  return null;
 }
 
 export const Route = createFileRoute("/api/access-signal")({
@@ -48,23 +58,24 @@ export const Route = createFileRoute("/api/access-signal")({
 
           const ipAddress = getClientIp(request);
           const userAgent = request.headers.get("user-agent")?.slice(0, 500) ?? null;
-          const { error: insertError } = await (supabaseAdmin as any)
+          const { error: upsertError } = await (supabaseAdmin as any)
             .from("user_access_signals")
-            .insert({
+            .upsert({
               user_id: data.user.id,
               ip_address: ipAddress,
-              country: headerValue(request, "x-vercel-ip-country"),
+              country: headerValue(request, "x-vercel-ip-country", "cf-ipcountry"),
               region: headerValue(request, "x-vercel-ip-country-region"),
               city: headerValue(request, "x-vercel-ip-city"),
               user_agent: userAgent,
-              source: "auth",
-            });
+              source: "dashboard",
+              created_at: new Date().toISOString(),
+            }, { onConflict: "user_id" });
 
-          if (insertError) {
-            console.error("[AdverX] access signal insert failed", insertError.message);
+          if (upsertError) {
+            console.error("[AdverX] access signal upsert failed", upsertError.message);
             return Response.json({ ok: false }, { status: 500 });
           }
-          return Response.json({ ok: true }, { status: 201 });
+          return Response.json({ ok: true }, { status: 200 });
         } catch (error) {
           if (error instanceof Response) return error;
           console.error("[AdverX] access signal endpoint failed", error);
