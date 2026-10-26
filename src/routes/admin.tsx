@@ -2479,6 +2479,110 @@ function ManagementEditDialog({
     </Dialog>
   );
 }
+type UserAccessSignal = {
+  id: string;
+  ip_address: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  source: string | null;
+  user_agent: string | null;
+  created_at: string;
+};
+
+function UserAccessSignals({ userId }: { userId: string }) {
+  const [signals, setSignals] = useState<UserAccessSignal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadSignals = useCallback(async () => {
+    if (!userId) {
+      setSignals([]);
+      setError("User ID is unavailable.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/user-access-signals?userId=${encodeURIComponent(userId)}`, {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        if (response.status === 404) throw new Error("IP activity endpoint is not available in this deployment.");
+        if (response.status === 500) throw new Error("Could not load IP records. Check that the Supabase migration is applied.");
+        throw new Error(response.status === 401 || response.status === 403 ? "Admin verification is required to view IP activity." : "Unable to load IP activity.");
+      }
+      const result = await response.json() as { ok?: boolean; signals?: UserAccessSignal[] };
+      if (!result.ok) throw new Error("Unable to load IP activity.");
+      setSignals(Array.isArray(result.signals) ? result.signals : []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to load IP activity.");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => { void loadSignals(); }, [loadSignals]);
+
+  const dateTime = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString("en-GB", {
+      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between gap-3 px-4 py-3">
+        <div className="min-w-0">
+          <CardTitle className="text-sm">IP Activity</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">Recent sign-in IP addresses and approximate locations · latest 20 records</p>
+        </div>
+        <Button type="button" size="sm" variant="outline" onClick={() => void loadSignals()} disabled={loading}>
+          <RefreshCw className={`mr-1.5 size-3.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 pt-0">
+        {loading ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">Loading IP activity…</div>
+        ) : error ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">{error}</div>
+        ) : signals.length === 0 ? (
+          <div className="rounded-lg border border-dashed px-3 py-6 text-center">
+            <p className="text-sm font-medium">No IP records yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">A record is added when the user signs in after IP activity collection is available.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {signals.map((signal) => {
+              const location = [signal.city, signal.region, signal.country].filter((part) => Boolean(part && part.trim())).join(", ");
+              return (
+                <div key={signal.id} className="rounded-lg border p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="break-all font-mono text-sm font-semibold">{signal.ip_address || "IP unavailable"}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{location || "Location unavailable"}</p>
+                    </div>
+                    <Badge variant="outline">{signal.source || "sign-in"}</Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">{dateTime(signal.created_at)}</p>
+                  {signal.user_agent ? <p className="mt-2 break-words text-xs text-muted-foreground">Device: {signal.user_agent}</p> : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="mt-3 text-[11px] text-muted-foreground">IP-based location is approximate and should be used as a review signal, not proof of identity.</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginAsUser }: { data: AdminRow | null; loading: boolean; onBack: () => void; onOpenReferrer?: (publicUid: string) => void; onLoginAsUser?: (userId: string) => void }) {
   if (loading) {
     return <div className="flex min-h-64 items-center justify-center"><LoadingIndicator size="md" label="Loading user details" /></div>;
@@ -2604,6 +2708,8 @@ export function UserDetailPage({ data, loading, onBack, onOpenReferrer, onLoginA
           ) : null}
         </CardContent>
       </Card>
+
+      <UserAccessSignals userId={String(profile.id ?? "")} />
 
       {(() => {
         const activePlan = plans.find((row) => String(row.status ?? "").toLowerCase() === "active");
