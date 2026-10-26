@@ -414,6 +414,21 @@ function Dashboard() {
           <span className="mt-2 flex items-baseline justify-between gap-3"><span className="text-xl font-bold">{activityLevel}</span><span className="text-xs text-muted-foreground">Tap for tips</span></span>
           <Progress value={activityScore} className="mt-3" />
         </summary>
+        <div className="mt-4 space-y-3 border-t border-border/70 pt-4">
+          <p className="text-sm font-semibold">Tips to improve your activity</p>
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span>Complete the available ad tasks for today.</span>
+          </div>
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span>Check your dashboard regularly to see your current progress.</span>
+          </div>
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span>Keep your account information accurate and follow the task rules.</span>
+          </div>
+        </div>
       </details>
 
       {plan && (
