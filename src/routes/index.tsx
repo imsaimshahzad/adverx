@@ -16,10 +16,13 @@ import {
   Twitter,
   Facebook,
   Maximize2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 import { AppShell, StatTile } from "@/components/AppShell";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { BrandLogo } from "@/components/BrandLogo";
 import { HeroTrustStrip, HomepageTrustStrip, useHomepageHero } from "@/components/HomepageHeroSettings";
 import { Button } from "@/components/ui/button";
@@ -291,6 +294,7 @@ function Dashboard() {
   const pendingDeposit = state.deposits.find((d) => d.status === "pending");
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
+  const [balanceVisible, setBalanceVisible] = useState(true);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
 
   useEffect(() => {
@@ -343,10 +347,13 @@ function Dashboard() {
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div>
             <p className="morphic-eyebrow">Available earnings</p>
-            <p className="morphic-number num">{money(availableBalance)}</p>
+            <p className="morphic-number num" aria-live="polite">{balanceVisible ? <AnimatedNumber value={Number(availableBalance) || 0} format={money} /> : "••••••"}</p>
             <p className="morphic-caption">Available now · rewards are credited instantly</p>
           </div>
-          <button type="button" aria-label="Expand earnings details" className="morphic-icon-button" onClick={() => setExpanded((value) => !value)}><Maximize2 className="size-4" /></button>
+          <div className="flex items-center gap-2">
+            <button type="button" aria-label={balanceVisible ? "Hide available earnings" : "Show available earnings"} className="morphic-icon-button" onClick={() => setBalanceVisible((value) => !value)}>{balanceVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}</button>
+            <button type="button" aria-label={expanded ? "Collapse earnings details" : "Expand earnings details"} className="morphic-icon-button" onClick={() => setExpanded((value) => !value)}><Maximize2 className="size-4" /></button>
+          </div>
         </div>
         <div className="relative z-10 mt-6 flex flex-wrap items-end justify-between gap-4">
           <div><p className="morphic-label">Today</p><p className="num text-xl font-semibold">{money(todaysEarnings)}</p></div>
