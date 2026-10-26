@@ -1046,7 +1046,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     });
     return () => {
       mounted = false;
-      data.subscription.unsubscribe();
+      data?.subscription?.unsubscribe();
     };
   }, [refresh]);
   useEffect(() => {
