@@ -6,14 +6,28 @@ import { AppShell } from "@/components/AppShell";
 import { TransactionRow } from "@/components/TransactionRow";
 import { Badge } from "@/components/ui/badge";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
-import { formatDate, formatMoney, plainDescription, shortId, statusBadge, typeLabel } from "@/lib/display";
-import { loadWalletTransactions, type TransactionRowData } from "@/lib/transaction-service";
+import {
+  formatDate,
+  formatMoney,
+  plainDescription,
+  shortId,
+  statusBadge,
+  typeLabel,
+} from "@/lib/display";
+import {
+  loadWalletTransactions,
+  type TransactionRowData,
+} from "@/lib/transaction-service";
 
 export const Route = createFileRoute("/transactions")({
   head: () => ({
     meta: [
       { title: "Transactions — AdverX" },
-      { name: "description", content: "Clean wallet activity for deposits, rewards, referrals and withdrawals." },
+      {
+        name: "description",
+        content:
+          "Clean wallet activity for deposits, rewards, referrals and withdrawals.",
+      },
     ],
   }),
   component: TransactionsPage,
@@ -28,7 +42,9 @@ function TransactionsPage() {
   const [selected, setSelected] = useState<TransactionRowData | null>(null);
   const [copied, setCopied] = useState(false);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
-  const [activityFilter, setActivityFilter] = useState<"all" | "deposits" | "withdrawals" | "rewards" | "referrals">("all");
+  const [activityFilter, setActivityFilter] = useState<
+    "all" | "deposits" | "withdrawals" | "rewards" | "referrals"
+  >("all");
   const withdrawalsOnly = activityFilter === "withdrawals";
 
   const lastLiveRefreshRef = useRef(0);
@@ -47,7 +63,11 @@ function TransactionsPage() {
       setItems(result.rows);
     } catch (cause) {
       if (requestVersion === loadVersionRef.current) {
-        setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Unable to load transactions.",
+        );
       }
     } finally {
       if (requestVersion === loadVersionRef.current) setLoading(false);
@@ -85,57 +105,131 @@ function TransactionsPage() {
       if (activityFilter === "all") return true;
       const kind = String(item.kind ?? "").toLowerCase();
       const source = String(item.source_type ?? "").toLowerCase();
-      if (activityFilter === "deposits") return kind.includes("deposit") || source.includes("deposit") || kind.includes("purchase");
-      if (activityFilter === "withdrawals") return kind.includes("withdrawal") || source.includes("withdrawal");
-      if (activityFilter === "rewards") return kind.includes("reward") || source.includes("reward") || kind.includes("ad_reward");
+      if (activityFilter === "deposits")
+        return (
+          kind.includes("deposit") ||
+          source.includes("deposit") ||
+          kind.includes("purchase")
+        );
+      if (activityFilter === "withdrawals")
+        return kind.includes("withdrawal") || source.includes("withdrawal");
+      if (activityFilter === "rewards")
+        return (
+          kind.includes("reward") ||
+          source.includes("reward") ||
+          kind.includes("ad_reward")
+        );
       return kind.includes("referral") || source.includes("referral");
     })
     .sort((a, b) => {
-      const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      const diff =
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       if (diff !== 0) return sortOrder === "newest" ? -diff : diff;
-      return String(a.transaction_no ?? a.id).localeCompare(String(b.transaction_no ?? b.id)) * (sortOrder === "newest" ? -1 : 1);
+      return (
+        String(a.transaction_no ?? a.id).localeCompare(
+          String(b.transaction_no ?? b.id),
+        ) * (sortOrder === "newest" ? -1 : 1)
+      );
     });
 
+  useEffect(() => {
+    if (!selected) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selected]);
+
   const selectedStatus = selected ? statusBadge(selected.status) : null;
-  const selectedType = selected ? typeLabel(selected.kind, selected.metadata) : null;
+  const selectedType = selected
+    ? typeLabel(selected.kind, selected.metadata)
+    : null;
 
   return (
-    <AppShell title={withdrawalsOnly ? "Withdrawal History" : "Transactions"} subtitle={accountUid ? (withdrawalsOnly ? `Your withdrawal requests · ${accountUid}` : `Wallet activity · ${accountUid}`) : (withdrawalsOnly ? "Your withdrawal requests" : "Wallet activity")}>
+    <AppShell
+      title={withdrawalsOnly ? "Withdrawal History" : "Transactions"}
+      subtitle={
+        accountUid
+          ? withdrawalsOnly
+            ? `Your withdrawal requests · ${accountUid}`
+            : `Wallet activity · ${accountUid}`
+          : withdrawalsOnly
+            ? "Your withdrawal requests"
+            : "Wallet activity"
+      }
+    >
       <div className="surface mt-4 overflow-hidden">
         <div className="flex items-start gap-3 border-b border-border/60 p-4 sm:p-5">
           <ReceiptText className="mt-0.5 size-5 text-primary" />
           <div>
-            <p className="text-sm font-semibold">{withdrawalsOnly ? "Withdrawal history" : "Activity"}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{withdrawalsOnly ? "Your withdrawal requests, amounts and payment status." : "Your deposits, withdrawals, rewards and referral activity."}</p>
+            <p className="text-sm font-semibold">
+              {withdrawalsOnly ? "Withdrawal history" : "Activity"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {withdrawalsOnly
+                ? "Your withdrawal requests, amounts and payment status."
+                : "Your deposits, withdrawals, rewards and referral activity."}
+            </p>
           </div>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center gap-2 p-10 text-sm text-muted-foreground">
-            <LoadingIndicator size="sm" label="Loading activity" /> Loading activity…
+            <LoadingIndicator size="sm" label="Loading activity" /> Loading
+            activity…
           </div>
         ) : error ? (
           <div className="p-5 text-sm text-destructive">{error}</div>
         ) : items.length === 0 ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">No activity yet.</div>
+          <div className="p-10 text-center text-sm text-muted-foreground">
+            No activity yet.
+          </div>
         ) : (
           <>
             <div className="hidden grid-cols-[minmax(150px,1.1fr)_minmax(150px,1fr)_minmax(180px,1.6fr)_minmax(90px,.8fr)_minmax(110px,.8fr)] gap-3 border-b border-border/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-              <span>Type</span><span>Description</span><span>Date</span><span>Status</span><span className="text-right">Amount</span>
+              <span>Type</span>
+              <span>Description</span>
+              <span>Date</span>
+              <span>Status</span>
+              <span className="text-right">Amount</span>
             </div>
             <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-muted-foreground">{visibleItems.length} {visibleItems.length === 1 ? "activity" : "activities"}</p>
+              <p className="text-xs text-muted-foreground">
+                {visibleItems.length}{" "}
+                {visibleItems.length === 1 ? "activity" : "activities"}
+              </p>
               <div className="flex flex-wrap gap-2">
-                <label className="sr-only" htmlFor="activity-filter">Activity type</label>
-                <select id="activity-filter" value={activityFilter} onChange={(event) => setActivityFilter(event.target.value as typeof activityFilter)} className="rounded-lg border border-border/60 bg-background px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/30">
+                <label className="sr-only" htmlFor="activity-filter">
+                  Activity type
+                </label>
+                <select
+                  id="activity-filter"
+                  value={activityFilter}
+                  onChange={(event) =>
+                    setActivityFilter(
+                      event.target.value as typeof activityFilter,
+                    )
+                  }
+                  className="rounded-lg border border-border/60 bg-background px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/30"
+                >
                   <option value="all">All Activity</option>
                   <option value="deposits">Deposits</option>
                   <option value="withdrawals">Withdrawals</option>
                   <option value="rewards">Rewards</option>
                   <option value="referrals">Referral Activity</option>
                 </select>
-                <label className="sr-only" htmlFor="activity-sort">Sort activity</label>
-                <select id="activity-sort" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as typeof sortOrder)} className="rounded-lg border border-border/60 bg-background px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/30">
+                <label className="sr-only" htmlFor="activity-sort">
+                  Sort activity
+                </label>
+                <select
+                  id="activity-sort"
+                  value={sortOrder}
+                  onChange={(event) =>
+                    setSortOrder(event.target.value as typeof sortOrder)
+                  }
+                  className="rounded-lg border border-border/60 bg-background px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/30"
+                >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
                 </select>
@@ -143,63 +237,140 @@ function TransactionsPage() {
             </div>
             <div>
               {visibleItems.length === 0 ? (
-                <div className="p-8 text-center text-sm text-muted-foreground">No activity matches this filter.</div>
-              ) : visibleItems.map((item) => (
-                <TransactionRow key={item.id} row={item} onClick={() => { setSelected(item); setCopied(false); }} />
-              ))}
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  No activity matches this filter.
+                </div>
+              ) : (
+                visibleItems.map((item) => (
+                  <TransactionRow
+                    key={item.id}
+                    row={item}
+                    onClick={() => {
+                      setSelected(item);
+                      setCopied(false);
+                    }}
+                  />
+                ))
+              )}
             </div>
           </>
         )}
       </div>
 
       {selected ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
-          <div role="dialog" aria-modal="true" className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border/60 bg-background p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="morphic-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="transaction-dialog-title"
+            className="morphic-modal max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border/60 bg-background p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-lg font-semibold">{selectedType?.icon} {selectedType?.label ?? "Other"}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{formatDate(selected.created_at)}</p>
+                <p
+                  id="transaction-dialog-title"
+                  className="text-lg font-semibold"
+                >
+                  {selectedType?.icon} {selectedType?.label ?? "Other"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {formatDate(selected.created_at)}
+                </p>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Close"><X className="size-4" /></button>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="morphic-pressable rounded-lg p-2 text-muted-foreground hover:bg-muted"
+                aria-label="Close transaction details"
+              >
+                <X className="size-4" />
+              </button>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                 <p className="text-xs text-muted-foreground">Transaction ID</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <p className="font-mono text-sm font-semibold text-primary">{shortId(selected.id)}</p>
-                  <button type="button" className="rounded-md p-1 hover:bg-muted" onClick={() => { void navigator.clipboard?.writeText(shortId(selected.id)); setCopied(true); }}>
-                    {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                  <p className="font-mono text-sm font-semibold text-primary">
+                    {shortId(selected.id)}
+                  </p>
+                  <button
+                    type="button"
+                    className="rounded-md p-1 hover:bg-muted"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(shortId(selected.id));
+                      setCopied(true);
+                    }}
+                  >
+                    {copied ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Copy className="size-3.5" />
+                    )}
                   </button>
                 </div>
               </div>
               <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                 <p className="text-xs text-muted-foreground">Amount</p>
-                <p className={`mt-1 text-2xl font-bold ${Number(selected.amount ?? 0) < 0 ? "text-destructive" : "text-success"}`}>
+                <p
+                  className={`mt-1 text-2xl font-bold ${Number(selected.amount ?? 0) < 0 ? "text-destructive" : "text-success"}`}
+                >
                   {formatMoney(selected.amount, selected.currency ?? "PKR")}
                 </p>
               </div>
             </div>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Type</p><p className="mt-1 text-sm font-medium">{selectedType?.label ?? "Other"}</p></div>
-              <div className="rounded-xl border border-border/50 p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Status</p><p className="mt-1"><Badge className={selectedStatus?.className}>{selectedStatus?.label ?? "—"}</Badge></p></div>
+              <div className="rounded-xl border border-border/50 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Type
+                </p>
+                <p className="mt-1 text-sm font-medium">
+                  {selectedType?.label ?? "Other"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/50 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Status
+                </p>
+                <p className="mt-1">
+                  <Badge className={selectedStatus?.className}>
+                    {selectedStatus?.label ?? "—"}
+                  </Badge>
+                </p>
+              </div>
             </div>
 
             <div className="mt-3 rounded-xl border border-border/50 p-4">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Description</p>
-              <p className="mt-1 text-sm">{plainDescription(selected.kind, selected.metadata)}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Description
+              </p>
+              <p className="mt-1 text-sm">
+                {plainDescription(selected.kind, selected.metadata)}
+              </p>
             </div>
 
             {isStaff ? (
               <div className="mt-4 rounded-xl border border-border/50 p-4">
                 <p className="text-xs font-semibold">Admin technical details</p>
-                <p className="mt-1 text-xs text-muted-foreground">Technical fields stay hidden in the normal view.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Technical fields stay hidden in the normal view.
+                </p>
               </div>
             ) : null}
 
             <div className="mt-5 flex justify-end">
-              <button type="button" onClick={() => setSelected(null)} className="rounded-lg border border-border/60 px-4 py-2 text-sm font-medium hover:bg-muted">Close</button>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="rounded-lg border border-border/60 px-4 py-2 text-sm font-medium hover:bg-muted"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
