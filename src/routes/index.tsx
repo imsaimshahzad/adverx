@@ -357,7 +357,7 @@ function Dashboard() {
         </div>
         <div className="relative z-10 mt-6 flex flex-wrap items-end justify-between gap-4">
           <div><p className="morphic-label">Today</p><p className="num text-xl font-semibold">{money(todaysEarnings)}</p></div>
-          <Button asChild variant="secondary" size="sm" className="morphic-action"><Link to="/withdraw">Withdraw <ArrowRight className="size-4" /></Link></Button>
+          <Button asChild variant="secondary" size="sm" className="morphic-action morphic-pressable"><Link to="/withdraw">Withdraw <ArrowRight className="size-4" /></Link></Button>
         </div>
         <div className={`morphic-detail ${expanded ? "is-visible" : ""}`} aria-hidden={!expanded}><div><p className="morphic-label">Momentum</p><p className="text-sm font-semibold">{activityLevel} · {activityScore}% active</p></div><div><p className="morphic-label">Next focus</p><p className="text-sm font-semibold">{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1 ? "" : "s"} remaining</p></div></div>
       </section>

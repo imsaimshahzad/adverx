@@ -55,5 +55,12 @@
 .dark .morphic-action:hover { color:#000000; background:#ffffff; font-weight:600; opacity:1 !important; transform:translateY(-1px) scale(1.02); }
 .dark .morphic-action:active { color:#000000; background:#ffffff; transform:scale(.96); transition:transform .12s ease, background .12s ease; }
 
-@media (max-width: 639px) { .morphic-hero:hover .morphic-orb-one,.morphic-hero:hover .morphic-orb-two { transform:none; } }
-@media (prefers-reduced-motion:reduce) { .morphic-hero,.morphic-detail,.morphic-orb,.morphic-stats > .surface { transition:none!important; } }
+.morphic-pressable { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+.morphic-pressable:hover { filter: brightness(1.015); }
+.morphic-pressable:active { transform: scale(.985); }
+.morphic-modal { animation: morphic-modal-in .22s cubic-bezier(.2,.8,.2,1); }
+.morphic-backdrop { animation: morphic-backdrop-in .18s ease-out; }
+@keyframes morphic-modal-in { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes morphic-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 639px) { .morphic-hero:hover .morphic-orb-one,.morphic-hero:hover .morphic-orb-two { transform:none; } .morphic-pressable:hover { filter:none; } }
+@media (prefers-reduced-motion:reduce) { .morphic-hero,.morphic-detail,.morphic-orb,.morphic-stats > .surface,.morphic-pressable,.morphic-modal,.morphic-backdrop { transition:none!important; animation:none!important; } }

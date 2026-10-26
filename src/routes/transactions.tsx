@@ -96,6 +96,15 @@ function TransactionsPage() {
       return String(a.transaction_no ?? a.id).localeCompare(String(b.transaction_no ?? b.id)) * (sortOrder === "newest" ? -1 : 1);
     });
 
+  useEffect(() => {
+    if (!selected) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selected]);
+
   const selectedStatus = selected ? statusBadge(selected.status) : null;
   const selectedType = selected ? typeLabel(selected.kind, selected.metadata) : null;
 
@@ -153,14 +162,14 @@ function TransactionsPage() {
       </div>
 
       {selected ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
-          <div role="dialog" aria-modal="true" className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border/60 bg-background p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div className="morphic-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="transaction-dialog-title" className="morphic-modal max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border/60 bg-background p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-lg font-semibold">{selectedType?.icon} {selectedType?.label ?? "Other"}</p>
+                <p id="transaction-dialog-title" className="text-lg font-semibold">{selectedType?.icon} {selectedType?.label ?? "Other"}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{formatDate(selected.created_at)}</p>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Close"><X className="size-4" /></button>
+              <button type="button" onClick={() => setSelected(null)} className="morphic-pressable rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Close transaction details"><X className="size-4" /></button>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
