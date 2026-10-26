@@ -1,7 +1,7 @@
 import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { isImpersonating, supabase } from "@/integrations/supabase/client";
 import { loginSchema, resetRequestSchema } from "@/lib/input-validation";
 
 import { usePlatform } from "@/lib/platform-store";
@@ -65,7 +65,9 @@ export function AuthPage() {
   const [resetRequested, setResetRequested] = useState(false);
 
   useEffect(() => {
-    if (!ready || !state.user) return;
+    // Admin "Login as User" must not create an IP activity record for the target user.
+    // The impersonation session is not a real sign-in by that user.
+    if (isImpersonating() || !ready || !state.user) return;
 
     // Record one IP-derived access signal per signed-in user per browser session.
     // This is best-effort and must never block login or redirect.
@@ -79,6 +81,9 @@ export function AuthPage() {
         const response = await fetch("/api/access-signal", {
           method: "POST",
           headers: { Authorization: `Bearer ${accessToken}` },
+          // The auth effect redirects immediately below; keep this telemetry
+          // request alive when the browser navigates away from the auth page.
+          keepalive: true,
         });
         if (response.ok) sessionStorage.setItem(key, "1");
       } catch {
