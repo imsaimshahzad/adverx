@@ -16,9 +16,10 @@ import {
   Twitter,
   Facebook,
   Maximize2,
+  type LucideIcon,
 } from "lucide-react";
 
-import { AppShell, StatTile } from "@/components/AppShell";
+import { AppShell } from "@/components/AppShell";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { BrandLogo } from "@/components/BrandLogo";
 import { HeroTrustStrip, HomepageTrustStrip, useHomepageHero } from "@/components/HomepageHeroSettings";
@@ -275,7 +276,7 @@ function PublicFooter() {
   );
 }
 
-function DashboardStat({ icon: Icon, label, value, hint }: { icon: typeof ListChecks; label: string; value: string; hint: string }) {
+function DashboardStat({ icon: Icon, label, value, hint }: { icon: LucideIcon; label: string; value: string; hint: string }) {
   return (
     <div className="morphic-stat surface min-w-0 rounded-2xl p-4">
       <div className="flex items-center gap-2">
