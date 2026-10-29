@@ -875,8 +875,16 @@ export function AdminRoute() {
     }
   }
   async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    try {
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) {
+        toast.error("Unable to sign out. Please try again.");
+        return;
+      }
+      navigate({ to: "/admin/login", replace: true });
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+    }
   }
   const managementTable = currentTable && ["plans", "ads", "deposit_methods", "withdrawal_methods"].includes(currentTable);
   async function saveEditedRow(changes: AdminRow) {
