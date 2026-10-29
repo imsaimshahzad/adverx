@@ -213,19 +213,35 @@ function AdminLoginPage() {
         if (challengeError) throw challengeError;
         activeChallengeId = challenge.id;
       }
-      const { error: verifyError } = await supabase.auth.mfa.verify({
+      const { data: verification, error: verifyError } = await supabase.auth.mfa.verify({
         factorId,
         challengeId: activeChallengeId,
         code: code.trim(),
       });
       if (verifyError) throw new Error("That code is incorrect or expired. Check your phone and try again.");
+
+      // Do not navigate away until the elevated AAL2 session is actually
+      // available to the browser client. Otherwise /admin immediately sees the
+      // stale AAL1 session and redirects back to this login page.
+      const { data: verifiedSession, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !verifiedSession.session?.access_token || !verifiedSession.session.user) {
+        throw new Error("Your 2FA code was accepted, but the secure session did not finish updating. Please enter a fresh code and try again.");
+      }
+      if (verification.user && verification.user.id !== verifiedSession.session.user.id) {
+        throw new Error("The verified session does not match this admin account. Please sign in again.");
+      }
+      const { data: verifiedAssurance, error: verifiedAssuranceError } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (verifiedAssuranceError || verifiedAssurance.currentLevel !== "aal2") {
+        throw new Error("Your 2FA code was accepted, but AdverX did not receive an elevated secure session. Please enter a fresh code and try again.");
+      }
+
       if (step === "enroll") {
         toast.success("Two-factor authentication enabled.");
       }
       if (trustThisDevice) {
         try {
-          const { data: currentSession } = await supabase.auth.getSession();
-          if (!currentSession.session?.access_token) throw new Error("Missing verified session");
+          const currentSession = verifiedSession;
           const trustResponse = await fetch("/api/admin/trusted-device", {
             method: "POST",
             headers: {
