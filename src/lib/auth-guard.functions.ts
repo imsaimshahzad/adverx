@@ -4,10 +4,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ADMIN_ROLES, requireAdminUser, requireAuthenticatedUser } from "@/lib/auth.server";
 
 export const checkRouteAccess = createServerFn({ method: "GET" })
-  .validator((data: { admin: boolean }) => data)
+  .validator((data: { admin: boolean; accessToken?: string }) => data)
   .handler(async ({ data }) => {
     try {
-      const user = data.admin ? await requireAdminUser() : await requireAuthenticatedUser();
+      const user = data.admin
+        ? await requireAdminUser(data.accessToken)
+        : await requireAuthenticatedUser(data.accessToken);
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("role, full_name, username")

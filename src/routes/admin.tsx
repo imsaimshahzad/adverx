@@ -475,8 +475,11 @@ export function AdminRoute() {
         if (assurance.currentLevel !== "aal2") {
           // The server accepts AAL1 only when the HttpOnly trusted-device
           // token is valid, unexpired, and bound to this admin account.
-          const trustedAccess = await checkRouteAccess({ data: { admin: true } });
-          if (!trustedAccess.authenticated || !trustedAccess.admin || trustedAccess.userId !== auth.user.id) {
+          const { data: currentSession } = await supabase.auth.getSession();
+          const trustedAccess = currentSession.session?.access_token
+            ? await checkRouteAccess({ data: { admin: true, accessToken: currentSession.session.access_token } })
+            : null;
+          if (!trustedAccess?.authenticated || !trustedAccess.admin || trustedAccess.userId !== auth.user.id) {
             setAuthorization("unauthorized");
             navigate({ to: "/admin/login", replace: true });
             return;
