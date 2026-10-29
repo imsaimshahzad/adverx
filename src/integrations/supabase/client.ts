@@ -97,6 +97,8 @@ function env(name: string) {
           ? import.meta.env.NEXT_PUBLIC_SUPABASE_URL
           : name === "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
             ? import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+          : name === "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+            ? import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
             : name === "SUPABASE_URL"
               ? import.meta.env.SUPABASE_URL
               : name === "SUPABASE_PUBLISHABLE_KEY"
@@ -136,6 +138,7 @@ function createBrowserClient(impersonating: boolean) {
 
   const SUPABASE_PUBLISHABLE_KEY =
     env("VITE_SUPABASE_PUBLISHABLE_KEY") ||
+    env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
     env("SUPABASE_PUBLISHABLE_KEY") ||
     env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
     env("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
