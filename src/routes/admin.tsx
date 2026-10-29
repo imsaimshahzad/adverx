@@ -384,6 +384,9 @@ export function AdminRoute() {
   const [paymentAccountDialog, setPaymentAccountDialog] = useState<{
     holder: string;
     number: string;
+    amount: number | string;
+    status: string;
+    date: string;
   } | null>(null);
   const [balanceTarget, setBalanceTarget] = useState<AdminRow | null>(null);
   const [balanceMode, setBalanceMode] = useState<"add" | "deduct">("add");
@@ -1238,6 +1241,28 @@ export function AdminRoute() {
                 <DialogDescription>Verify the recipient details before sending the withdrawal payment.</DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Payment Amount</div>
+                  <div className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+                    {paymentAccountDialog?.amount !== "" && paymentAccountDialog?.amount !== undefined
+                      ? `PKR ${Number(paymentAccountDialog.amount).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : "Not available"}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
+                    <div>
+                      <div className="mb-1 text-xs font-medium text-slate-500">Payment Status</div>
+                      <Badge variant="outline" className={`capitalize ${["paid", "approved", "completed"].includes(String(paymentAccountDialog?.status ?? "").toLowerCase()) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : ["rejected", "failed", "cancelled"].includes(String(paymentAccountDialog?.status ?? "").toLowerCase()) ? "border-rose-200 bg-rose-50 text-rose-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+                        {String(paymentAccountDialog?.status ?? "—").replaceAll("_", " ")}
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="mb-1 text-xs font-medium text-slate-500">Payment Date</div>
+                      <div className="text-sm font-semibold text-slate-800">
+                        {paymentAccountDialog?.date ? formatDate(paymentAccountDialog.date) : "Not available"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-1 text-xs font-medium text-slate-500">Account Holder Name</div>
                   <div className="flex items-center justify-between gap-3">
@@ -3001,7 +3026,7 @@ function ModuleTable({
   setCreateOpen: (open: boolean) => void;
   onCreated: () => void;
   onReceipt: (row: AdminRow) => void;
-  onViewPaymentAccount: (details: { holder: string; number: string }) => void;
+  onViewPaymentAccount: (details: { holder: string; number: string; amount: number | string; status: string; date: string }) => void;
   managementTable: boolean;
   onEdit: (row: AdminRow) => void;
   onDelete: (row: AdminRow) => void;
@@ -3467,7 +3492,12 @@ function ModuleTable({
                                 <button
                                   type="button"
                                   className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
-                                  onClick={() => onViewPaymentAccount(details)}
+                                  onClick={() => onViewPaymentAccount({
+                                    ...details,
+                                    amount: row.amount === null || row.amount === undefined ? "" : row.amount as number | string,
+                                    status: String(row.status ?? "—"),
+                                    date: String(row.created_at ?? ""),
+                                  })}
                                 >
                                   <Eye className="size-3.5" />
                                   View Payment Account
