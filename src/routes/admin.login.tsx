@@ -164,6 +164,7 @@ function AdminLoginPage() {
     }
     setSubmitting(true);
     setError(null);
+    let stage = "password verification";
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -171,9 +172,11 @@ function AdminLoginPage() {
       });
       if (signInError) throw signInError;
 
+      stage = "session verification";
       const { data: auth, error: userError } = await supabase.auth.getUser();
       if (userError || !auth.user) throw new Error("We could not verify your session. Please try again.");
 
+      stage = "admin-role verification";
       const { data: profile, error: profileError } = await (supabase as any)
         .from("profiles")
         .select("role")
@@ -181,18 +184,18 @@ function AdminLoginPage() {
         .maybeSingle();
       if (profileError) throw new Error("We could not verify your admin role. Please try again.");
       if (!["admin", "super_admin", "moderator"].includes(profile?.role)) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         throw new Error("This account is not authorized to access the admin panel.");
       }
+      stage = "two-factor initialization";
       await beginMfa();
     } catch (cause) {
-      // If credentials were accepted but MFA could not start, revoke this local session.
-      try {
-        await supabase.auth.signOut({ scope: "local" });
-      } catch {
-        // Keep the original, user-facing authentication error.
-      }
-      setError(cause instanceof Error ? cause.message : "Unable to sign in securely. Please try again.");
+      // Keep the accepted AAL1 session when MFA setup/challenge has a transient
+      // failure. Admin routes still require AAL2 or a server-validated trusted
+      // device, so retaining this session cannot grant admin access by itself.
+      const message = cause instanceof Error ? cause.message : "Unable to sign in securely. Please try again.";
+      console.error("[AdverX admin login] flow failed", { stage, message });
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -213,19 +216,35 @@ function AdminLoginPage() {
         if (challengeError) throw challengeError;
         activeChallengeId = challenge.id;
       }
-      const { error: verifyError } = await supabase.auth.mfa.verify({
+      const { data: verification, error: verifyError } = await supabase.auth.mfa.verify({
         factorId,
         challengeId: activeChallengeId,
         code: code.trim(),
       });
       if (verifyError) throw new Error("That code is incorrect or expired. Check your phone and try again.");
+
+      // Do not navigate away until the elevated AAL2 session is actually
+      // available to the browser client. Otherwise /admin immediately sees the
+      // stale AAL1 session and redirects back to this login page.
+      const { data: verifiedSession, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !verifiedSession.session?.access_token || !verifiedSession.session.user) {
+        throw new Error("Your 2FA code was accepted, but the secure session did not finish updating. Please enter a fresh code and try again.");
+      }
+      if (verification.user && verification.user.id !== verifiedSession.session.user.id) {
+        throw new Error("The verified session does not match this admin account. Please sign in again.");
+      }
+      const { data: verifiedAssurance, error: verifiedAssuranceError } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (verifiedAssuranceError || verifiedAssurance.currentLevel !== "aal2") {
+        throw new Error("Your 2FA code was accepted, but AdverX did not receive an elevated secure session. Please enter a fresh code and try again.");
+      }
+
       if (step === "enroll") {
         toast.success("Two-factor authentication enabled.");
       }
       if (trustThisDevice) {
         try {
-          const { data: currentSession } = await supabase.auth.getSession();
-          if (!currentSession.session?.access_token) throw new Error("Missing verified session");
+          const currentSession = verifiedSession;
           const trustResponse = await fetch("/api/admin/trusted-device", {
             method: "POST",
             headers: {
