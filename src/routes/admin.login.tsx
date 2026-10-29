@@ -223,20 +223,31 @@ function AdminLoginPage() {
       });
       if (verifyError) throw new Error("That code is incorrect or expired. Check your phone and try again.");
 
-      // Do not navigate away until the elevated AAL2 session is actually
-      // available to the browser client. Otherwise /admin immediately sees the
-      // stale AAL1 session and redirects back to this login page.
-      const { data: verifiedSession, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !verifiedSession.session?.access_token || !verifiedSession.session.user) {
-        throw new Error("Your 2FA code was accepted, but the secure session did not finish updating. Please enter a fresh code and try again.");
+      // Persist the exact elevated session returned by MFA verification before
+      // performing a full-page navigation. This avoids /admin restoring a
+      // stale AAL1 token from browser storage after the TOTP step.
+      if (!verification.access_token || !verification.refresh_token || !verification.user?.id) {
+        throw new Error("Your 2FA code was accepted, but Supabase did not return a complete secure session. Please sign in again.");
       }
-      if (verification.user && verification.user.id !== verifiedSession.session.user.id) {
+      const { data: persisted, error: persistError } = await supabase.auth.setSession({
+        access_token: verification.access_token,
+        refresh_token: verification.refresh_token,
+      });
+      if (persistError || !persisted.session?.access_token || !persisted.session.user) {
+        throw new Error("Your 2FA code was accepted, but the secure session could not be saved. Please sign in again.");
+      }
+      if (persisted.session.user.id !== verification.user.id) {
         throw new Error("The verified session does not match this admin account. Please sign in again.");
       }
       const { data: verifiedAssurance, error: verifiedAssuranceError } =
         await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (verifiedAssuranceError || verifiedAssurance.currentLevel !== "aal2") {
-        throw new Error("Your 2FA code was accepted, but AdverX did not receive an elevated secure session. Please enter a fresh code and try again.");
+        console.error("[AdverX admin login] MFA session assurance check failed", {
+          hasAccessToken: Boolean(persisted.session.access_token),
+          currentLevel: verifiedAssurance?.currentLevel ?? null,
+          hasAssuranceError: Boolean(verifiedAssuranceError),
+        });
+        throw new Error("Your 2FA code was accepted, but AdverX could not confirm the elevated secure session. Please sign in again.");
       }
 
       if (step === "enroll") {
