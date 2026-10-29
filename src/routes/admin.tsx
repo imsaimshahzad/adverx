@@ -704,12 +704,15 @@ export function AdminRoute() {
     void load();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || !session?.user) {
+      // Supabase emits INITIAL_SESSION while persisted storage is being restored.
+      // A null session on that event is not proof that the user signed out; redirecting
+      // here races the initial getUser() check and causes an endless admin login loop.
+      if (event === "SIGNED_OUT") {
         adminIdentity.current = null;
         setAuthorization("unauthorized");
         setLoading(false);
         navigate({ to: "/admin/login", replace: true });
-      } else if (event === "SIGNED_IN" && !adminIdentity.current) {
+      } else if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") && session?.user && !adminIdentity.current) {
         void load();
       }
     });
