@@ -164,6 +164,7 @@ function AdminLoginPage() {
     }
     setSubmitting(true);
     setError(null);
+    let stage = "password verification";
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -171,9 +172,11 @@ function AdminLoginPage() {
       });
       if (signInError) throw signInError;
 
+      stage = "session verification";
       const { data: auth, error: userError } = await supabase.auth.getUser();
       if (userError || !auth.user) throw new Error("We could not verify your session. Please try again.");
 
+      stage = "admin-role verification";
       const { data: profile, error: profileError } = await (supabase as any)
         .from("profiles")
         .select("role")
@@ -181,18 +184,18 @@ function AdminLoginPage() {
         .maybeSingle();
       if (profileError) throw new Error("We could not verify your admin role. Please try again.");
       if (!["admin", "super_admin", "moderator"].includes(profile?.role)) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         throw new Error("This account is not authorized to access the admin panel.");
       }
+      stage = "two-factor initialization";
       await beginMfa();
     } catch (cause) {
-      // If credentials were accepted but MFA could not start, revoke this local session.
-      try {
-        await supabase.auth.signOut({ scope: "local" });
-      } catch {
-        // Keep the original, user-facing authentication error.
-      }
-      setError(cause instanceof Error ? cause.message : "Unable to sign in securely. Please try again.");
+      // Keep the accepted AAL1 session when MFA setup/challenge has a transient
+      // failure. Admin routes still require AAL2 or a server-validated trusted
+      // device, so retaining this session cannot grant admin access by itself.
+      const message = cause instanceof Error ? cause.message : "Unable to sign in securely. Please try again.";
+      console.error("[AdverX admin login] flow failed", { stage, message });
+      setError(message);
     } finally {
       setSubmitting(false);
     }
