@@ -1163,6 +1163,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       // Clearing local account state does not call Supabase, so do it immediately
       // inside SIGNED_OUT—even if lastAuthUserIdRef was already null.
       if (event === "SIGNED_OUT") {
+        const signedOutUserId = lastAuthUserIdRef.current;
+        if (signedOutUserId) {
+          try { window.localStorage.removeItem(`adverx-last-activity:${signedOutUserId}`); } catch {}
+        }
         lastAuthUserIdRef.current = null;
         void refresh(null);
         return;
@@ -1274,13 +1278,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
 
     activityEvents.forEach((event) => window.addEventListener(event, recordActivity, { passive: true }));
     const onStorage = (event: StorageEvent) => {
-      if (event.key !== storageKey) return;
-      if (event.newValue === null) {
-        // A different tab may have signed out; Supabase auth events handle state cleanup.
-        return;
-      }
+      if (event.key !== storageKey || event.newValue === null) return;
       const sharedActivity = Number(event.newValue);
-      if (Number.isFinite(sharedActivity) && sharedActivity > readLastActivity()) {
+      if (Number.isFinite(sharedActivity) && sharedActivity > 0) {
         memoryLastActivity = sharedActivity;
         scheduleExpiryCheck();
       }
