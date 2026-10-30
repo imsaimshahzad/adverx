@@ -1143,12 +1143,18 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (mounted) await refresh(sessionUser);
     } else {
       await loadCatalog();
+      // Anonymous visitors must leave the account bootstrap state too; otherwise
+      // the public homepage remains on "Loading your account…" indefinitely.
+      if (mounted) setReady(true);
     }
     if (mounted) setCatalogReady(true);
   } catch (error) {
     console.error("[v0] Public catalog/account bootstrap failed", error);
     if (mounted) {
       setCatalogError("Unable to load available plans. Please try again.");
+      // A failed public catalog request should show the page's error/empty state,
+      // not keep the global account loader spinning forever.
+      setReady(true);
     }
   }
 };
