@@ -55,10 +55,13 @@ test("a request arriving during the queued follow-up schedules exactly one more 
   };
 
   const queued = requestCoalescedRun(pending, running, run);
+  // Queue the first follow-up while the original refresh is still running.
+  requestCoalescedRun(pending, running, run);
   firstRun.resolve();
   await new Promise<void>((resolve) => setTimeout(resolve, 0));
   assert.equal(runs, 2);
 
+  // A new force request during that follow-up must queue one more run.
   requestCoalescedRun(pending, running, run);
   followUp.resolve();
   await queued;
