@@ -108,60 +108,7 @@
   opacity: 1;
   transform: none;
 }
-.morphic-tools {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid #eadfd5;
-  border-radius: 1rem;
-  background: #f7f4ef;
-  transition:
-    background 0.3s,
-    transform 0.3s;
-}
-.morphic-tools:hover {
-  transform: translateY(-1px);
-  background: #fff7f0;
-}
-.morphic-tool-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  border-radius: 0.7rem;
-  padding: 0.45rem 0.65rem;
-  color: #a95636;
-  font-size: 11px;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-.morphic-tool-button:hover {
-  background: #f4dfd2;
-}
-.morphic-search {
-  min-height: 2.5rem;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid #eadfd5;
-  border-radius: 1rem;
-  color: #9b9087;
-  font-size: 12px;
-  transition:
-    border-color 0.25s,
-    box-shadow 0.25s;
-}
-.morphic-search:hover {
-  border-color: #d99a7d;
-  box-shadow: 0 0 0 3px rgba(200, 107, 69, 0.08);
-}
-.morphic-search kbd {
-  margin-left: auto;
-  border: 1px solid #e5d6cb;
-  border-radius: 0.4rem;
-  padding: 0.15rem 0.35rem;
-  font-size: 10px;
-  color: #a99c92;
-}
+
 .morphic-stats > .surface {
   transition:
     transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -172,10 +119,6 @@
   transform: translateY(-4px) scale(1.015);
   border-color: #d99a7d;
   box-shadow: 0 14px 28px rgba(94, 69, 52, 0.1);
-}
-.morphic-stats.is-focused > .surface:nth-child(2) {
-  transform: translateY(-3px) scale(1.025);
-  border-color: #d99a7d;
 }
 
 /* Dark mode: the earnings/wallet hero becomes deep slate with an AdverX teal glow. */
@@ -235,59 +178,17 @@
     background 0.12s ease;
 }
 
-.morphic-pressable {
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    filter 0.18s ease;
-}
-.morphic-pressable:hover {
-  filter: brightness(1.015);
-}
-.morphic-pressable:active {
-  transform: scale(0.985);
-}
-.morphic-modal {
-  animation: morphic-modal-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.morphic-backdrop {
-  animation: morphic-backdrop-in 0.18s ease-out;
-}
-@keyframes morphic-modal-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes morphic-backdrop-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
 @media (max-width: 639px) {
   .morphic-hero:hover .morphic-orb-one,
   .morphic-hero:hover .morphic-orb-two {
     transform: none;
-  }
-  .morphic-pressable:hover {
-    filter: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .morphic-hero,
   .morphic-detail,
   .morphic-orb,
-  .morphic-stats > .surface,
-  .morphic-pressable,
-  .morphic-modal,
-  .morphic-backdrop {
+  .morphic-stats > .surface, {
     transition: none !important;
     animation: none !important;
   }
