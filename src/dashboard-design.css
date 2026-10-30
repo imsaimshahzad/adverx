@@ -99,3 +99,11 @@ a { text-underline-offset:3px; }
 .dark .dashboard-shell main .morphic-stats > .surface {
   background-color:rgba(17,24,39,.94) !important;
 }
+
+
+/* Requested hover color for compact member stat cards. */
+@media (hover:hover) {
+  .dashboard-shell main .morphic-stats > .surface:hover {
+    background-color:#DEFAFA !important;
+  }
+}
