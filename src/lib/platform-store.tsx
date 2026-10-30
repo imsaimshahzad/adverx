@@ -1166,7 +1166,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT") {
         const signedOutUserId = lastAuthUserIdRef.current;
         if (signedOutUserId) {
-          try { window.localStorage.removeItem(`adverx-last-activity:${signedOutUserId}`); } catch {}
+          try { window.localStorage.removeItem(sessionActivityStorageKey(signedOutUserId, isImpersonating())); } catch {}
         }
         lastAuthUserIdRef.current = null;
         void refresh(null);
@@ -1203,8 +1203,11 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
 
     const readLastActivity = () => {
       try {
-        const stored = Number(window.localStorage.getItem(storageKey));
-        if (Number.isFinite(stored) && stored > 0) return stored;
+        const storedValue = window.localStorage.getItem(storageKey);
+        if (storedValue !== null) {
+          const stored = Number(storedValue);
+          return Number.isFinite(stored) && stored > 0 ? stored : 0;
+        }
       } catch {
         // Continue with an in-memory fallback if browser storage is unavailable.
       }
@@ -1271,6 +1274,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const initialLastActivity = readLastActivity();
     if (!initialLastActivity) {
       writeLastActivity(Date.now());
+      scheduleExpiryCheck();
     } else if (isSessionIdleExpired(initialLastActivity, Date.now())) {
       expireSession();
     } else {
@@ -1281,10 +1285,12 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const onStorage = (event: StorageEvent) => {
       if (event.key !== storageKey || event.newValue === null) return;
       const sharedActivity = Number(event.newValue);
-      if (Number.isFinite(sharedActivity) && sharedActivity > 0) {
-        memoryLastActivity = sharedActivity;
-        scheduleExpiryCheck();
+      if (!Number.isFinite(sharedActivity) || sharedActivity <= 0) {
+        expireSession();
+        return;
       }
+      memoryLastActivity = sharedActivity;
+      scheduleExpiryCheck();
     };
     const onVisibility = () => {
       if (document.visibilityState === "visible") checkOnReturn();
