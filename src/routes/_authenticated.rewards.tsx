@@ -33,9 +33,9 @@ type HistoryItem = {
 type RewardsData = { campaigns: Campaign[]; history: HistoryItem[] };
 
 const CAMPAIGNS = [
-  { key: "starter", label: "Starter", description: "Starter plan referrals", accent: "from-sky-500/15 to-sky-500/5" },
-  { key: "growth", label: "Growth", description: "Growth plan referrals", accent: "from-violet-500/15 to-violet-500/5" },
-  { key: "pro", label: "Pro", description: "Pro plan referrals", accent: "from-primary/20 to-primary/5" },
+  { key: "starter", label: "Starter", description: "Starter plan referrals", row: "border-sky-500/25 bg-sky-500/[0.04] hover:border-sky-500/45", icon: "bg-sky-500/10 text-sky-500", badge: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300", progress: "bg-sky-500" },
+  { key: "growth", label: "Growth", description: "Growth plan referrals", row: "border-violet-500/25 bg-violet-500/[0.04] hover:border-violet-500/45", icon: "bg-violet-500/10 text-violet-500", badge: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-300", progress: "bg-violet-500" },
+  { key: "pro", label: "Pro", description: "Pro plan referrals", row: "border-amber-500/25 bg-amber-500/[0.045] hover:border-amber-500/45", icon: "bg-amber-500/10 text-amber-500", badge: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300", progress: "bg-amber-500" },
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/rewards")({
@@ -135,15 +135,15 @@ function RewardsPage() {
                   const percent = Math.min(100, Math.round((campaign.progress / milestone.target) * 100));
                   const claimKey = `${campaign.plan_key}-${milestone.target}`;
                   return (
-                    <article key={claimKey} className="rounded-xl border border-border/80 bg-card px-3 py-3 transition hover:border-primary/40 sm:px-4">
+                    <article key={claimKey} className={`rounded-xl border px-3 py-3 transition sm:px-4 ${plan?.row ?? "border-border/80 bg-card hover:border-primary/40"}`}>
                       <div className="flex items-center gap-3">
-                        <div className={`flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary`}>{milestone.claimed ? <CheckCircle2 className="size-5" /> : <Gift className="size-5" />}</div>
+                        <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${plan?.icon ?? "bg-primary/10 text-primary"}`}>{milestone.claimed ? <CheckCircle2 className="size-5" /> : <Gift className="size-5" />}</div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{milestone.target} direct referrals</p><Badge variant="outline" className="px-2 py-0 text-[10px]">{plan?.label ?? campaign.plan_key} task</Badge></div>
+                          <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{milestone.target} direct referrals</p><Badge variant="outline" className={`px-2 py-0 text-[10px] ${plan?.badge ?? ""}`}>{plan?.label ?? campaign.plan_key} task</Badge></div>
                           <p className="mt-0.5 text-xs text-muted-foreground">One-time campaign bonus · Progress {Math.min(campaign.progress, milestone.target)} / {milestone.target}</p>
-                          <div className="mt-2 h-1.5 max-w-64 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} /></div>
+                          <div className="mt-2 h-1.5 max-w-64 overflow-hidden rounded-full bg-muted"><div className={`h-full rounded-full transition-all ${plan?.progress ?? "bg-primary"}`} style={{ width: `${percent}%` }} /></div>
                         </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1.5"><p className="num text-sm font-bold sm:text-base">{formatMoney(milestone.reward_amount_pkr, "PKR")}</p>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5"><p className={`num text-sm font-bold sm:text-base ${plan?.icon?.split(" ").pop() ?? "text-foreground"}`}>{formatMoney(milestone.reward_amount_pkr, "PKR")}</p>
                           {milestone.claimed ? <Badge className="border-emerald-500/20 bg-emerald-500/10 px-2 py-0 text-emerald-700">Claimed</Badge> : milestone.claimable ? <Button size="sm" className="h-8 px-3" disabled={claiming !== null || !campaign.is_active} onClick={() => void claim(campaign.plan_key, milestone.target)}>{claiming === claimKey ? "Claiming…" : "Claim"}</Button> : <Badge variant="outline" className="px-2 py-0 text-[10px]">{campaign.is_active ? "Keep going" : "Paused"}</Badge>}
                         </div>
                       </div>
