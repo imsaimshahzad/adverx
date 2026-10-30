@@ -867,42 +867,7 @@ function Dashboard() {
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
-  const [continuity, setContinuity] = useState<{
-    reserve_status?: "normal" | "medium" | "low" | "exhausted" | "no_plan";
-    earning_paused?: boolean;
-    grace_days_remaining?: number | null;
-  } | null>(null);
-  const reserveRemaining = Math.max(0, Number(plan?.remainingRewardBudget ?? 0));
-  const reserveBase = Math.max(0, Number(plan?.rewardBudget ?? 0));
-  const reservePercent = reserveBase > 0 ? (reserveRemaining / reserveBase) * 100 : null;
-  const computedReserveStatus = !plan
-    ? "normal"
-    : reserveRemaining <= 0
-      ? "exhausted"
-      : reservePercent === null
-        ? "normal"
-        : reservePercent < 20
-          ? "low"
-          : reservePercent <= 50
-            ? "medium"
-            : "normal";
-  const reserveStatus = continuity?.reserve_status ?? computedReserveStatus;
-  const earningPaused = Boolean(continuity?.earning_paused);
   const referralTip = getDailyReferralTip(state.user?.id ?? "guest");
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!state.user?.id) {
-      setContinuity(null);
-      return;
-    }
-    void (async () => {
-      const { data, error } = await (supabase as any).rpc("get_my_earning_continuity");
-      if (!cancelled && !error && data) setContinuity(data);
-      if (error) console.error("[AdverX] earning continuity status unavailable:", error);
-    })();
-    return () => { cancelled = true; };
-  }, [state.user?.id, plan?.id, plan?.remainingRewardBudget]);
 
   useEffect(() => {
     let cancelled = false;
@@ -986,48 +951,17 @@ function Dashboard() {
         <div className={`morphic-detail ${expanded ? "is-visible" : ""}`} aria-hidden={!expanded}><div><p className="morphic-label">Momentum</p><p className="text-sm font-semibold">{activityLevel} · {activityScore}% active</p></div><div><p className="morphic-label">Next focus</p><p className="text-sm font-semibold">{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1 ? "" : "s"} remaining</p></div></div>
       </section>
 
-      <section className={`mt-3 flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-        reserveStatus === "low" || reserveStatus === "exhausted"
-          ? "border-amber-500/30 bg-amber-500/[0.07]"
-          : reserveStatus === "medium"
-            ? "border-primary/25 bg-primary/[0.06]"
-            : "border-border/70 bg-card/70"
-      }`}>
+      <section className="mt-3 flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <span className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ${
-            reserveStatus === "low" || reserveStatus === "exhausted"
-              ? "bg-amber-500/15 text-amber-600"
-              : "bg-primary/10 text-primary"
-          }`}>
+          <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <UserPlus className="size-4" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold">
-              {reserveStatus === "exhausted"
-                ? "Your ad reserve is exhausted"
-                : reserveStatus === "low"
-                  ? "Keep your earning journey active"
-                  : reserveStatus === "medium"
-                    ? "Keep growing your AdverX network"
-                    : "Grow your AdverX network"}
-            </p>
-            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-              {earningPaused
-                ? "Your ad rewards are paused because the earning reserve is exhausted. Refer an eligible new user; ad rewards can resume automatically after the referral reserve credit is recorded."
-                : reserveStatus === "exhausted"
-                  ? `Your reserve is empty. Existing accounts have ${continuity?.grace_days_remaining ?? 30} transition days remaining. An eligible referral reserve credit can replenish it.`
-                  : reserveStatus === "low"
-                    ? "Invite eligible new users through your referral link to support your earning continuity."
-                    : reserveStatus === "medium"
-                      ? "Your network helps support earning continuity. Invite someone new today."
-                      : referralTip}
-            </p>
-            <p className="mt-1 text-[11px] leading-4 text-muted-foreground/80">
-              Ad rewards depend on available earning reserves. If your reserve is fully used, ad rewards may pause; eligible referral reserve credits can restore them.
-            </p>
+            <p className="text-sm font-semibold">Grow your AdverX network</p>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{referralTip}</p>
           </div>
         </div>
-        <Button asChild size="sm" variant={reserveStatus === "low" || reserveStatus === "exhausted" ? "default" : "outline"} className="shrink-0">
+        <Button asChild size="sm" variant="outline" className="shrink-0">
           <Link to="/network">Refer a Friend <ArrowRight className="size-4" /></Link>
         </Button>
       </section>
