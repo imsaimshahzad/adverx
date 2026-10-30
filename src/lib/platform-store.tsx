@@ -1,5 +1,6 @@
 import { ensureSupabaseSessionReady, isImpersonating, supabase } from "@/integrations/supabase/client";
 import { getAdminProfitSummary, type AdminProfitSummary } from "@/lib/admin-service";
+import { requestCoalescedRun } from "@/lib/refresh-coordinator";
 import { toast } from "sonner";
 import { signupSchema, profileSchema, depositSchema, withdrawalSchema, adIdSchema, sessionIdSchema } from "@/lib/input-validation";
 import {
@@ -989,44 +990,32 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         // financial data after the action that requested this refresh.
         ++refreshVersion.current;
 
-        if (!forceRefreshPromiseRef.current) {
-          const queuedRun = (async () => {
-            while (forceRefreshPendingRef.current) {
-              forceRefreshPendingRef.current = false;
-              const requestId = forceRefreshRequestRef.current;
-              const requestedUser = forceRefreshUserRef.current;
+        const queuedRun = requestCoalescedRun(
+          forceRefreshPendingRef,
+          forceRefreshPromiseRef,
+          async () => {
+            const requestId = forceRefreshRequestRef.current;
+            const requestedUser = forceRefreshUserRef.current;
 
-              while (refreshTasksRef.current.size > 0) {
-                await Promise.all([...refreshTasksRef.current]);
-              }
-
-              // Any force request received while waiting supersedes this run.
-              if (
-                forceRefreshPendingRef.current ||
-                requestId !== forceRefreshRequestRef.current
-              ) continue;
-
-              const { data } = await supabase.auth.getUser();
-              // A newer request or sign-out may have arrived during getUser().
-              if (
-                forceRefreshPendingRef.current ||
-                requestId !== forceRefreshRequestRef.current
-              ) continue;
-              if (!requestedUser || !data.user || data.user.id !== requestedUser.id) {
-                break;
-              }
-
-              // This is the one queued fresh snapshot. If another force request
-              // arrives during it, the loop performs exactly one coalesced follow-up.
-              await refresh(data.user, { force: true, queued: true });
+            while (refreshTasksRef.current.size > 0) {
+              await Promise.all([...refreshTasksRef.current]);
             }
-          })().finally(() => {
-            forceRefreshPromiseRef.current = null;
-          });
-          forceRefreshPromiseRef.current = queuedRun;
-        }
 
-        await forceRefreshPromiseRef.current;
+            // A newer force request or sign-out supersedes this queued attempt.
+            if (requestId !== forceRefreshRequestRef.current) return;
+
+            const { data } = await supabase.auth.getUser();
+            if (requestId !== forceRefreshRequestRef.current) return;
+            if (!requestedUser || !data.user || data.user.id !== requestedUser.id) return;
+
+            // One fresh snapshot serves all force requests coalesced before it.
+            // A force request during this snapshot sets pending=true and schedules
+            // exactly one follow-up after this task completes.
+            await refresh(data.user, { force: true, queued: true });
+          },
+        );
+
+        await queuedRun;
         return;
       }
 
