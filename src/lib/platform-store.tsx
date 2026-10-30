@@ -905,6 +905,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const refreshTasksRef = useRef(new Set<Promise<void>>());
   const inFlightRefreshRef = useRef<{ userId: string; version: number; promise: Promise<void> } | null>(null);
   const forceRefreshRequestRef = useRef(0);
+  const forceRefreshPendingRef = useRef(false);
+  const forceRefreshPromiseRef = useRef<Promise<void> | null>(null);
+  const forceRefreshUserRef = useRef<{ id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null>(null);
   const lastAuthUserIdRef = useRef<string | null>(null);
   const authEventVersionRef = useRef(0);
   const lastLiveRefreshRef = useRef(0);
@@ -922,7 +925,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refresh: (
     user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null,
-    options?: { background?: boolean; force?: boolean },
+    options?: { background?: boolean; force?: boolean; queued?: boolean },
   ) => Promise<void> = useCallback(
     async (
       user: {
@@ -930,15 +933,22 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         email?: string | null;
         user_metadata?: Record<string, unknown>;
       } | null,
-      options: { background?: boolean; force?: boolean } = {},
+      options: { background?: boolean; force?: boolean; queued?: boolean } = {},
     ) => {
-      if (options.background && refreshTasksRef.current.size > 0) return;
+      if (
+        options.background &&
+        (refreshTasksRef.current.size > 0 ||
+          forceRefreshPendingRef.current ||
+          forceRefreshPromiseRef.current !== null)
+      ) return;
 
       if (!user) {
         // Sign-out must clear account data immediately, even when the remembered
         // auth user ID is already null. The version bump blocks every older response.
         ++refreshVersion.current;
         ++forceRefreshRequestRef.current;
+        forceRefreshPendingRef.current = false;
+        forceRefreshUserRef.current = null;
         inFlightRefreshRef.current = null;
         setDataError(null);
         setAccountLoading(false);
@@ -961,32 +971,63 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Required financial refreshes are never dropped. If a snapshot is already
-      // running, wait for it and then run one fresh follow-up for the latest request.
-      if (options.force && refreshTasksRef.current.size > 0) {
-        const requestId = ++forceRefreshRequestRef.current;
+      // Required refreshes are coalesced. While the queue is pending/running,
+      // background polling is blocked and every additional force request updates
+      // the user/request version rather than creating another waiter.
+      if (
+        options.force &&
+        !options.queued &&
+        (refreshTasksRef.current.size > 0 ||
+          forceRefreshPendingRef.current ||
+          forceRefreshPromiseRef.current !== null)
+      ) {
+        ++forceRefreshRequestRef.current;
+        forceRefreshPendingRef.current = true;
+        forceRefreshUserRef.current = user;
 
-        // Invalidate the in-flight snapshot immediately. It may finish loading, but
-        // its version guard must prevent it from committing pre-action financial data.
+        // Invalidate any older snapshot immediately so it cannot publish stale
+        // financial data after the action that requested this refresh.
         ++refreshVersion.current;
 
-        while (refreshTasksRef.current.size > 0) {
-          await Promise.all([...refreshTasksRef.current]);
-          if (requestId !== forceRefreshRequestRef.current) return;
+        if (!forceRefreshPromiseRef.current) {
+          const queuedRun = (async () => {
+            while (forceRefreshPendingRef.current) {
+              forceRefreshPendingRef.current = false;
+              const requestId = forceRefreshRequestRef.current;
+              const requestedUser = forceRefreshUserRef.current;
+
+              while (refreshTasksRef.current.size > 0) {
+                await Promise.all([...refreshTasksRef.current]);
+              }
+
+              // Any force request received while waiting supersedes this run.
+              if (
+                forceRefreshPendingRef.current ||
+                requestId !== forceRefreshRequestRef.current
+              ) continue;
+
+              const { data } = await supabase.auth.getUser();
+              // A newer request or sign-out may have arrived during getUser().
+              if (
+                forceRefreshPendingRef.current ||
+                requestId !== forceRefreshRequestRef.current
+              ) continue;
+              if (!requestedUser || !data.user || data.user.id !== requestedUser.id) {
+                break;
+              }
+
+              // This is the one queued fresh snapshot. If another force request
+              // arrives during it, the loop performs exactly one coalesced follow-up.
+              await refresh(data.user, { force: true, queued: true });
+            }
+          })().finally(() => {
+            forceRefreshPromiseRef.current = null;
+          });
+          forceRefreshPromiseRef.current = queuedRun;
         }
-        if (requestId !== forceRefreshRequestRef.current) return;
 
-        const { data } = await supabase.auth.getUser();
-        // A newer financial request or session transition may have happened while
-        // checking auth; never let this older queued request take precedence.
-        if (requestId !== forceRefreshRequestRef.current) return;
-        if (!data.user || data.user.id !== user.id) return;
-
-        // If another refresh started during getUser(), wait for it too. Pass the
-        // verified current user, not the stale user object captured by the caller.
-        // This request was queued because an earlier required refresh could not
-        // safely commit. Keep it required even if the task set is currently empty.
-        return refresh(data.user, { force: true });
+        await forceRefreshPromiseRef.current;
+        return;
       }
 
       const version = ++refreshVersion.current;
@@ -1071,11 +1112,21 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     [],
   );
   const refreshNow = useCallback(async (background = false) => {
-    if (background && refreshTasksRef.current.size > 0) return;
+    if (
+      background &&
+      (refreshTasksRef.current.size > 0 ||
+        forceRefreshPendingRef.current ||
+        forceRefreshPromiseRef.current !== null)
+    ) return;
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) return;
-    if (background && refreshTasksRef.current.size > 0) return;
+    if (
+      background &&
+      (refreshTasksRef.current.size > 0 ||
+        forceRefreshPendingRef.current ||
+        forceRefreshPromiseRef.current !== null)
+    ) return;
     await refresh(user, background ? { background: true } : { force: true });
     // Authenticated account snapshots already refresh the shared catalog tables.
     // Avoid issuing a second set of identical catalog requests on focus/poll refresh.
@@ -1167,7 +1218,11 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.user) return;
     const refreshIfDue = (includeCatalog: boolean) => {
-      if (refreshTasksRef.current.size > 0) return;
+      if (
+        refreshTasksRef.current.size > 0 ||
+        forceRefreshPendingRef.current ||
+        forceRefreshPromiseRef.current !== null
+      ) return;
       const now = Date.now();
       if (now - lastLiveRefreshRef.current < 10_000) return;
       lastLiveRefreshRef.current = now;
