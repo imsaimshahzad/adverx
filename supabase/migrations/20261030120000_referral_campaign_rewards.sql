@@ -98,8 +98,6 @@ begin
       order by up.purchased_at desc, up.created_at desc
       limit 1
     ) latest on true
-    where latest.active_plan_key=s.plan_key
-      and latest.purchased_at >= greatest(v_month_start,c.cycle_started_at)
     group by s.plan_key,s.is_active,c.cycle_started_at
   )
   select coalesce(jsonb_agg(jsonb_build_object(
