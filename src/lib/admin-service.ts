@@ -11,6 +11,7 @@ export type AdminModule =
   | "advertisers"
   | "revenue"
   | "reward-pool"
+  | "rewards"
   | "reserves"
   | "deposits"
   | "deposit-methods"
