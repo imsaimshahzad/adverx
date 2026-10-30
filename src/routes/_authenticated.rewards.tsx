@@ -33,8 +33,8 @@ type HistoryItem = {
 type RewardsData = { campaigns: Campaign[]; history: HistoryItem[] };
 
 const CAMPAIGNS = [
-  { key: "starter", label: "Starter", description: "Starter plan referrals", row: "border-blue-500/30 bg-blue-500/[0.045] hover:border-blue-500/55", icon: "bg-blue-500/12 text-blue-600 dark:text-blue-400", badge: "border-blue-500/35 bg-blue-500/10 text-blue-700 dark:text-blue-300", progress: "bg-blue-500" },
-  { key: "growth", label: "Growth", description: "Growth plan referrals", row: "border-fuchsia-500/30 bg-fuchsia-500/[0.045] hover:border-fuchsia-500/55", icon: "bg-fuchsia-500/12 text-fuchsia-600 dark:text-fuchsia-400", badge: "border-fuchsia-500/35 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300", progress: "bg-fuchsia-500" },
+  { key: "starter", label: "Starter", description: "Starter plan referrals", row: "border-l-4 border-l-cyan-500 border-y border-r border-cyan-500/40 bg-cyan-500/[0.10] hover:bg-cyan-500/[0.14]", icon: "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300", badge: "border-cyan-500/50 bg-cyan-500/20 text-cyan-800 dark:text-cyan-200", progress: "bg-cyan-500" },
+  { key: "growth", label: "Growth", description: "Growth plan referrals", row: "border-l-4 border-l-violet-500 border-y border-r border-violet-500/40 bg-violet-500/[0.10] hover:bg-violet-500/[0.14]", icon: "bg-violet-500/20 text-violet-700 dark:text-violet-300", badge: "border-violet-500/50 bg-violet-500/20 text-violet-800 dark:text-violet-200", progress: "bg-violet-500" },
   { key: "pro", label: "Pro", description: "Pro plan referrals", row: "border-emerald-500/30 bg-emerald-500/[0.045] hover:border-emerald-500/55", icon: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400", badge: "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", progress: "bg-emerald-500" },
 ] as const;
 
