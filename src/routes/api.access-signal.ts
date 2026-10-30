@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/access-signal")({
           const userAgent = request.headers.get("user-agent")?.slice(0, 500) ?? null;
           const { error: insertError } = await (supabaseAdmin as any)
             .from("user_access_signals")
-            .insert({
+            .upsert({
               user_id: data.user.id,
               ip_address: ipAddress,
               country: headerValue(request, "x-vercel-ip-country"),
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/access-signal")({
               city: headerValue(request, "x-vercel-ip-city"),
               user_agent: userAgent,
               source: "auth",
-            });
+            }, { onConflict: "user_id" });
 
           if (insertError) {
             console.error("[AdverX] access signal insert failed", insertError.message);
