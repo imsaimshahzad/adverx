@@ -31,6 +31,9 @@ jobs:
       - name: Test shared API helpers
         run: npm run test:api
 
+      - name: Test refresh queue race
+        run: npm run test:refresh
+
       - name: Run ESLint
         run: "npm run lint -- --rule 'prettier/prettier: off'"
 

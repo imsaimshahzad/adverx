@@ -1,5 +1,6 @@
 import { ensureSupabaseSessionReady, isImpersonating, supabase } from "@/integrations/supabase/client";
 import { getAdminProfitSummary, type AdminProfitSummary } from "@/lib/admin-service";
+import { requestCoalescedRun } from "@/lib/refresh-coordinator";
 import { toast } from "sonner";
 import { signupSchema, profileSchema, depositSchema, withdrawalSchema, adIdSchema, sessionIdSchema } from "@/lib/input-validation";
 import {
@@ -903,7 +904,13 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   });
   const refreshVersion = useRef(0);
   const refreshTasksRef = useRef(new Set<Promise<void>>());
+  const inFlightRefreshRef = useRef<{ userId: string; version: number; promise: Promise<void> } | null>(null);
   const forceRefreshRequestRef = useRef(0);
+  const forceRefreshPendingRef = useRef(false);
+  const forceRefreshPromiseRef = useRef<Promise<void> | null>(null);
+  const forceRefreshUserRef = useRef<{ id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null>(null);
+  const lastAuthUserIdRef = useRef<string | null>(null);
+  const authEventVersionRef = useRef(0);
   const lastLiveRefreshRef = useRef(0);
 
   useEffect(() => {
@@ -919,7 +926,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refresh: (
     user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null,
-    options?: { background?: boolean; force?: boolean },
+    options?: { background?: boolean; force?: boolean; queued?: boolean },
   ) => Promise<void> = useCallback(
     async (
       user: {
@@ -927,13 +934,23 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         email?: string | null;
         user_metadata?: Record<string, unknown>;
       } | null,
-      options: { background?: boolean; force?: boolean } = {},
+      options: { background?: boolean; force?: boolean; queued?: boolean } = {},
     ) => {
-      if (options.background && refreshTasksRef.current.size > 0) return;
+      if (
+        options.background &&
+        (refreshTasksRef.current.size > 0 ||
+          forceRefreshPendingRef.current ||
+          forceRefreshPromiseRef.current !== null)
+      ) return;
 
       if (!user) {
+        // Sign-out must clear account data immediately, even when the remembered
+        // auth user ID is already null. The version bump blocks every older response.
         ++refreshVersion.current;
         ++forceRefreshRequestRef.current;
+        forceRefreshPendingRef.current = false;
+        forceRefreshUserRef.current = null;
+        inFlightRefreshRef.current = null;
         setDataError(null);
         setAccountLoading(false);
         loadedAccountUserRef.current = null;
@@ -942,32 +959,64 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Required financial refreshes are never dropped. If a snapshot is already
-      // running, wait for it and then run one fresh follow-up for the latest request.
-      if (options.force && refreshTasksRef.current.size > 0) {
-        const requestId = ++forceRefreshRequestRef.current;
+      // A boot refresh and an auth-event refresh for the same user share one
+      // snapshot. The version check prevents sharing a request invalidated by a
+      // user switch or a queued forced refresh.
+      const inFlight = inFlightRefreshRef.current;
+      if (
+        !options.force &&
+        inFlight?.userId === user.id &&
+        inFlight.version === refreshVersion.current
+      ) {
+        await inFlight.promise;
+        return;
+      }
 
-        // Invalidate the in-flight snapshot immediately. It may finish loading, but
-        // its version guard must prevent it from committing pre-action financial data.
+      // Required refreshes are coalesced. While the queue is pending/running,
+      // background polling is blocked and every additional force request updates
+      // the user/request version rather than creating another waiter.
+      if (
+        options.force &&
+        !options.queued &&
+        (refreshTasksRef.current.size > 0 ||
+          forceRefreshPendingRef.current ||
+          forceRefreshPromiseRef.current !== null)
+      ) {
+        ++forceRefreshRequestRef.current;
+        forceRefreshPendingRef.current = true;
+        forceRefreshUserRef.current = user;
+
+        // Invalidate any older snapshot immediately so it cannot publish stale
+        // financial data after the action that requested this refresh.
         ++refreshVersion.current;
 
-        while (refreshTasksRef.current.size > 0) {
-          await Promise.all([...refreshTasksRef.current]);
-          if (requestId !== forceRefreshRequestRef.current) return;
-        }
-        if (requestId !== forceRefreshRequestRef.current) return;
+        const queuedRun = requestCoalescedRun(
+          forceRefreshPendingRef,
+          forceRefreshPromiseRef,
+          async () => {
+            const requestId = forceRefreshRequestRef.current;
+            const requestedUser = forceRefreshUserRef.current;
 
-        const { data } = await supabase.auth.getUser();
-        // A newer financial request or session transition may have happened while
-        // checking auth; never let this older queued request take precedence.
-        if (requestId !== forceRefreshRequestRef.current) return;
-        if (!data.user || data.user.id !== user.id) return;
+            while (refreshTasksRef.current.size > 0) {
+              await Promise.all([...refreshTasksRef.current]);
+            }
 
-        // If another refresh started during getUser(), wait for it too. Pass the
-        // verified current user, not the stale user object captured by the caller.
-        // This request was queued because an earlier required refresh could not
-        // safely commit. Keep it required even if the task set is currently empty.
-        return refresh(data.user, { force: true });
+            // A newer force request or sign-out supersedes this queued attempt.
+            if (requestId !== forceRefreshRequestRef.current) return;
+
+            const { data } = await supabase.auth.getUser();
+            if (requestId !== forceRefreshRequestRef.current) return;
+            if (!requestedUser || !data.user || data.user.id !== requestedUser.id) return;
+
+            // One fresh snapshot serves all force requests coalesced before it.
+            // A force request during this snapshot sets pending=true and schedules
+            // exactly one follow-up after this task completes.
+            await refresh(data.user, { force: true, queued: true });
+          },
+        );
+
+        await queuedRun;
+        return;
       }
 
       const version = ++refreshVersion.current;
@@ -1039,20 +1088,34 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         }
       })();
       refreshTasksRef.current.add(task);
+      inFlightRefreshRef.current = { userId: user.id, version, promise: task };
       try {
         await task;
       } finally {
         refreshTasksRef.current.delete(task);
+        if (inFlightRefreshRef.current?.promise === task) {
+          inFlightRefreshRef.current = null;
+        }
       }
     },
     [],
   );
   const refreshNow = useCallback(async (background = false) => {
-    if (background && refreshTasksRef.current.size > 0) return;
+    if (
+      background &&
+      (refreshTasksRef.current.size > 0 ||
+        forceRefreshPendingRef.current ||
+        forceRefreshPromiseRef.current !== null)
+    ) return;
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) return;
-    if (background && refreshTasksRef.current.size > 0) return;
+    if (
+      background &&
+      (refreshTasksRef.current.size > 0 ||
+        forceRefreshPendingRef.current ||
+        forceRefreshPromiseRef.current !== null)
+    ) return;
     await refresh(user, background ? { background: true } : { force: true });
     // Authenticated account snapshots already refresh the shared catalog tables.
     // Avoid issuing a second set of identical catalog requests on focus/poll refresh.
@@ -1067,8 +1130,15 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   try {
     // Authenticated snapshots already load and publish the shared catalog tables.
     // Only anonymous visitors need the standalone public catalog request.
+    const bootAuthEventVersion = authEventVersionRef.current;
     const { data } = await ensureSupabaseSessionReady();
+    // An auth event that arrived during boot owns the newer session state.
+    if (bootAuthEventVersion !== authEventVersionRef.current) {
+      if (mounted) setCatalogReady(true);
+      return;
+    }
     const sessionUser = data.session?.user ?? null;
+    lastAuthUserIdRef.current = sessionUser?.id ?? null;
     if (sessionUser) {
       if (mounted) await refresh(sessionUser);
     } else {
@@ -1086,12 +1156,28 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       // Boot handles INITIAL_SESSION. TOKEN_REFRESHED changes credentials, not
       // account data, so it must not trigger another full database snapshot.
-      if (
-        mounted &&
-        (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED")
-      ) {
-        void refresh(session?.user ?? null);
+      if (!mounted) return;
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      ++authEventVersionRef.current;
+
+      // Clearing local account state does not call Supabase, so do it immediately
+      // inside SIGNED_OUT—even if lastAuthUserIdRef was already null.
+      if (event === "SIGNED_OUT") {
+        lastAuthUserIdRef.current = null;
+        void refresh(null);
+        return;
       }
+
+      // Defer Supabase work until after its auth callback lock has been released.
+      // This also lets SIGNED_IN race safely with boot: both paths share one snapshot.
+      setTimeout(() => {
+        if (!mounted) return;
+        const nextUserId = session?.user?.id ?? null;
+        if (event === "SIGNED_IN" && nextUserId === lastAuthUserIdRef.current) return;
+
+        lastAuthUserIdRef.current = nextUserId;
+        if (session?.user) void refresh(session.user);
+      }, 0);
     });
     return () => {
       mounted = false;
@@ -1121,7 +1207,11 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.user) return;
     const refreshIfDue = (includeCatalog: boolean) => {
-      if (refreshTasksRef.current.size > 0) return;
+      if (
+        refreshTasksRef.current.size > 0 ||
+        forceRefreshPendingRef.current ||
+        forceRefreshPromiseRef.current !== null
+      ) return;
       const now = Date.now();
       if (now - lastLiveRefreshRef.current < 10_000) return;
       lastLiveRefreshRef.current = now;
