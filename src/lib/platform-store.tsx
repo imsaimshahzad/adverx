@@ -1166,7 +1166,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT") {
         const signedOutUserId = lastAuthUserIdRef.current;
         if (signedOutUserId) {
-          try { window.localStorage.removeItem(sessionActivityStorageKey(signedOutUserId, isImpersonating())); } catch {}
+          try { window.localStorage.removeItem(sessionActivityStorageKey(signedOutUserId, isImpersonating())); } catch { /* localStorage may be unavailable */ }
         }
         lastAuthUserIdRef.current = null;
         void refresh(null);
