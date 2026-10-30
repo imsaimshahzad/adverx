@@ -166,7 +166,7 @@ export function AppShell({
   return (
     <div className="dashboard-shell flex min-h-screen w-full">
       <div className="aurora" aria-hidden="true"><i /><i /><i /></div>
-      <aside className="app-sidebar hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">{navigation}</aside>
+      <aside className="app-sidebar hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar">{navigation}</aside>
       {mobileOpen ? <button aria-label="Close navigation" className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
       <aside className={`app-mobile-sidebar fixed inset-y-0 left-0 z-40 w-72 bg-sidebar shadow-xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>{navigation}<button className="absolute right-4 top-6 rounded-md p-1 text-muted-foreground" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button></aside>
       <div className="min-w-0 flex-1">
