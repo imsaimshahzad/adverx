@@ -32,8 +32,7 @@ test("coalesces force requests during an active refresh into one follow-up", asy
   assert.equal(runs, 1);
 
   firstRun.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
   assert.equal(runs, 2, "all queued requests produce one follow-up, not one run each");
 
   secondRun.resolve();
