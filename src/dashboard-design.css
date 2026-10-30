@@ -146,3 +146,79 @@ a { text-underline-offset:3px; }
   .dashboard-shell main .glass-panel,
   .dashboard-shell main [data-slot="card"] { transition: none; }
 }
+
+
+/* Visible but restrained member dashboard color accents. */
+.dashboard-shell main .surface,
+.dashboard-shell main [data-slot="card"] {
+  position: relative;
+  overflow: hidden;
+}
+.dashboard-shell main .surface::before,
+.dashboard-shell main [data-slot="card"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #0b8f88, #48a9bd 58%, #8a7bd0);
+  opacity: .72;
+  pointer-events: none;
+}
+.dashboard-shell main .morphic-stats > .surface:nth-child(1),
+.dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(1) {
+  background: linear-gradient(145deg, #ffffff 0%, #edf8f5 100%);
+  border-color: #c5e5dd;
+}
+.dashboard-shell main .morphic-stats > .surface:nth-child(2),
+.dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(2) {
+  background: linear-gradient(145deg, #ffffff 0%, #eef5fc 100%);
+  border-color: #cbdcf0;
+}
+.dashboard-shell main .morphic-stats > .surface:nth-child(3),
+.dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(3) {
+  background: linear-gradient(145deg, #ffffff 0%, #f3f0fb 100%);
+  border-color: #ddd3f2;
+}
+.dashboard-shell main .morphic-stats > .surface:nth-child(4),
+.dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(4) {
+  background: linear-gradient(145deg, #ffffff 0%, #fff5e9 100%);
+  border-color: #f0dcc0;
+}
+.dashboard-shell main :is(.text-primary,.text-\[\#087f7b\]) {
+  color: #087f7b;
+}
+.dashboard-shell .app-nav-item[aria-current="page"] {
+  background: linear-gradient(100deg, #ccece5 0%, #e4f3f7 100%);
+  color: #075e5b;
+  box-shadow: inset 4px 0 #087f7b, 0 4px 14px rgba(8,127,123,.1);
+}
+.dashboard-shell .morphic-hero {
+  background: linear-gradient(112deg, #064e4b 0%, #087f7b 48%, #287d91 100%);
+}
+.dark .dashboard-shell main .surface::before,
+.dark .dashboard-shell main [data-slot="card"]::before { opacity: .9; }
+.dark .dashboard-shell main .morphic-stats > .surface:nth-child(1),
+.dark .dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(1) {
+  background: linear-gradient(145deg, #142b2b, #132321);
+  border-color: #245c55;
+}
+.dark .dashboard-shell main .morphic-stats > .surface:nth-child(2),
+.dark .dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(2) {
+  background: linear-gradient(145deg, #17283a, #142235);
+  border-color: #2e4d70;
+}
+.dark .dashboard-shell main .morphic-stats > .surface:nth-child(3),
+.dark .dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(3) {
+  background: linear-gradient(145deg, #27223b, #1d1a30);
+  border-color: #4b3c70;
+}
+.dark .dashboard-shell main .morphic-stats > .surface:nth-child(4),
+.dark .dashboard-shell main .morphic-stats > [data-slot="card"]:nth-child(4) {
+  background: linear-gradient(145deg, #302719, #211d18);
+  border-color: #70532c;
+}
+.dark .dashboard-shell .app-nav-item[aria-current="page"] {
+  background: linear-gradient(100deg, #164e49, #173447);
+  color: #b8f3e6;
+  box-shadow: inset 4px 0 #2dd4bf, 0 4px 14px rgba(20,184,166,.12);
+}
