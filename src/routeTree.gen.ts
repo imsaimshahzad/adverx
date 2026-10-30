@@ -27,6 +27,7 @@ import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated.notifications'
 import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated.plans'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
+import { Route as AuthenticatedRewardsRouteImport } from './routes/_authenticated.rewards'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated.support'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated.withdraw'
 import { Route as AdminSplatRouteImport } from './routes/admin.$'
@@ -132,6 +133,11 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRewardsRoute = AuthenticatedRewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/rewards': typeof AuthenticatedRewardsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/$': typeof AdminSplatRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/rewards': typeof AuthenticatedRewardsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/$': typeof AdminSplatRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/plans': typeof AuthenticatedPlansRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/rewards': typeof AuthenticatedRewardsRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/$': typeof AdminSplatRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/plans'
     | '/profile'
+    | '/rewards'
     | '/support'
     | '/withdraw'
     | '/admin/$'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/plans'
     | '/profile'
+    | '/rewards'
     | '/support'
     | '/withdraw'
     | '/admin/$'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/plans'
     | '/_authenticated/profile'
+    | '/_authenticated/rewards'
     | '/_authenticated/support'
     | '/_authenticated/withdraw'
     | '/admin/$'
@@ -561,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/rewards': {
+      id: '/_authenticated/rewards'
+      path: '/rewards'
+      fullPath: '/rewards'
+      preLoaderRoute: typeof AuthenticatedRewardsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/support': {
       id: '/_authenticated/support'
       path: '/support'
@@ -669,6 +688,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedRewardsRoute: typeof AuthenticatedRewardsRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedDepositPlanIdRoute: typeof AuthenticatedDepositPlanIdRoute
@@ -682,6 +702,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedRewardsRoute: AuthenticatedRewardsRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedDepositPlanIdRoute: AuthenticatedDepositPlanIdRoute,
