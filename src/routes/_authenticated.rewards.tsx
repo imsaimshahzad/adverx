@@ -33,9 +33,9 @@ type HistoryItem = {
 type RewardsData = { campaigns: Campaign[]; history: HistoryItem[] };
 
 const CAMPAIGNS = [
-  { key: "starter", label: "Starter", description: "Starter plan referrals", row: "border-sky-500/25 bg-sky-500/[0.04] hover:border-sky-500/45", icon: "bg-sky-500/10 text-sky-500", badge: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300", progress: "bg-sky-500" },
-  { key: "growth", label: "Growth", description: "Growth plan referrals", row: "border-violet-500/25 bg-violet-500/[0.04] hover:border-violet-500/45", icon: "bg-violet-500/10 text-violet-500", badge: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-300", progress: "bg-violet-500" },
-  { key: "pro", label: "Pro", description: "Pro plan referrals", row: "border-amber-500/25 bg-amber-500/[0.045] hover:border-amber-500/45", icon: "bg-amber-500/10 text-amber-500", badge: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300", progress: "bg-amber-500" },
+  { key: "starter", label: "Starter", description: "Starter plan referrals", row: "border-blue-500/30 bg-blue-500/[0.045] hover:border-blue-500/55", icon: "bg-blue-500/12 text-blue-600 dark:text-blue-400", badge: "border-blue-500/35 bg-blue-500/10 text-blue-700 dark:text-blue-300", progress: "bg-blue-500" },
+  { key: "growth", label: "Growth", description: "Growth plan referrals", row: "border-fuchsia-500/30 bg-fuchsia-500/[0.045] hover:border-fuchsia-500/55", icon: "bg-fuchsia-500/12 text-fuchsia-600 dark:text-fuchsia-400", badge: "border-fuchsia-500/35 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300", progress: "bg-fuchsia-500" },
+  { key: "pro", label: "Pro", description: "Pro plan referrals", row: "border-emerald-500/30 bg-emerald-500/[0.045] hover:border-emerald-500/55", icon: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400", badge: "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", progress: "bg-emerald-500" },
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/rewards")({
