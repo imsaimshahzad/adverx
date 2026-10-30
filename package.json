@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "test:api": "node --experimental-strip-types --test src/lib/api/http.server.test.ts",
     "test:refresh": "node --experimental-strip-types --test src/lib/refresh-coordinator.test.ts",
+    "test:inactivity": "node --experimental-strip-types --test src/lib/inactivity-session.test.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
