@@ -68,6 +68,8 @@ function WithdrawPage() {
   const [receiptRow, setReceiptRow] = useState<{ id: string; reference_code?: string | null; amount: number | null; status: string | null; created_at: string; method?: string | null; account?: string | null; fee?: number | null } | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const selectedMethod = WITHDRAWAL_METHODS.find((method) => method.id === methodId);
+  const formatWithdrawalMoney = (amount: unknown, currency = "PKR") =>
+    formatMoney(amount, currency);
 
   const loadWithdrawalHistory = useCallback(async () => {
     if (!state.user?.id) return;
@@ -163,14 +165,14 @@ function WithdrawPage() {
     context.fillText("PAID", 450, 245);
     context.font = "bold 54px Arial";
     context.fillStyle = "#16302e";
-    context.fillText(formatMoney(receipt.amount, "PKR"), 450, 315);
+    context.fillText(formatWithdrawalMoney(receipt.amount, "PKR"), 450, 315);
     const rows: Array<[string, string]> = [
       ["Receipt No.", receipt.receiptNo],
       ["Date", receipt.date],
       ["Account Holder", receipt.holder],
       ["Payout Method", receipt.method],
       ["Account Number", receipt.accountNumber],
-      ["Amount Sent", formatMoney(receipt.amount, "PKR")],
+      ["Amount Sent", formatWithdrawalMoney(receipt.amount, "PKR")],
     ];
     context.textAlign = "left";
     rows.forEach(([label, value], index) => {
@@ -205,7 +207,7 @@ function WithdrawPage() {
       <div className="mb-3 surface px-4 py-3 sm:px-5">
         <p className="text-sm font-medium">Withdrawable Balance</p>
         <div className="mt-1 flex min-h-7 items-center gap-2">
-          {ready ? <p className="num text-xl font-semibold">{formatMoney(availableBalance).replace(/^\\+/, "")}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
+          {ready ? <p className="num text-xl font-semibold">{formatWithdrawalMoney(availableBalance)}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
         </div>
       </div>
       <div className="glass-panel space-y-3 p-4 sm:p-5">
@@ -218,9 +220,9 @@ function WithdrawPage() {
             placeholder="Enter amount here"
           />
           <p className="text-xs text-muted-foreground">
-            No processing fee · You receive {formatMoney(value).replace(/^\\+/, "")}
+            No processing fee · You receive {formatWithdrawalMoney(value)}
           </p>
-          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatMoney(methodMin).replace(/^\\+/, "")} – {formatMoney(methodMax).replace(/^\\+/, "")}</p> : null}
+          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatWithdrawalMoney(methodMin)} – {formatWithdrawalMoney(methodMax)}</p> : null}
         </div>
 
         <div className="space-y-1.5">
@@ -252,18 +254,18 @@ function WithdrawPage() {
           onClick={async () => {
             if (submitting) return;
             if (selectedMethod && requestedPaise < methodMinPaise) {
-              toast.error(`Minimum withdrawal for ${selectedMethod.name} is ${formatMoney(methodMin)}.`);
+              toast.error(`Minimum withdrawal for ${selectedMethod.name} is ${formatWithdrawalMoney(methodMin)}.`);
               return;
             }
             if (selectedMethod && requestedPaise > methodMaxPaise) {
-              toast.error(`Maximum withdrawal for ${selectedMethod.name} is ${formatMoney(methodMax)}.`);
+              toast.error(`Maximum withdrawal for ${selectedMethod.name} is ${formatWithdrawalMoney(methodMax)}.`);
               return;
             }
             if (!amountSchema.safeParse(requestedPaise / 100).success) { toast.error("Enter a valid withdrawal amount."); return; }
             if (!selectedMethod || !uuidSchema.safeParse(selectedMethod.id).success) { toast.error("Choose a valid payout method."); return; }
             if (!supportTextSchema.safeParse(details.holder ?? "").success) { toast.error("Enter a valid account holder name."); return; }
             if (requestedPaise < minPaise) {
-              toast.error(`Minimum withdrawal is ${formatMoney(min)}.`);
+              toast.error(`Minimum withdrawal is ${formatWithdrawalMoney(min)}.`);
               return;
             }
             if (requestedPaise > availablePaise) {
@@ -341,7 +343,7 @@ function WithdrawPage() {
                     {isPaid ? <ArrowUpRight className="h-5 w-5" /> : isRejected ? <CircleX className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0">
-                    <p className="num whitespace-nowrap text-xs font-bold sm:text-[17px]">{formatMoney(item.amount, "PKR").replace(/^\+/, "")}</p>
+                    <p className="num whitespace-nowrap text-xs font-bold sm:text-[17px]">{formatWithdrawalMoney(item.amount, "PKR")}</p>
                     <p className="whitespace-nowrap text-[10px] text-muted-foreground sm:mt-1 sm:text-xs">{new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
                   </div>
                   </div>
@@ -385,7 +387,7 @@ function WithdrawPage() {
                 </div>
                 <div className="px-3 py-2.5 text-center sm:px-5 sm:py-3">
                   <div className="mx-auto grid h-7 w-7 place-items-center rounded-full bg-emerald-500/10 text-base font-bold text-emerald-600 sm:h-9 sm:w-9">✓</div>
-                  <p className="mt-1 text-lg font-bold sm:text-xl">{formatMoney(receipt.amount, "PKR")}</p>
+                  <p className="mt-1 text-lg font-bold sm:text-xl">{formatWithdrawalMoney(receipt.amount, "PKR")}</p>
                   <Badge className="mt-1 border-0 bg-emerald-500/10 px-2 py-0 text-xs text-emerald-700">Paid</Badge>
                 </div>
                 <div className="divide-y divide-border border-t border-dashed border-border px-3 sm:px-5">
@@ -395,7 +397,7 @@ function WithdrawPage() {
                     ["Account Holder", receipt.holder],
                     ["Payout Method", receipt.method],
                     ["Account Number", receipt.accountNumber],
-                    ["Amount Sent", formatMoney(receipt.amount, "PKR")],
+                    ["Amount Sent", formatWithdrawalMoney(receipt.amount, "PKR")],
                   ].map(([label, value]) => (
                     <div key={label} className="flex min-w-0 items-start justify-between gap-2 py-1.5 text-[11px] sm:gap-4 sm:py-2 sm:text-xs">
                       <span className="w-[38%] shrink-0 text-muted-foreground">{label}</span>
@@ -419,7 +421,7 @@ function WithdrawPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive"><CircleX className="h-5 w-5" /> Withdrawal rejected</DialogTitle>
             <DialogDescription>
-              {reasonRow ? `${formatMoney(reasonRow.amount, "PKR")} · ${reasonRow.reference_code || `WD-${reasonRow.id.replaceAll("-", "").slice(0, 10).toUpperCase()}`}` : ""}
+              {reasonRow ? `${formatWithdrawalMoney(reasonRow.amount, "PKR")} · ${reasonRow.reference_code || `WD-${reasonRow.id.replaceAll("-", "").slice(0, 10).toUpperCase()}`}` : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
