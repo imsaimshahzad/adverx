@@ -205,7 +205,7 @@ function WithdrawPage() {
       <div className="mb-3 surface px-4 py-3 sm:px-5">
         <p className="text-sm font-medium">Withdrawable Balance</p>
         <div className="mt-1 flex min-h-7 items-center gap-2">
-          {ready ? <p className="num text-xl font-semibold">{formatMoney(availableBalance)}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
+          {ready ? <p className="num text-xl font-semibold">{formatMoney(availableBalance).replace(/^\\+/, "")}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
         </div>
       </div>
       <div className="glass-panel space-y-3 p-4 sm:p-5">
@@ -218,9 +218,9 @@ function WithdrawPage() {
             placeholder="Enter amount here"
           />
           <p className="text-xs text-muted-foreground">
-            No processing fee · You receive {formatMoney(value)}
+            No processing fee · You receive {formatMoney(value).replace(/^\\+/, "")}
           </p>
-          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatMoney(methodMin)} – {formatMoney(methodMax)}</p> : null}
+          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatMoney(methodMin).replace(/^\\+/, "")} – {formatMoney(methodMax).replace(/^\\+/, "")}</p> : null}
         </div>
 
         <div className="space-y-1.5">
