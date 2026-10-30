@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -140,6 +141,22 @@ function AdsPage() {
   );
   const dailyLimitReached = adsCompletedToday >= dailyAdLimit;
   const remainingAds = Math.max(0, dailyAdLimit - adsCompletedToday);
+  const [continuity, setContinuity] = useState<{ earning_paused?: boolean; grace_days_remaining?: number | null } | null>(null);
+  const earningPaused = Boolean(continuity?.earning_paused);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!state.user?.id || isPrivilegedAccount) {
+      setContinuity(null);
+      return;
+    }
+    void (async () => {
+      const { data, error } = await (supabase as any).rpc("get_my_earning_continuity");
+      if (!cancelled && !error && data) setContinuity(data);
+      if (error) console.error("[AdverX] earning continuity status unavailable:", error);
+    })();
+    return () => { cancelled = true; };
+  }, [state.user?.id, plan?.id, plan?.remainingRewardBudget, isPrivilegedAccount]);
 
   return (
     <AppShell
@@ -180,6 +197,20 @@ function AdsPage() {
             <span className="text-sm font-semibold text-foreground">{remainingAds} Ads Remaining Today</span>
           </div>
 
+          {earningPaused ? (
+            <section className="mt-3 flex flex-col items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-7 text-center">
+              <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600"><Lock className="size-6" /></span>
+              <div>
+                <p className="text-base font-semibold">Your ad rewards are currently paused.</p>
+                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+                  Your earning reserve has been fully used. Refer an eligible new user and receive the applicable referral reserve credit. Ad rewards can resume automatically once that credit is recorded.
+                </p>
+              </div>
+              <Button asChild><Link to="/network">Refer Now</Link></Button>
+              <Link to="/terms" className="text-xs font-medium text-primary underline underline-offset-4">How does this work?</Link>
+            </section>
+          ) : (
+            <>
           {catalogError && (
             <div role="alert" className="mt-3 surface border border-destructive/30 p-4 text-sm text-destructive">
               {catalogError}
@@ -294,6 +325,8 @@ function AdsPage() {
               );
             })}
           </div>
+            </>
+          )}
         </>
       ) : null}
 
