@@ -836,6 +836,7 @@ async function loadState(user: {
 
 type Ctx = {
   ready: boolean;
+  accountLoading: boolean;
   displayCurrency: "PKR" | "USD";
   dataError: string | null;
   catalogReady: boolean;
@@ -884,6 +885,8 @@ const StoreContext = createContext<Ctx | null>(null);
 export function PlatformProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(EMPTY as unknown as State);
   const [ready, setReady] = useState(false);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const loadedAccountUserRef = useRef<string | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [catalogReady, setCatalogReady] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -926,6 +929,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         ++refreshVersion.current;
         ++forceRefreshRequestRef.current;
         setDataError(null);
+        setAccountLoading(false);
+        loadedAccountUserRef.current = null;
         setState(EMPTY as unknown as State);
         setReady(true);
         return;
@@ -961,6 +966,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
 
       const version = ++refreshVersion.current;
       setDataError(null);
+      if (loadedAccountUserRef.current !== user.id) setAccountLoading(true);
       // Let the authenticated shell open as soon as Supabase confirms a user.
       // The full account snapshot includes many independent queries; waiting for all
       // of them before exposing state leaves the login screen spinning unnecessarily.
@@ -990,14 +996,21 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       const task = (async () => {
         try {
           const nextState = await loadState(user, () => version === refreshVersion.current);
-          if (version === refreshVersion.current) setState(nextState);
+          if (version === refreshVersion.current) {
+            setState(nextState);
+            loadedAccountUserRef.current = user.id;
+            setAccountLoading(false);
+          }
         } catch (error) {
           console.error("[v0] Supabase data sync failed", error);
           if (version === refreshVersion.current) {
             setDataError("Unable to load your account data. Please try again.");
           }
         } finally {
-          if (version === refreshVersion.current) setReady(true);
+          if (version === refreshVersion.current) {
+            setAccountLoading(false);
+            setReady(true);
+          }
         }
       })();
       refreshTasksRef.current.add(task);
@@ -1376,6 +1389,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     <StoreContext.Provider
       value={{
         ready,
+        accountLoading,
         displayCurrency,
         dataError,
         catalogReady,

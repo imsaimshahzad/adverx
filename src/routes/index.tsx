@@ -18,6 +18,7 @@ import {
   Maximize2,
   Eye,
   EyeOff,
+  type LucideIcon,
 } from "lucide-react";
 
 import { AppShell, StatTile } from "@/components/AppShell";
@@ -780,6 +781,55 @@ function PublicFooter() {
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <div aria-label="Loading dashboard values" aria-busy="true" className="space-y-4 animate-pulse">
+      <section className="morphic-hero relative overflow-hidden">
+        <div className="relative z-10 space-y-3">
+          <div className="h-3 w-32 rounded bg-white/15" />
+          <div className="h-10 w-52 max-w-full rounded-lg bg-white/20" />
+          <div className="h-3 w-60 max-w-full rounded bg-white/10" />
+        </div>
+        <div className="relative z-10 mt-6 flex items-end justify-between gap-4">
+          <div className="space-y-2"><div className="h-3 w-12 rounded bg-white/15" /><div className="h-6 w-28 rounded bg-white/20" /></div>
+          <div className="h-9 w-24 rounded-lg bg-white/20" />
+        </div>
+      </section>
+      <div className="morphic-stats grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="surface min-h-28 rounded-2xl p-4">
+            <div className="mb-4 size-8 rounded-lg bg-muted/70" />
+            <div className="mb-2 h-3 w-16 rounded bg-muted/70" />
+            <div className="mb-2 h-6 w-24 max-w-full rounded bg-muted/70" />
+            <div className="h-2.5 w-20 rounded bg-muted/50" />
+          </div>
+        ))}
+      </div>
+      <div className="surface rounded-2xl p-4">
+        <div className="mb-4 h-4 w-36 rounded bg-muted/70" />
+        <div className="mb-3 h-6 w-28 rounded bg-muted/70" />
+        <div className="h-2.5 w-full rounded-full bg-muted/50" />
+      </div>
+      <div className="surface rounded-2xl p-4">
+        <div className="mb-4 h-4 w-32 rounded bg-muted/70" />
+        {Array.from({ length: 3 }).map((_, index) => <div key={index} className="mb-3 h-4 w-3/4 rounded bg-muted/60 last:mb-0" />)}
+      </div>
+    </div>
+  );
+}
+
+function DashboardStat({ icon: Icon, label, value, hint }: { icon: LucideIcon; label: string; value: string; hint: string }) {
+  return (
+    <div className="morphic-stat surface min-w-0 rounded-2xl p-4">
+      <div className="flex items-center gap-2">
+        <span className="morphic-stat-icon flex size-8 shrink-0 items-center justify-center rounded-xl"><Icon className="size-4" /></span>
+        <span className="truncate text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">{label}</span>
+      </div>
+      <p className="num mt-3 break-words text-xl font-extrabold tracking-tight sm:text-2xl">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
 function Dashboard() {
   const {
     state,
@@ -791,12 +841,15 @@ function Dashboard() {
     activityLevel,
     activityScore,
     ready,
+    accountLoading,
+    catalogReady,
+    catalogError,
+    dataError,
   } = usePlatform();
 
   const pendingDeposit = state.deposits.find((d) => d.status === "pending");
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
-  const [balanceVisible, setBalanceVisible] = useState(true);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
 
   useEffect(() => {
@@ -832,10 +885,19 @@ function Dashboard() {
   if (!ready) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-5 text-sm text-muted-foreground">
-        <span className="flex flex-col items-center gap-3">
-          <LoadingIndicator size="md" label="Loading your account" />
-          <span>Loading your account…</span>
-        </span>
+        <span className="flex flex-col items-center gap-3"><LoadingIndicator size="md" label="Loading your account" /><span>Loading your account…</span></span>
+      </main>
+    );
+  }
+
+  if (!state.user && dataError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-5 text-foreground">
+        <section role="alert" className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <h1 className="text-lg font-semibold">AdverX couldn’t finish loading</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{dataError}</p>
+          <Button className="mt-5" onClick={() => window.location.reload()}>Try again</Button>
+        </section>
       </main>
     );
   }
@@ -844,98 +906,32 @@ function Dashboard() {
     return <PublicHome />;
   }
 
+  if (accountLoading || (!catalogReady && !catalogError)) {
+    return (
+      <AppShell title="Dashboard">
+        <DashboardSkeleton />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title={`Hi, ${state.user?.fullName?.split(" ")[0] ?? "there"}`}>
-      <section
-        className={`morphic-hero relative overflow-hidden ${expanded ? "is-expanded" : ""}`}
-      >
+      <section className={`morphic-hero relative overflow-hidden ${expanded ? "is-expanded" : ""}`}>
         <div className="morphic-orb morphic-orb-one" />
         <div className="morphic-orb morphic-orb-two" />
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div>
             <p className="morphic-eyebrow">Available earnings</p>
-            <p className="morphic-number num" aria-live="polite">
-              {balanceVisible ? (
-                <AnimatedNumber
-                  value={Number(availableBalance) || 0}
-                  format={money}
-                />
-              ) : (
-                "••••••"
-              )}
-            </p>
-            <p className="morphic-caption">
-              Available now · rewards are credited instantly
-            </p>
+            <p className="morphic-number num">{money(availableBalance)}</p>
+            <p className="morphic-caption">Available now · rewards are credited instantly</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label={
-                balanceVisible
-                  ? "Hide available earnings"
-                  : "Show available earnings"
-              }
-              className="morphic-icon-button"
-              onClick={() => setBalanceVisible((value) => !value)}
-            >
-              {balanceVisible ? (
-                <Eye className="size-4" />
-              ) : (
-                <EyeOff className="size-4" />
-              )}
-            </button>
-            <button
-              type="button"
-              aria-label={
-                expanded
-                  ? "Collapse earnings details"
-                  : "Expand earnings details"
-              }
-              className="morphic-icon-button"
-              onClick={() => setExpanded((value) => !value)}
-            >
-              <Maximize2 className="size-4" />
-            </button>
-          </div>
+          <button type="button" aria-label="Expand earnings details" className="morphic-icon-button" onClick={() => setExpanded((value) => !value)}><Maximize2 className="size-4" /></button>
         </div>
         <div className="relative z-10 mt-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="morphic-label">Today</p>
-            <p className="num text-xl font-semibold">{money(todaysEarnings)}</p>
-          </div>
-          <Button
-            asChild
-            variant="secondary"
-            size="sm"
-            className="morphic-action morphic-pressable"
-          >
-            <Link to="/withdraw">
-              Withdraw <ArrowRight className="size-4" />
-            </Link>
-          </Button>
+          <div><p className="morphic-label">Today</p><p className="num text-xl font-semibold">{money(todaysEarnings)}</p></div>
+          <Button asChild variant="secondary" size="sm" className="morphic-action"><Link to="/withdraw">Withdraw <ArrowRight className="size-4" /></Link></Button>
         </div>
-        <div
-          className={`morphic-detail ${expanded ? "is-visible" : ""}`}
-          aria-hidden={!expanded}
-        >
-          <div>
-            <p className="morphic-label">Momentum</p>
-            <p className="text-sm font-semibold">
-              {activityLevel} · {activityScore}% active
-            </p>
-          </div>
-          <div>
-            <p className="morphic-label">Next focus</p>
-            <p className="text-sm font-semibold">
-              {Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task
-              {Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1
-                ? ""
-                : "s"}{" "}
-              remaining
-            </p>
-          </div>
-        </div>
+        <div className={`morphic-detail ${expanded ? "is-visible" : ""}`} aria-hidden={!expanded}><div><p className="morphic-label">Momentum</p><p className="text-sm font-semibold">{activityLevel} · {activityScore}% active</p></div><div><p className="morphic-label">Next focus</p><p className="text-sm font-semibold">{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1 ? "" : "s"} remaining</p></div></div>
       </section>
 
       {!plan && (
@@ -969,47 +965,37 @@ function Dashboard() {
       )}
 
       <div className="morphic-stats mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile
-          label="Ads"
-          value={`${adsCompletedToday} / ${dailyAdLimit || "—"}`}
-          hint="Completed today"
-        />
-        <StatTile
-          label="Network"
-          value={`${activeMembers}`}
-          hint={`${state.network.length} total members`}
-        />
-        <StatTile
-          label="Today"
-          value={money(todaysEarnings)}
-          hint="Rewards credited"
-        />
-        <StatTile
-          label="Total Withdrawn"
-          value={money(totalWithdrawn)}
-          hint="Successfully paid"
-        />
-        <StatTile
-          label="Level"
-          value={activityLevel}
-          hint={`${activityScore}% activity`}
-        />
+        <DashboardStat icon={ListChecks} label="Ads" value={`${adsCompletedToday} / ${dailyAdLimit || "—"}`} hint="Completed today" />
+        <DashboardStat icon={Network} label="Network" value={`${activeMembers}`} hint={`${state.network.length} total members`} />
+        <DashboardStat icon={CircleDollarSign} label="Today" value={money(todaysEarnings)} hint="Rewards credited" />
+        <DashboardStat icon={ReceiptText} label="Withdrawn" value={money(totalWithdrawn)} hint="Successfully paid" />
       </div>
 
-      <div className="surface mt-3 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="size-4 text-primary" />
-            <p className="text-sm font-medium">Activity level</p>
+      <details className="morphic-level surface mt-3 p-4">
+        <summary className="cursor-pointer list-none">
+          <span className="flex min-h-11 items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm font-semibold"><TrendingUp className="size-4 text-primary" />Activity level</span>
+            <span className="flex items-center gap-2"><Badge variant="secondary">{activityScore}% activity</Badge><ChevronDown className="morphic-level-chevron size-4 text-muted-foreground" /></span>
+          </span>
+          <span className="mt-2 flex items-baseline justify-between gap-3"><span className="text-xl font-bold">{activityLevel}</span><span className="text-xs text-muted-foreground">Tap for tips</span></span>
+          <Progress value={activityScore} className="mt-3" />
+        </summary>
+        <div className="mt-4 space-y-3 border-t border-border/70 pt-4">
+          <p className="text-sm font-semibold">Tips to improve your activity</p>
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span>Complete the available ad tasks for today.</span>
           </div>
-          <Badge variant="secondary">{activityLevel}</Badge>
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span>Check your dashboard regularly to see your current progress.</span>
+          </div>
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span>Keep your account information accurate and follow the task rules.</span>
+          </div>
         </div>
-        <Progress value={activityScore} className="mt-3" />
-        <p className="mt-2 text-xs text-muted-foreground">
-          Keep completing daily tasks and growing an active network to improve
-          your level.
-        </p>
-      </div>
+      </details>
 
       {plan && (
         <div className="surface mt-3 p-4">
@@ -1041,6 +1027,8 @@ function Dashboard() {
           </Button>
         </div>
       )}
+
+
     </AppShell>
   );
 }
