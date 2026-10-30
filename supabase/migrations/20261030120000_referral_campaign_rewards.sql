@@ -170,7 +170,7 @@ declare
   v_balance numeric(14,2);
   v_payout uuid := gen_random_uuid();
   v_tx uuid := gen_random_uuid();
-  v_tx_no text := 'TXN-' || substr(replace(v_tx::text,'-',''),1,8);
+  v_tx_no text := 'TXN-' || lpad(nextval('public.transaction_no_seq')::text,8,'0');
 begin
   if v_user is null then
     raise exception 'authentication required' using errcode='42501';
