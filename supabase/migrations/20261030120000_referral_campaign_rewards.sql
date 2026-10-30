@@ -158,7 +158,7 @@ declare
   v_balance numeric(14,2);
   v_payout uuid := gen_random_uuid();
   v_tx uuid := gen_random_uuid();
-  v_tx_no text := 'RCB-' || upper(substr(replace(v_tx::text,'-',''),1,12));
+  v_tx_no text := 'TXN-' || substr(replace(v_tx::text,'-',''),1,8);
 begin
   if v_user is null then
     raise exception 'authentication required' using errcode='42501';
@@ -257,6 +257,14 @@ begin
       'Referral campaign bonus paid to user '||v_user::text||' ('||p_plan_key||' / '||p_referral_target||')',v_tx),
     (v_user,'admin_adjustment',v_reward,v_payout,
       'Referral campaign bonus · '||initcap(p_plan_key)||' · '||p_referral_target||' referrals',v_tx);
+
+  insert into public.wallet_transactions(
+    user_id,type,amount,currency,status,reference_id,reference_type,metadata,transaction_id
+  ) values
+    (v_admin,'ADMIN_ADJUSTMENT',-v_reward,'PKR','completed',v_payout,'referral_campaign_bonus',
+      jsonb_build_object('direction','debit','beneficiary_id',v_user,'plan_key',p_plan_key,'referral_target',p_referral_target),v_tx),
+    (v_user,'ADMIN_ADJUSTMENT',v_reward,'PKR','completed',v_payout,'referral_campaign_bonus',
+      jsonb_build_object('direction','credit','plan_key',p_plan_key,'referral_target',p_referral_target),v_tx);
 
   -- Claiming a milestone starts a fresh cycle for this plan campaign only.
   update public.referral_campaign_cycles
