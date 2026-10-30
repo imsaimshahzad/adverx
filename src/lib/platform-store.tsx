@@ -1,6 +1,7 @@
 import { ensureSupabaseSessionReady, isImpersonating, supabase } from "@/integrations/supabase/client";
 import { getAdminProfitSummary, type AdminProfitSummary } from "@/lib/admin-service";
 import { requestCoalescedRun } from "@/lib/refresh-coordinator";
+import { SESSION_IDLE_TIMEOUT_MS, isSessionIdleExpired, sessionActivityStorageKey } from "@/lib/inactivity-session";
 import { toast } from "sonner";
 import { signupSchema, profileSchema, depositSchema, withdrawalSchema, adIdSchema, sessionIdSchema } from "@/lib/input-validation";
 import {
@@ -1192,8 +1193,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     if (!state.user || typeof window === "undefined") return;
 
     const userId = state.user.id;
-    const storageKey = `adverx-last-activity:${userId}`;
-    const timeoutMs = 15 * 60 * 1000;
+    const storageKey = sessionActivityStorageKey(userId, isImpersonating());
+    const timeoutMs = SESSION_IDLE_TIMEOUT_MS;
     const activityEvents = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart", "wheel"];
     let disposed = false;
     let expired = false;
@@ -1243,7 +1244,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (disposed || expired) return;
       clearTimer();
       const lastActivity = readLastActivity();
-      if (!lastActivity || Date.now() - lastActivity >= timeoutMs) {
+      if (isSessionIdleExpired(lastActivity, Date.now())) {
         expireSession();
         return;
       }
@@ -1270,7 +1271,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const initialLastActivity = readLastActivity();
     if (!initialLastActivity) {
       writeLastActivity(Date.now());
-    } else if (Date.now() - initialLastActivity >= timeoutMs) {
+    } else if (isSessionIdleExpired(initialLastActivity, Date.now())) {
       expireSession();
     } else {
       scheduleExpiryCheck();
