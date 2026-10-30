@@ -202,9 +202,6 @@ function AdsPage() {
               <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600"><Lock className="size-6" /></span>
               <div>
                 <p className="text-base font-semibold">Your ad rewards are currently paused.</p>
-                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
-                  Your earning reserve has been fully used. Refer an eligible new user and receive the applicable referral reserve credit. Ad rewards can resume automatically once that credit is recorded.
-                </p>
               </div>
               <Button asChild><Link to="/network">Refer Now</Link></Button>
               <Link to="/terms" className="text-xs font-medium text-primary underline underline-offset-4">How does this work?</Link>
