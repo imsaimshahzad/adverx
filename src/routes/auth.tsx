@@ -73,8 +73,6 @@ export function AuthPage() {
     // This is best-effort and must never block login or redirect.
     void (async () => {
       try {
-        const key = `adverx-access-signal:${state.user!.id}`;
-        if (sessionStorage.getItem(key) === "1") return;
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
         if (!accessToken) return;
@@ -85,7 +83,6 @@ export function AuthPage() {
           // request alive when the browser navigates away from the auth page.
           keepalive: true,
         });
-        if (response.ok) sessionStorage.setItem(key, "1");
       } catch {
         // Fraud telemetry is non-critical; authentication must continue normally.
       }
