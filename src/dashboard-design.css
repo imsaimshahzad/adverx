@@ -80,6 +80,37 @@ html:not(.dark) .dashboard-shell td { color:#102a2a; border-color:rgba(16,42,42,
 html:not(.dark) .dashboard-shell tbody tr:hover { background:#f0f8f6; }
 html:not(.dark) .dashboard-shell input,html:not(.dark) .dashboard-shell textarea,html:not(.dark) .dashboard-shell select { background:#fff; color:#102a2a; border-color:rgba(16,42,42,.18); }
 
+/* Text contrast follows the active palette instead of the global theme defaults. */
+html:not(.dark) .dashboard-shell .text-foreground,
+html:not(.dark) .dashboard-shell .text-primary,
+html:not(.dark) .dashboard-shell h1,
+html:not(.dark) .dashboard-shell h2,
+html:not(.dark) .dashboard-shell h3,
+html:not(.dark) .dashboard-shell h4,
+html:not(.dark) .dashboard-shell label { color:#102a2a; }
+html:not(.dark) .dashboard-shell .text-muted-foreground,
+html:not(.dark) .dashboard-shell .text-secondary-foreground,
+html:not(.dark) .dashboard-shell p,
+html:not(.dark) .dashboard-shell small,
+html:not(.dark) .dashboard-shell [data-slot="card-description"] { color:#4b6561; }
+html:not(.dark) .dashboard-shell a:not([aria-current="page"]) { color:#176d68; }
+html:not(.dark) .dashboard-shell input::placeholder,
+html:not(.dark) .dashboard-shell textarea::placeholder { color:#6a817d; opacity:1; }
+.dark .dashboard-shell .text-foreground,
+.dark .dashboard-shell .text-primary,
+.dark .dashboard-shell h1,
+.dark .dashboard-shell h2,
+.dark .dashboard-shell h3,
+.dark .dashboard-shell h4,
+.dark .dashboard-shell label { color:#eaf6f4; }
+.dark .dashboard-shell .text-muted-foreground,
+.dark .dashboard-shell .text-secondary-foreground,
+.dark .dashboard-shell p,
+.dark .dashboard-shell small,
+.dark .dashboard-shell [data-slot="card-description"] { color:#b4cdc9; }
+.dark .dashboard-shell input::placeholder,
+.dark .dashboard-shell textarea::placeholder { color:#9dbab5; opacity:1; }
+
 /* Keep the reference palette stable when the app-level theme class is present. */
 .dark .dashboard-shell { background:#041214; color:#eaf6f4; }
 .dark .dashboard-shell .surface,.dark .dashboard-shell .glass-panel,.dark .dashboard-shell [data-slot="card"],.dark .dashboard-shell .bg-white,.dark .dashboard-shell .bg-card { color:#eaf6f4; }
