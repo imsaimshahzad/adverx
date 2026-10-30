@@ -2594,7 +2594,7 @@ function UserAccessSignals({ userId }: { userId: string }) {
       <CardHeader className="flex flex-row items-start justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
           <CardTitle className="text-sm">IP Activity</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">Recent sign-in IP addresses and approximate locations · latest 20 records</p>
+          <p className="mt-1 text-xs text-muted-foreground">Current sign-in IP address and approximate location · one record per user</p>
         </div>
         <Button type="button" size="sm" variant="outline" onClick={() => void loadSignals()} disabled={loading}>
           <RefreshCw className={`mr-1.5 size-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -2609,7 +2609,7 @@ function UserAccessSignals({ userId }: { userId: string }) {
         ) : signals.length === 0 ? (
           <div className="rounded-lg border border-dashed px-3 py-6 text-center">
             <p className="text-sm font-medium">No IP records yet</p>
-            <p className="mt-1 text-xs text-muted-foreground">A record is added when the user signs in after IP activity collection is available.</p>
+            <p className="mt-1 text-xs text-muted-foreground">The current record appears after the user signs in. It updates automatically when their IP address changes.</p>
           </div>
         ) : (
           <div className="space-y-3">
