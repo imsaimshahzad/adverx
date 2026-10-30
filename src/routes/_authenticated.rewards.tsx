@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, CheckCircle2, Gift, RefreshCw, Sparkles } from "lucide-react";
+import { Award, CheckCircle2, Gift, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -52,8 +52,7 @@ function RewardsPage() {
   const [data, setData] = useState<RewardsData>({ campaigns: [], history: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"starter" | "growth" | "pro">("starter");
-  const [claiming, setClaiming] = useState<number | null>(null);
+  const [claiming, setClaiming] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,17 +72,22 @@ function RewardsPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const campaign = useMemo(
-    () => data.campaigns.find((item) => item.plan_key === activeTab),
-    [data.campaigns, activeTab],
+  const campaignCards = useMemo(
+    () => data.campaigns.flatMap((campaign) => campaign.milestones.map((milestone) => ({
+      campaign,
+      milestone,
+      plan: CAMPAIGNS.find((item) => item.key === campaign.plan_key),
+    }))),
+    [data.campaigns],
   );
   const totalClaimed = data.history.reduce((sum, item) => sum + Number(item.reward_amount_pkr || 0), 0);
 
-  const claim = async (target: number) => {
+  const claim = async (planKey: Campaign["plan_key"], target: number) => {
+    const claimKey = `${planKey}-${target}`;
     if (claiming !== null) return;
-    setClaiming(target);
+    setClaiming(claimKey);
     const { data: result, error: claimError } = await (supabase as any).rpc("claim_referral_campaign_reward", {
-      p_plan_key: activeTab,
+      p_plan_key: planKey,
       p_referral_target: target,
     });
     setClaiming(null);
@@ -115,44 +119,34 @@ function RewardsPage() {
               <div><h2 className="text-lg font-semibold">Referral campaigns</h2><p className="mt-1 text-sm text-muted-foreground">Har campaign mein direct referrals ke milestones complete karein.</p></div>
               <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}><RefreshCw className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`} />Refresh</Button>
             </div>
-            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:gap-3" role="tablist" aria-label="Referral campaigns">
-              {CAMPAIGNS.map((item) => (
-                <button key={item.key} type="button" role="tab" aria-selected={activeTab === item.key} onClick={() => setActiveTab(item.key)}
-                  className={`min-h-12 min-w-0 flex-1 rounded-xl border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${activeTab === item.key ? "border-primary bg-primary/10 text-foreground shadow-sm" : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/60"}`}>
-                  {item.label}
-                </button>
-              ))}
-            </div>
+            <p className="mt-2 text-xs text-muted-foreground">Starter, Growth aur Pro plans ke tamam milestones aik hi list mein hain.</p>
           </div>
 
           {loading ? (
             <div className="flex min-h-48 flex-col items-center justify-center gap-3 p-8 text-sm text-muted-foreground"><LoadingIndicator size="md" label="Loading rewards" />Loading campaign rewards…</div>
           ) : error ? (
             <div className="p-6 text-center"><p className="text-sm text-destructive">{error}</p><Button className="mt-3" variant="outline" onClick={() => void load()}>Try again</Button></div>
-          ) : !campaign ? (
+          ) : campaignCards.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">Campaign data is not available yet.</div>
           ) : (
             <div className="space-y-5 p-4 sm:p-6">
-              <div className={`rounded-2xl border border-border/60 bg-gradient-to-r ${CAMPAIGNS.find((item) => item.key === activeTab)?.accent} p-4 sm:p-5`}>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div><p className="text-sm font-semibold">{CAMPAIGNS.find((item) => item.key === activeTab)?.label} campaign</p><p className="mt-1 text-xs text-muted-foreground">Sirf direct referrals count honge</p></div>
-                  <Badge variant={campaign.is_active ? "secondary" : "outline"}>{campaign.is_active ? "Active" : "Paused"}</Badge>
-                </div>
-                <div className="mt-4 flex items-end justify-between gap-3"><div><p className="text-xs text-muted-foreground">Current cycle progress</p><p className="num mt-1 text-3xl font-bold">{campaign.progress} <span className="text-base font-medium text-muted-foreground">referrals</span></p></div><Sparkles className="size-8 text-primary" /></div>
-              </div>
-
               <div className="grid gap-3 md:grid-cols-2">
-                {campaign.milestones.map((milestone) => {
+                {campaignCards.map(({ campaign, milestone, plan }) => {
                   const percent = Math.min(100, Math.round((campaign.progress / milestone.target) * 100));
+                  const claimKey = `${campaign.plan_key}-${milestone.target}`;
                   return (
-                    <article key={milestone.target} className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm">
+                    <article key={claimKey} className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <Badge variant="outline" className={`bg-gradient-to-r ${plan?.accent ?? ""}`}>{plan?.label ?? campaign.plan_key} plan task</Badge>
+                        <Badge variant={campaign.is_active ? "secondary" : "outline"}>{campaign.is_active ? "Active" : "Paused"}</Badge>
+                      </div>
                       <div className="flex items-start justify-between gap-3">
                         <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{milestone.target} direct referrals</p><p className="num mt-1 text-2xl font-bold">{formatMoney(milestone.reward_amount_pkr, "PKR")}</p><p className="mt-1 text-xs text-muted-foreground">One-time campaign bonus</p></div>
                         {milestone.claimed ? <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="mr-1 size-3" />Claimed</Badge> : milestone.claimable ? <Badge>Completed</Badge> : <Badge variant="outline">In progress</Badge>}
                       </div>
                       <div className="mt-5"><div className="mb-2 flex justify-between text-xs text-muted-foreground"><span>Progress</span><span className="num">{Math.min(campaign.progress, milestone.target)} / {milestone.target}</span></div><div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} /></div></div>
-                      <Button className="mt-5 w-full" disabled={!milestone.claimable || claiming !== null || !campaign.is_active} onClick={() => void claim(milestone.target)}>
-                        {claiming === milestone.target ? <><LoadingIndicator size="sm" label="Claiming bonus" />Claiming…</> : milestone.claimed ? "Already claimed" : milestone.claimable ? "Claim bonus" : "Keep going"}
+                      <Button className="mt-5 w-full" disabled={!milestone.claimable || claiming !== null || !campaign.is_active} onClick={() => void claim(campaign.plan_key, milestone.target)}>
+                        {claiming === claimKey ? <><LoadingIndicator size="sm" label="Claiming bonus" />Claiming…</> : milestone.claimed ? "Already claimed" : milestone.claimable ? "Claim bonus" : "Keep going"}
                       </Button>
                     </article>
                   );
