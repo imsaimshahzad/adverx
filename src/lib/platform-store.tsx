@@ -903,7 +903,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   });
   const refreshVersion = useRef(0);
   const refreshTasksRef = useRef(new Set<Promise<void>>());
+  const inFlightRefreshRef = useRef<{ userId: string; version: number; promise: Promise<void> } | null>(null);
   const forceRefreshRequestRef = useRef(0);
+  const lastAuthUserIdRef = useRef<string | null>(null);
   const lastLiveRefreshRef = useRef(0);
 
   useEffect(() => {
@@ -932,13 +934,29 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       if (options.background && refreshTasksRef.current.size > 0) return;
 
       if (!user) {
+        // Sign-out must clear account data immediately, even when the remembered
+        // auth user ID is already null. The version bump blocks every older response.
         ++refreshVersion.current;
         ++forceRefreshRequestRef.current;
+        inFlightRefreshRef.current = null;
         setDataError(null);
         setAccountLoading(false);
         loadedAccountUserRef.current = null;
         setState(EMPTY as unknown as State);
         setReady(true);
+        return;
+      }
+
+      // A boot refresh and an auth-event refresh for the same user share one
+      // snapshot. The version check prevents sharing a request invalidated by a
+      // user switch or a queued forced refresh.
+      const inFlight = inFlightRefreshRef.current;
+      if (
+        !options.force &&
+        inFlight?.userId === user.id &&
+        inFlight.version === refreshVersion.current
+      ) {
+        await inFlight.promise;
         return;
       }
 
@@ -1039,10 +1057,14 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         }
       })();
       refreshTasksRef.current.add(task);
+      inFlightRefreshRef.current = { userId: user.id, version, promise: task };
       try {
         await task;
       } finally {
         refreshTasksRef.current.delete(task);
+        if (inFlightRefreshRef.current?.promise === task) {
+          inFlightRefreshRef.current = null;
+        }
       }
     },
     [],
@@ -1069,6 +1091,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     // Only anonymous visitors need the standalone public catalog request.
     const { data } = await ensureSupabaseSessionReady();
     const sessionUser = data.session?.user ?? null;
+    lastAuthUserIdRef.current = sessionUser?.id ?? null;
     if (sessionUser) {
       if (mounted) await refresh(sessionUser);
     } else {
@@ -1086,12 +1109,25 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       // Boot handles INITIAL_SESSION. TOKEN_REFRESHED changes credentials, not
       // account data, so it must not trigger another full database snapshot.
-      if (
-        mounted &&
-        (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED")
-      ) {
-        void refresh(session?.user ?? null);
-      }
+      if (!mounted) return;
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+
+      // Defer Supabase work until after its auth callback lock has been released.
+      // This also lets SIGNED_IN race safely with boot: both paths share one snapshot.
+      setTimeout(() => {
+        if (!mounted) return;
+        const nextUserId = session?.user?.id ?? null;
+
+        if (event === "SIGNED_IN" && nextUserId === lastAuthUserIdRef.current) return;
+        if (event === "SIGNED_OUT") {
+          lastAuthUserIdRef.current = null;
+          void refresh(null);
+          return;
+        }
+
+        lastAuthUserIdRef.current = nextUserId;
+        if (session?.user) void refresh(session.user);
+      }, 0);
     });
     return () => {
       mounted = false;
