@@ -55,7 +55,7 @@ a { text-underline-offset:3px; }
 .dashboard-shell main [data-slot="card"],
 .dashboard-shell main .bg-card,
 .dashboard-shell .adverx-table-wrapper {
-  background-color:#eaf4ff !important;
+  background-color:#fff !important;
   transition:background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 @media (hover:hover) {
