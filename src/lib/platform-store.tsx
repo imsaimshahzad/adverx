@@ -995,9 +995,28 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
 
       const task = (async () => {
         try {
-          const nextState = await loadState(user, () => version === refreshVersion.current);
+          let nextState: State;
+          try {
+            nextState = await loadState(user, () => version === refreshVersion.current);
+          } catch (firstError) {
+            // A long-idle tab can resume while Supabase is refreshing an expired
+            // access token or recovering from a transient request failure. Re-check
+            // the session and retry one complete snapshot before showing a blocking error.
+            if (version !== refreshVersion.current) return;
+            await new Promise((resolve) => setTimeout(resolve, 750));
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            if (version !== refreshVersion.current) return;
+            if (authError || !authData.user || authData.user.id !== user.id) {
+              throw firstError;
+            }
+            nextState = await loadState(
+              authData.user,
+              () => version === refreshVersion.current,
+            );
+          }
           if (version === refreshVersion.current) {
             setState(nextState);
+            setDataError(null);
             loadedAccountUserRef.current = user.id;
             setAccountLoading(false);
           }
