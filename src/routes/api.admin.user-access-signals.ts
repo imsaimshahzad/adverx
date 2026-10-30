@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/admin/user-access-signals")({
           if (!userId || !/^[0-9a-f-]{36}$/i.test(userId)) return Response.json({ ok: false }, { status: 400 });
           const { data, error } = await (supabaseAdmin as any).from("user_access_signals")
             .select("id, ip_address, country, region, city, source, user_agent, created_at")
-            .eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+            .eq("user_id", userId).order("created_at", { ascending: false }).limit(1);
           if (error) return Response.json({ ok: false }, { status: 500 });
           return Response.json({ ok: true, signals: data ?? [] });
         } catch (error) {
