@@ -115,10 +115,10 @@ function RewardsPage() {
               <div><h2 className="text-lg font-semibold">Referral campaigns</h2><p className="mt-1 text-sm text-muted-foreground">Har campaign mein direct referrals ke milestones complete karein.</p></div>
               <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}><RefreshCw className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`} />Refresh</Button>
             </div>
-            <div className="mt-5 grid grid-cols-3 gap-2">
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:gap-3" role="tablist" aria-label="Referral campaigns">
               {CAMPAIGNS.map((item) => (
-                <button key={item.key} type="button" onClick={() => setActiveTab(item.key)}
-                  className={`min-h-12 rounded-xl border px-3 py-2 text-sm font-semibold transition ${activeTab === item.key ? "border-primary bg-primary/10 text-foreground shadow-sm" : "border-border bg-background text-muted-foreground hover:bg-muted/60"}`}>
+                <button key={item.key} type="button" role="tab" aria-selected={activeTab === item.key} onClick={() => setActiveTab(item.key)}
+                  className={`min-h-12 min-w-0 flex-1 rounded-xl border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${activeTab === item.key ? "border-primary bg-primary/10 text-foreground shadow-sm" : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/60"}`}>
                   {item.label}
                 </button>
               ))}
