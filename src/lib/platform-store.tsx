@@ -372,6 +372,7 @@ async function loadState(user: {
     { data: notifications },
     { data: depositMethods },
     { data: withdrawalMethods },
+    { data: publicMinWithdrawal },
     { data: recoveries },
     { data: referralReserveActivity },
   ] = await Promise.all([
@@ -432,6 +433,7 @@ async function loadState(user: {
       .order("created_at", { ascending: false }),
     db.from("deposit_methods").select("*").order("sort_order"),
     db.from("withdrawal_methods").select("*").eq("is_active", true).order("sort_order"),
+    db.from("public_min_withdrawal").select("min_withdrawal_pkr").maybeSingle(),
     db.from("ad_budget_recoveries").select("id, amount_pkr, status, created_at, referred_id").eq("referrer_id", uid).order("created_at", { ascending: false }),
     db.from("recovery_fund_ledger").select("id, entry_type, amount_pkr, created_at, note").eq("user_id", uid).eq("entry_type", "referrer_credit").order("created_at", { ascending: false }),
   ]);
@@ -442,6 +444,10 @@ async function loadState(user: {
     console.error("[AdverX] wallet transactions query failed", walletTransactionsError);
     throw new Error("Unable to load your wallet activity.");
   }
+  PUBLIC_MIN_WITHDRAWAL =
+    (publicMinWithdrawal as any)?.min_withdrawal_pkr == null
+      ? null
+      : num((publicMinWithdrawal as any).min_withdrawal_pkr);
   const planRows = (plans ?? []) as any[];
   const applyAccountCatalogWrites = () => {
   PAYMENT_METHODS.splice(0, PAYMENT_METHODS.length, ...((depositMethods ?? []) as any[]).map((method) => ({ id: method.id, name: method.name, accountTitle: method.account_title, accountNumber: method.account_number, instructions: method.instructions ?? "" })));
@@ -1047,8 +1053,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const user = data.user;
     if (!user) return;
     if (background && refreshTasksRef.current.size > 0) return;
-    const accountLoad = refresh(user, background ? { background: true } : { force: true });
-    await Promise.all([accountLoad, loadCatalog(accountLoad)]);
+    await refresh(user, background ? { background: true } : { force: true });
+    // Authenticated account snapshots already refresh the shared catalog tables.
+    // Avoid issuing a second set of identical catalog requests on focus/poll refresh.
     setCatalogRevision((value) => value + 1);
     setCatalogReady(true);
   }, [refresh]);
@@ -1058,12 +1065,15 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   setCatalogReady(false);
   setCatalogError(null);
   try {
-    // Resolve the auth session first. Catalog and account reads now start together,
-    // while catalog writes wait for the account snapshot so the existing final write
-    // order remains deterministic and PLANS is ready before the catalog is exposed.
+    // Authenticated snapshots already load and publish the shared catalog tables.
+    // Only anonymous visitors need the standalone public catalog request.
     const { data } = await ensureSupabaseSessionReady();
-    const accountLoad = mounted ? refresh(data.session?.user ?? null) : Promise.resolve();
-    await Promise.all([accountLoad, loadCatalog(accountLoad)]);
+    const sessionUser = data.session?.user ?? null;
+    if (sessionUser) {
+      if (mounted) await refresh(sessionUser);
+    } else {
+      await loadCatalog();
+    }
     if (mounted) setCatalogReady(true);
   } catch (error) {
     console.error("[v0] Public catalog/account bootstrap failed", error);
@@ -1073,8 +1083,15 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   }
 };
     void boot();
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) void refresh(session?.user ?? null);
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      // Boot handles INITIAL_SESSION. TOKEN_REFRESHED changes credentials, not
+      // account data, so it must not trigger another full database snapshot.
+      if (
+        mounted &&
+        (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED")
+      ) {
+        void refresh(session?.user ?? null);
+      }
     });
     return () => {
       mounted = false;
