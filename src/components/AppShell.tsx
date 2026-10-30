@@ -11,6 +11,7 @@ import {
   Moon,
   Sun,
   BadgeCheck,
+  Gift,
   ShieldCheck,
   X,
   type LucideIcon,
@@ -36,6 +37,7 @@ const NAV_GROUPS = [
       { to: "/ads", label: "Ad Tasks", icon: MonitorPlay },
       { to: "/plans", label: "Plans", icon: BadgeCheck },
       { to: "/network", label: "Referrals", icon: Users },
+      { to: "/rewards", label: "Rewards", icon: Gift },
     ],
   },
   {

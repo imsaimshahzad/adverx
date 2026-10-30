@@ -23,6 +23,7 @@ import {
   CircleDollarSign,
   FileText,
   Flag,
+  Gift,
   LayoutDashboard,
   LogOut,
   Menu as MenuIcon,
@@ -54,6 +55,7 @@ import { LoadingButtonContent, LoadingIndicator, LoadingScreen } from "@/compone
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminPushNotifications } from "@/components/AdminPushNotifications";
+import { RewardsManager } from "@/components/admin/RewardsManager";
 import { HomepageHeroSettings } from "@/components/HomepageHeroSettings";
 import { SupportTicketPanel } from "@/components/SupportTicketPanel";
 import { AdminEmailComposer } from "@/components/AdminEmailComposer";
@@ -271,6 +273,7 @@ const menu: Array<[AdminModule, string, Icon]> = [
   ["advertisers", "Advertisers", CircleDollarSign],
   ["revenue", "Revenue", WalletCards],
   ["reward-pool", "Reward Pool", CircleDollarSign],
+  ["rewards", "Rewards Manager", Gift],
   ["reserves", "User Reward Reserves", CircleDollarSign],
   ["deposits", "Deposits", WalletCards],
   ["deposit-methods", "Deposit Methods", WalletCards],
@@ -1160,6 +1163,8 @@ export function AdminRoute() {
             <SupportTicketPanel admin />
           ) : active === "email" ? (
             <AdminEmailComposer />
+          ) : active === "rewards" ? (
+            <RewardsManager />
           ) : active === "revenue" ? (
             <RevenueDashboard summary={profitSummary} overview={overview} ledger={profitLedger} plans={revenuePlans} referrerRecoveryReserve={referrerRecoveryReserve} onRefresh={load} />
           ) : active === "fraud" ? (
