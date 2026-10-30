@@ -18,6 +18,7 @@ import {
   Maximize2,
   Eye,
   EyeOff,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -830,6 +831,21 @@ function DashboardStat({ icon: Icon, label, value, hint }: { icon: LucideIcon; l
     </div>
   );
 }
+const REFERRAL_DAILY_TIPS = [
+  "Keep referring to keep earning!",
+  "Your network helps you grow. Invite someone today!",
+  "More referrals, more earning opportunities.",
+  "Don’t stop growing. Share your referral link!",
+  "Build your network and keep your earning journey active.",
+] as const;
+
+function getDailyReferralTip(userId: string) {
+  const dateKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date());
+  const dayNumber = Math.floor(new Date(`${dateKey}T00:00:00+05:00`).getTime() / 86_400_000);
+  const userSeed = [...userId].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return REFERRAL_DAILY_TIPS[(dayNumber + userSeed) % REFERRAL_DAILY_TIPS.length];
+}
+
 function Dashboard() {
   const {
     state,
@@ -851,6 +867,21 @@ function Dashboard() {
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
+  const reserveRemaining = Math.max(0, Number(plan?.remainingRewardBudget ?? 0));
+  const reserveBase = Math.max(0, Number(plan?.rewardBudget ?? 0));
+  const reservePercent = reserveBase > 0 ? (reserveRemaining / reserveBase) * 100 : null;
+  const reserveStatus = !plan
+    ? "normal"
+    : reserveRemaining <= 0
+      ? "exhausted"
+      : reservePercent === null
+        ? "normal"
+        : reservePercent < 20
+          ? "low"
+          : reservePercent <= 50
+            ? "medium"
+            : "normal";
+  const referralTip = getDailyReferralTip(state.user?.id ?? "guest");
 
   useEffect(() => {
     let cancelled = false;
@@ -932,6 +963,47 @@ function Dashboard() {
           <Button asChild variant="secondary" size="sm" className="morphic-action"><Link to="/withdraw">Withdraw <ArrowRight className="size-4" /></Link></Button>
         </div>
         <div className={`morphic-detail ${expanded ? "is-visible" : ""}`} aria-hidden={!expanded}><div><p className="morphic-label">Momentum</p><p className="text-sm font-semibold">{activityLevel} · {activityScore}% active</p></div><div><p className="morphic-label">Next focus</p><p className="text-sm font-semibold">{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0)} task{Math.max((dailyAdLimit || 0) - adsCompletedToday, 0) === 1 ? "" : "s"} remaining</p></div></div>
+      </section>
+
+      <section className={`mt-3 flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+        reserveStatus === "low" || reserveStatus === "exhausted"
+          ? "border-amber-500/30 bg-amber-500/[0.07]"
+          : reserveStatus === "medium"
+            ? "border-primary/25 bg-primary/[0.06]"
+            : "border-border/70 bg-card/70"
+      }`}>
+        <div className="flex min-w-0 items-start gap-3">
+          <span className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ${
+            reserveStatus === "low" || reserveStatus === "exhausted"
+              ? "bg-amber-500/15 text-amber-600"
+              : "bg-primary/10 text-primary"
+          }`}>
+            <UserPlus className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">
+              {reserveStatus === "exhausted"
+                ? "Your ad reserve is exhausted"
+                : reserveStatus === "low"
+                  ? "Keep your earning journey active"
+                  : reserveStatus === "medium"
+                    ? "Keep growing your AdverX network"
+                    : "Grow your AdverX network"}
+            </p>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+              {reserveStatus === "exhausted"
+                ? "Ad rewards cannot be credited while your reserve is empty. An eligible referral bonus can replenish your reserve."
+                : reserveStatus === "low"
+                  ? "Invite eligible new users through your referral link to support your earning continuity."
+                  : reserveStatus === "medium"
+                    ? "Your network helps support earning continuity. Invite someone new today."
+                    : referralTip}
+            </p>
+          </div>
+        </div>
+        <Button asChild size="sm" variant={reserveStatus === "low" || reserveStatus === "exhausted" ? "default" : "outline"} className="shrink-0">
+          <Link to="/network">Refer a Friend <ArrowRight className="size-4" /></Link>
+        </Button>
       </section>
 
       {!plan && (
