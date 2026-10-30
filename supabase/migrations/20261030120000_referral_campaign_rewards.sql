@@ -273,9 +273,9 @@ begin
   insert into public.wallet_transactions(
     user_id,type,amount,currency,status,reference_id,reference_type,metadata,transaction_id
   ) values
-    (v_admin,'ADMIN_ADJUSTMENT',-v_reward,'PKR','completed',v_payout,'referral_campaign_bonus',
+    (v_admin,'REFERRAL_CAMPAIGN_BONUS',-v_reward,'PKR','completed',v_payout,'referral_campaign_bonus',
       jsonb_build_object('direction','debit','beneficiary_id',v_user,'plan_key',p_plan_key,'referral_target',p_referral_target),v_tx),
-    (v_user,'ADMIN_ADJUSTMENT',v_reward,'PKR','completed',v_payout,'referral_campaign_bonus',
+    (v_user,'REFERRAL_CAMPAIGN_BONUS',v_reward,'PKR','completed',v_payout,'referral_campaign_bonus',
       jsonb_build_object('direction','credit','plan_key',p_plan_key,'referral_target',p_referral_target),v_tx);
 
   -- Claiming a milestone starts a fresh cycle for this plan campaign only.
