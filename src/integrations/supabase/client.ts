@@ -15,7 +15,7 @@ function isNewSupabaseApiKey(value: string): boolean {
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
-  return (input, init) => {
+  return async (input, init) => {
     const headers = new Headers(
       typeof Request !== "undefined" && input instanceof Request
         ? input.headers
@@ -35,17 +35,59 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
     headers.set("apikey", supabaseKey);
 
-    // Some privacy-focused browsers/extensions can leave a blocked Supabase
-    // request pending indefinitely. Never let auth/database boot hang forever.
-    if (!init?.signal && typeof AbortController !== "undefined") {
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 15000);
-      return fetch(input, { ...init, headers, signal: controller.signal }).finally(() => {
-        window.clearTimeout(timer);
-      });
-    }
+    const method = (init?.method ?? (
+      typeof Request !== "undefined" && input instanceof Request
+        ? input.method
+        : "GET"
+    )).toUpperCase();
+    const retrySafe = method === "GET" || method === "HEAD";
+    const retryableStatuses = new Set([408, 425, 429, 500, 502, 503, 504, 522, 524]);
+    const controller =
+      !init?.signal && typeof AbortController !== "undefined"
+        ? new AbortController()
+        : null;
+    // Bound the complete retry window, not each individual attempt.
+    const timer = controller
+      ? window.setTimeout(() => controller.abort(), 15000)
+      : null;
+    const requestInit = {
+      ...init,
+      headers,
+      ...(controller ? { signal: controller.signal } : {}),
+    };
 
-    return fetch(input, { ...init, headers });
+    try {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const response = await fetch(input, requestInit);
+          if (!retrySafe || !retryableStatuses.has(response.status) || attempt === 2) {
+            return response;
+          }
+
+          const retryAfter = Number(response.headers.get("Retry-After"));
+          const delay =
+            Number.isFinite(retryAfter) && retryAfter > 0
+              ? Math.min(retryAfter * 1000, 2000)
+              : 300 * 2 ** attempt + Math.round(Math.random() * 150);
+          await new Promise((resolve) => window.setTimeout(resolve, delay));
+        } catch (error) {
+          if (
+            !retrySafe ||
+            attempt === 2 ||
+            controller?.signal.aborted ||
+            init?.signal?.aborted
+          ) {
+            throw error;
+          }
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, 300 * 2 ** attempt + Math.round(Math.random() * 150)),
+          );
+        }
+      }
+      throw new Error("Supabase request failed after retries.");
+    } finally {
+      if (timer !== null) window.clearTimeout(timer);
+    }
   };
 }
 
