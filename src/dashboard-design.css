@@ -49,11 +49,33 @@ a { text-underline-offset:3px; }
 .dark .dashboard-shell tbody tr:hover { background:#1e293b; }
 .dark .dashboard-shell input,.dark .dashboard-shell textarea,.dark .dashboard-shell select { background:#0f172a; color:#f8fafc; border-color:#475569; }
 
-/* Member dashboard cards stay crisp white against the ice-blue canvas. */
+/* Member cards use ice blue by default and turn white on interaction. */
 .dashboard-shell main .surface,
 .dashboard-shell main .glass-panel,
 .dashboard-shell main [data-slot="card"],
 .dashboard-shell main .bg-card,
 .dashboard-shell .adverx-table-wrapper {
+  background-color:#eaf4ff !important;
+  transition:background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+@media (hover:hover) {
+  .dashboard-shell main .surface:hover,
+  .dashboard-shell main .glass-panel:hover,
+  .dashboard-shell main [data-slot="card"]:hover,
+  .dashboard-shell main .bg-card:hover,
+  .dashboard-shell .adverx-table-wrapper:hover {
+    background-color:#fff !important;
+  }
+}
+.dashboard-shell main .surface:focus-within,
+.dashboard-shell main .glass-panel:focus-within,
+.dashboard-shell main [data-slot="card"]:focus-within {
   background-color:#fff !important;
+}
+.dark .dashboard-shell main .surface,
+.dark .dashboard-shell main .glass-panel,
+.dark .dashboard-shell main [data-slot="card"],
+.dark .dashboard-shell main .bg-card,
+.dark .dashboard-shell .adverx-table-wrapper {
+  background-color:rgba(17,24,39,.94) !important;
 }
