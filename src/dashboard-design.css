@@ -62,15 +62,12 @@ a { text-underline-offset:3px; }
 @media (prefers-reduced-motion:no-preference) { .dashboard-shell .aurora i { animation:adverx-drift 26s ease-in-out infinite alternate; } @keyframes adverx-drift { to { transform:translate(5vmax,4vmax) scale(1.1); } } }
 
 
-.dark .dashboard-shell { background:#0b1120; color:#f8fafc; }
-.dark .dashboard-shell .app-sidebar,.dark .dashboard-shell .dashboard-header { background:rgba(17,24,39,.92); border-color:#334155; }
-.dark .dashboard-shell .app-nav-item { color:#cbd5e1; }
-.dark .dashboard-shell .app-nav-item:hover { background:#1e293b; color:#99f6e4; }
-.dark .dashboard-shell .app-nav-item[aria-current="page"] { background:#134e4a; color:#99f6e4; box-shadow:inset 3px 0 #14b8a6; }
-.dark .dashboard-shell .surface,.dark .dashboard-shell .glass-panel,.dark .dashboard-shell [data-slot="card"],.dark .dashboard-shell .bg-white,.dark .dashboard-shell .bg-card { background:rgba(17,24,39,.94); border-color:#334155; color:#f8fafc; }
-.dark .dashboard-shell table { background:#111827; }
-.dark .dashboard-shell thead { background:#1e293b; }
-.dark .dashboard-shell th { color:#cbd5e1; border-color:#334155; }
-.dark .dashboard-shell td { color:#f8fafc; border-color:#1e293b; }
-.dark .dashboard-shell tbody tr:hover { background:#1e293b; }
-.dark .dashboard-shell input,.dark .dashboard-shell textarea,.dark .dashboard-shell select { background:#0f172a; color:#f8fafc; border-color:#475569; }
+/* Keep the reference palette stable when the app-level theme class is present. */
+.dark .dashboard-shell { background:#041214; color:#eaf6f4; }
+.dark .dashboard-shell .surface,.dark .dashboard-shell .glass-panel,.dark .dashboard-shell [data-slot="card"],.dark .dashboard-shell .bg-white,.dark .dashboard-shell .bg-card { color:#eaf6f4; }
+.dark .dashboard-shell table { background:rgba(6,26,28,.5); }
+.dark .dashboard-shell thead { background:rgba(255,255,255,.08); }
+.dark .dashboard-shell th { color:#b4cdc9; border-color:rgba(255,255,255,.16); }
+.dark .dashboard-shell td { color:#eaf6f4; border-color:rgba(255,255,255,.1); }
+.dark .dashboard-shell tbody tr:hover { background:rgba(255,255,255,.07); }
+.dark .dashboard-shell input,.dark .dashboard-shell textarea,.dark .dashboard-shell select { background:rgba(255,255,255,.07); color:#eaf6f4; border-color:rgba(255,255,255,.2); }
