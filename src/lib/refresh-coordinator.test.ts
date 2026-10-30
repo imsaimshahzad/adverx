@@ -56,8 +56,7 @@ test("a request arriving during the queued follow-up schedules exactly one more 
 
   const queued = requestCoalescedRun(pending, running, run);
   firstRun.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
   assert.equal(runs, 2);
 
   requestCoalescedRun(pending, running, run);
