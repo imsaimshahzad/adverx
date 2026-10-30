@@ -69,7 +69,7 @@ function WithdrawPage() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const selectedMethod = WITHDRAWAL_METHODS.find((method) => method.id === methodId);
   const formatWithdrawalMoney = (amount: unknown, currency = "PKR") =>
-    formatMoney(amount, currency).replace(/^\+/, "");
+    formatMoney(amount, currency);
 
   const loadWithdrawalHistory = useCallback(async () => {
     if (!state.user?.id) return;
@@ -207,7 +207,7 @@ function WithdrawPage() {
       <div className="mb-3 surface px-4 py-3 sm:px-5">
         <p className="text-sm font-medium">Withdrawable Balance</p>
         <div className="mt-1 flex min-h-7 items-center gap-2">
-          {ready ? <p className="num text-xl font-semibold">{formatWithdrawalMoney(availableBalance).replace(/^\\+/, "")}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
+          {ready ? <p className="num text-xl font-semibold">{formatWithdrawalMoney(availableBalance)}</p> : <LoadingIndicator size="sm" label="Loading withdrawable balance" />}
         </div>
       </div>
       <div className="glass-panel space-y-3 p-4 sm:p-5">
@@ -220,9 +220,9 @@ function WithdrawPage() {
             placeholder="Enter amount here"
           />
           <p className="text-xs text-muted-foreground">
-            No processing fee · You receive {formatWithdrawalMoney(value).replace(/^\\+/, "")}
+            No processing fee · You receive {formatWithdrawalMoney(value)}
           </p>
-          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatWithdrawalMoney(methodMin).replace(/^\\+/, "")} – {formatWithdrawalMoney(methodMax).replace(/^\\+/, "")}</p> : null}
+          {selectedMethod ? <p className="text-xs font-medium text-primary">Withdrawal limit: {formatWithdrawalMoney(methodMin)} – {formatWithdrawalMoney(methodMax)}</p> : null}
         </div>
 
         <div className="space-y-1.5">
@@ -343,7 +343,7 @@ function WithdrawPage() {
                     {isPaid ? <ArrowUpRight className="h-5 w-5" /> : isRejected ? <CircleX className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0">
-                    <p className="num whitespace-nowrap text-xs font-bold sm:text-[17px]">{formatWithdrawalMoney(item.amount, "PKR").replace(/^\+/, "")}</p>
+                    <p className="num whitespace-nowrap text-xs font-bold sm:text-[17px]">{formatWithdrawalMoney(item.amount, "PKR")}</p>
                     <p className="whitespace-nowrap text-[10px] text-muted-foreground sm:mt-1 sm:text-xs">{new Date(item.created_at).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</p>
                   </div>
                   </div>
