@@ -16,7 +16,7 @@ function headerValue(request: Request, name: string) {
 function getClientIp(request: Request): string | null {
   // Use the single-IP proxy header supplied by the hosting platform; do not
   // trust a browser-provided query/body value for the client's IP.
-  const candidate = request.headers.get("x-real-ip")?.trim();
+  const candidate = (request.headers.get("cf-connecting-ip") ?? request.headers.get("x-real-ip"))?.trim();
   if (!candidate || candidate.length > 64) return null;
   // PostgreSQL inet accepts IPv4/IPv6. Reject commas, whitespace and hostnames.
   if (candidate.includes(",") || /\s/.test(candidate) || !/^[0-9a-fA-F:.]+$/.test(candidate)) {
