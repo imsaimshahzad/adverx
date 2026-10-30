@@ -999,6 +999,9 @@ function Dashboard() {
                     ? "Your network helps support earning continuity. Invite someone new today."
                     : referralTip}
             </p>
+            <p className="mt-1 text-[11px] leading-4 text-muted-foreground/80">
+              Ad rewards depend on available earning reserves. If your reserve is fully used, ad rewards may pause; eligible referral reserve credits can restore them.
+            </p>
           </div>
         </div>
         <Button asChild size="sm" variant={reserveStatus === "low" || reserveStatus === "exhausted" ? "default" : "outline"} className="shrink-0">
