@@ -82,3 +82,20 @@ a { text-underline-offset:3px; }
 .dark .dashboard-shell .adverx-table-wrapper {
   background-color:rgba(17,24,39,.94) !important;
 }
+
+
+/* Compact member stat cards use a soft aqua tint; larger surfaces keep their existing color. */
+.dashboard-shell main .morphic-stats > .surface {
+  background-color:#defafa !important;
+}
+@media (hover:hover) {
+  .dashboard-shell main .morphic-stats > .surface:hover {
+    background-color:#fff !important;
+  }
+}
+.dashboard-shell main .morphic-stats > .surface:focus-within {
+  background-color:#fff !important;
+}
+.dark .dashboard-shell main .morphic-stats > .surface {
+  background-color:rgba(17,24,39,.94) !important;
+}
