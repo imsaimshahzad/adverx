@@ -83,7 +83,7 @@ begin
       s.plan_key,
       s.is_active,
       greatest(v_month_start,c.cycle_started_at) as cycle_started_at,
-      count(distinct r.referred_id)::integer as progress
+      count(distinct r.referred_id) filter (where latest.active_plan_key=s.plan_key and latest.purchased_at >= greatest(v_month_start,c.cycle_started_at))::integer as progress
     from public.referral_campaign_settings s
     join public.referral_campaign_cycles c
       on c.referrer_id=v_user and c.plan_key=s.plan_key
