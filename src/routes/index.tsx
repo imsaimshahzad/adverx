@@ -16,12 +16,10 @@ import {
   Twitter,
   Facebook,
   Maximize2,
-  Eye,
-  EyeOff,
   type LucideIcon,
 } from "lucide-react";
 
-import { AppShell, StatTile } from "@/components/AppShell";
+import { AppShell } from "@/components/AppShell";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { BrandLogo } from "@/components/BrandLogo";
