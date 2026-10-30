@@ -906,6 +906,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const inFlightRefreshRef = useRef<{ userId: string; version: number; promise: Promise<void> } | null>(null);
   const forceRefreshRequestRef = useRef(0);
   const lastAuthUserIdRef = useRef<string | null>(null);
+  const authEventVersionRef = useRef(0);
   const lastLiveRefreshRef = useRef(0);
 
   useEffect(() => {
@@ -1089,7 +1090,13 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   try {
     // Authenticated snapshots already load and publish the shared catalog tables.
     // Only anonymous visitors need the standalone public catalog request.
+    const bootAuthEventVersion = authEventVersionRef.current;
     const { data } = await ensureSupabaseSessionReady();
+    // An auth event that arrived during boot owns the newer session state.
+    if (bootAuthEventVersion !== authEventVersionRef.current) {
+      if (mounted) setCatalogReady(true);
+      return;
+    }
     const sessionUser = data.session?.user ?? null;
     lastAuthUserIdRef.current = sessionUser?.id ?? null;
     if (sessionUser) {
@@ -1111,19 +1118,22 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       // account data, so it must not trigger another full database snapshot.
       if (!mounted) return;
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      ++authEventVersionRef.current;
+
+      // Clearing local account state does not call Supabase, so do it immediately
+      // inside SIGNED_OUT—even if lastAuthUserIdRef was already null.
+      if (event === "SIGNED_OUT") {
+        lastAuthUserIdRef.current = null;
+        void refresh(null);
+        return;
+      }
 
       // Defer Supabase work until after its auth callback lock has been released.
       // This also lets SIGNED_IN race safely with boot: both paths share one snapshot.
       setTimeout(() => {
         if (!mounted) return;
         const nextUserId = session?.user?.id ?? null;
-
         if (event === "SIGNED_IN" && nextUserId === lastAuthUserIdRef.current) return;
-        if (event === "SIGNED_OUT") {
-          lastAuthUserIdRef.current = null;
-          void refresh(null);
-          return;
-        }
 
         lastAuthUserIdRef.current = nextUserId;
         if (session?.user) void refresh(session.user);
