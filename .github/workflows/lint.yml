@@ -34,6 +34,9 @@ jobs:
       - name: Test refresh queue race
         run: npm run test:refresh
 
+      - name: Test inactivity session expiry
+        run: npm run test:inactivity
+
       - name: Run ESLint
         run: "npm run lint -- --rule 'prettier/prettier: off'"
 

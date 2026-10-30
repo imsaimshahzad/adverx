@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { brokeredPreviewStorage } from "./previewAuthStorage";
+import { isSessionIdleExpired, sessionActivityStorageKey } from "@/lib/inactivity-session";
 
 const IMPERSONATION_FLAG = "adverx-impersonating";
 const IMPERSONATION_TOKEN_PARAM = "impersonation_token";
@@ -279,7 +280,22 @@ export async function ensureSupabaseSessionReady() {
     }
   }
 
-  return getSupabase().auth.getSession();
+  const sessionResult = await getSupabase().auth.getSession();
+  const sessionUserId = sessionResult.data.session?.user?.id;
+  if (sessionUserId) {
+    const activityKey = sessionActivityStorageKey(sessionUserId, isImpersonating());
+    try {
+      const storedActivity = window.localStorage.getItem(activityKey);
+      if (storedActivity !== null && isSessionIdleExpired(Number(storedActivity))) {
+        window.localStorage.removeItem(activityKey);
+        await getSupabase().auth.signOut({ scope: "local" });
+        return { data: { session: null }, error: null };
+      }
+    } catch {
+      // If browser storage is blocked, the live in-tab inactivity monitor still applies.
+    }
+  }
+  return sessionResult;
 }
 
 // Keep the existing import surface while ensuring all browser auth access goes
