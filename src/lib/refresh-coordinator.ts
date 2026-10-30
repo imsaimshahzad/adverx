@@ -12,8 +12,7 @@ export function requestCoalescedRun(
   pending.current = true;
 
   if (!running.current) {
-    let current: Promise<void>;
-    current = (async () => {
+    const current = (async () => {
       while (pending.current) {
         pending.current = false;
         await run();
