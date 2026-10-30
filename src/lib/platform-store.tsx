@@ -1185,23 +1185,122 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
   useEffect(() => {
-    if (!state.user) return;
-    const activityEvents = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart"];
-    let lastActivity = 0;
-    const resetInactivityTimer = () => {
-      if (Date.now() - lastActivity < 1000) return;
-      lastActivity = Date.now();
-      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-      inactivityTimer.current = setTimeout(() => {
-        toast.error("Your session expired due to inactivity.");
-        void supabase.auth.signOut({ scope: "local" });
-      }, 15 * 60 * 1000);
+    if (!state.user || typeof window === "undefined") return;
+
+    const userId = state.user.id;
+    const storageKey = `adverx-last-activity:${userId}`;
+    const timeoutMs = 15 * 60 * 1000;
+    const activityEvents = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart", "wheel"];
+    let disposed = false;
+    let expired = false;
+    let lastWriteAt = 0;
+    let memoryLastActivity = 0;
+
+    const readLastActivity = () => {
+      try {
+        const stored = Number(window.localStorage.getItem(storageKey));
+        if (Number.isFinite(stored) && stored > 0) return stored;
+      } catch {
+        // Continue with an in-memory fallback if browser storage is unavailable.
+      }
+      return memoryLastActivity;
     };
-    activityEvents.forEach((event) => window.addEventListener(event, resetInactivityTimer, { passive: true }));
-    resetInactivityTimer();
+
+    const writeLastActivity = (timestamp: number) => {
+      memoryLastActivity = timestamp;
+      try {
+        window.localStorage.setItem(storageKey, String(timestamp));
+      } catch {
+        // The current tab still gets timeout enforcement without persistent storage.
+      }
+    };
+
+    const clearTimer = () => {
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current);
+        inactivityTimer.current = null;
+      }
+    };
+
+    const expireSession = () => {
+      if (disposed || expired) return;
+      expired = true;
+      clearTimer();
+      try {
+        window.localStorage.removeItem(storageKey);
+      } catch {
+        // Local sign-out remains the primary expiry action.
+      }
+      toast.error("Your session expired due to inactivity. Please sign in again.");
+      void supabase.auth.signOut({ scope: "local" });
+    };
+
+    const scheduleExpiryCheck = () => {
+      if (disposed || expired) return;
+      clearTimer();
+      const lastActivity = readLastActivity();
+      if (!lastActivity || Date.now() - lastActivity >= timeoutMs) {
+        expireSession();
+        return;
+      }
+      const remaining = timeoutMs - (Date.now() - lastActivity);
+      inactivityTimer.current = setTimeout(scheduleExpiryCheck, Math.max(250, remaining));
+    };
+
+    const recordActivity = () => {
+      if (disposed || expired) return;
+      const now = Date.now();
+      if (now - lastWriteAt < 1000) return;
+      lastWriteAt = now;
+      writeLastActivity(now);
+      scheduleExpiryCheck();
+    };
+
+    const checkOnReturn = () => {
+      if (disposed || expired) return;
+      // Check the persisted timestamp BEFORE treating returning to the tab as activity.
+      scheduleExpiryCheck();
+      if (!expired && document.visibilityState === "visible") recordActivity();
+    };
+
+    const initialLastActivity = readLastActivity();
+    if (!initialLastActivity) {
+      writeLastActivity(Date.now());
+    } else if (Date.now() - initialLastActivity >= timeoutMs) {
+      expireSession();
+    } else {
+      scheduleExpiryCheck();
+    }
+
+    activityEvents.forEach((event) => window.addEventListener(event, recordActivity, { passive: true }));
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== storageKey) return;
+      if (event.newValue === null) {
+        // A different tab may have signed out; Supabase auth events handle state cleanup.
+        return;
+      }
+      const sharedActivity = Number(event.newValue);
+      if (Number.isFinite(sharedActivity) && sharedActivity > readLastActivity()) {
+        memoryLastActivity = sharedActivity;
+        scheduleExpiryCheck();
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") checkOnReturn();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", checkOnReturn);
+    window.addEventListener("pageshow", checkOnReturn);
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
-      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-      activityEvents.forEach((event) => window.removeEventListener(event, resetInactivityTimer));
+      disposed = true;
+      clearTimer();
+      activityEvents.forEach((event) => window.removeEventListener(event, recordActivity));
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", checkOnReturn);
+      window.removeEventListener("pageshow", checkOnReturn);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [state.user?.id]);
   useEffect(() => {
