@@ -130,24 +130,23 @@ function RewardsPage() {
             <div className="p-8 text-center text-sm text-muted-foreground">Campaign data is not available yet.</div>
           ) : (
             <div className="space-y-5 p-4 sm:p-6">
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
                 {campaignCards.map(({ campaign, milestone, plan }) => {
                   const percent = Math.min(100, Math.round((campaign.progress / milestone.target) * 100));
                   const claimKey = `${campaign.plan_key}-${milestone.target}`;
                   return (
-                    <article key={claimKey} className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <Badge variant="outline" className={`bg-gradient-to-r ${plan?.accent ?? ""}`}>{plan?.label ?? campaign.plan_key} plan task</Badge>
-                        <Badge variant={campaign.is_active ? "secondary" : "outline"}>{campaign.is_active ? "Active" : "Paused"}</Badge>
+                    <article key={claimKey} className="rounded-xl border border-border/80 bg-card px-3 py-3 transition hover:border-primary/40 sm:px-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary`}>{milestone.claimed ? <CheckCircle2 className="size-5" /> : <Gift className="size-5" />}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{milestone.target} direct referrals</p><Badge variant="outline" className="px-2 py-0 text-[10px]">{plan?.label ?? campaign.plan_key} task</Badge></div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">One-time campaign bonus · Progress {Math.min(campaign.progress, milestone.target)} / {milestone.target}</p>
+                          <div className="mt-2 h-1.5 max-w-64 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} /></div>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5"><p className="num text-sm font-bold sm:text-base">{formatMoney(milestone.reward_amount_pkr, "PKR")}</p>
+                          {milestone.claimed ? <Badge className="border-emerald-500/20 bg-emerald-500/10 px-2 py-0 text-emerald-700">Claimed</Badge> : milestone.claimable ? <Button size="sm" className="h-8 px-3" disabled={claiming !== null || !campaign.is_active} onClick={() => void claim(campaign.plan_key, milestone.target)}>{claiming === claimKey ? "Claiming…" : "Claim"}</Button> : <Badge variant="outline" className="px-2 py-0 text-[10px]">{campaign.is_active ? "Keep going" : "Paused"}</Badge>}
+                        </div>
                       </div>
-                      <div className="flex items-start justify-between gap-3">
-                        <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{milestone.target} direct referrals</p><p className="num mt-1 text-2xl font-bold">{formatMoney(milestone.reward_amount_pkr, "PKR")}</p><p className="mt-1 text-xs text-muted-foreground">One-time campaign bonus</p></div>
-                        {milestone.claimed ? <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="mr-1 size-3" />Claimed</Badge> : milestone.claimable ? <Badge>Completed</Badge> : <Badge variant="outline">In progress</Badge>}
-                      </div>
-                      <div className="mt-5"><div className="mb-2 flex justify-between text-xs text-muted-foreground"><span>Progress</span><span className="num">{Math.min(campaign.progress, milestone.target)} / {milestone.target}</span></div><div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} /></div></div>
-                      <Button className="mt-5 w-full" disabled={!milestone.claimable || claiming !== null || !campaign.is_active} onClick={() => void claim(campaign.plan_key, milestone.target)}>
-                        {claiming === claimKey ? <><LoadingIndicator size="sm" label="Claiming bonus" />Claiming…</> : milestone.claimed ? "Already claimed" : milestone.claimable ? "Claim bonus" : "Keep going"}
-                      </Button>
                     </article>
                   );
                 })}
