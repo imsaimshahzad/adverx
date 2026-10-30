@@ -116,10 +116,10 @@ function RewardsPage() {
         <section className="glass-panel overflow-hidden">
           <div className="border-b border-border/60 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><h2 className="text-lg font-semibold">Referral campaigns</h2><p className="mt-1 text-sm text-muted-foreground">Har campaign mein direct referrals ke milestones complete karein.</p></div>
+              <div><h2 className="text-lg font-semibold">Referral campaigns</h2><p className="mt-1 text-sm text-muted-foreground">Complete direct referral milestones in each campaign.</p></div>
               <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}><RefreshCw className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`} />Refresh</Button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Starter, Growth aur Pro plans ke tamam milestones aik hi list mein hain.</p>
+            <p className="mt-2 text-xs text-muted-foreground">All Starter, Growth, and Pro milestones are listed together.</p>
           </div>
 
           {loading ? (
