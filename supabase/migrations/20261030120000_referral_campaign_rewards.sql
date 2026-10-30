@@ -1,5 +1,17 @@
 -- AdverX referral campaign rewards
 -- Separate from existing referral commission calculations.
+alter table public.wallet_transactions
+  drop constraint if exists wallet_transactions_type_check;
+alter table public.wallet_transactions
+  add constraint wallet_transactions_type_check check (
+    type = any (array[
+      'DEPOSIT','PLAN_ACTIVATION','PLAN_PURCHASE','TASK_REWARD','REFERRAL_REWARD',
+      'REFERRAL_COMMISSION','UNASSIGNED_REFERRAL','PLATFORM_PROFIT','ADMIN_RECOVERY',
+      'WITHDRAWAL','WITHDRAWAL_FEE','REFUND','REVERSAL','ADMIN_ADJUSTMENT',
+      'REFERRAL_CAMPAIGN_BONUS'
+    ]::text[])
+  );
+
 create table if not exists public.referral_campaign_settings (
   plan_key text primary key check (plan_key in ('starter','growth','pro')),
   is_active boolean not null default true,
