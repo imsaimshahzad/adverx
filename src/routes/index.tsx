@@ -867,10 +867,15 @@ function Dashboard() {
   const activeMembers = state.network.filter((member) => member.active).length;
   const [expanded, setExpanded] = useState(false);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
+  const [continuity, setContinuity] = useState<{
+    reserve_status?: "normal" | "medium" | "low" | "exhausted" | "no_plan";
+    earning_paused?: boolean;
+    grace_days_remaining?: number | null;
+  } | null>(null);
   const reserveRemaining = Math.max(0, Number(plan?.remainingRewardBudget ?? 0));
   const reserveBase = Math.max(0, Number(plan?.rewardBudget ?? 0));
   const reservePercent = reserveBase > 0 ? (reserveRemaining / reserveBase) * 100 : null;
-  const reserveStatus = !plan
+  const computedReserveStatus = !plan
     ? "normal"
     : reserveRemaining <= 0
       ? "exhausted"
@@ -881,7 +886,23 @@ function Dashboard() {
           : reservePercent <= 50
             ? "medium"
             : "normal";
+  const reserveStatus = continuity?.reserve_status ?? computedReserveStatus;
+  const earningPaused = Boolean(continuity?.earning_paused);
   const referralTip = getDailyReferralTip(state.user?.id ?? "guest");
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!state.user?.id) {
+      setContinuity(null);
+      return;
+    }
+    void (async () => {
+      const { data, error } = await (supabase as any).rpc("get_my_earning_continuity");
+      if (!cancelled && !error && data) setContinuity(data);
+      if (error) console.error("[AdverX] earning continuity status unavailable:", error);
+    })();
+    return () => { cancelled = true; };
+  }, [state.user?.id, plan?.id, plan?.remainingRewardBudget]);
 
   useEffect(() => {
     let cancelled = false;
@@ -991,13 +1012,15 @@ function Dashboard() {
                     : "Grow your AdverX network"}
             </p>
             <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-              {reserveStatus === "exhausted"
-                ? "Ad rewards cannot be credited while your reserve is empty. An eligible referral bonus can replenish your reserve."
-                : reserveStatus === "low"
-                  ? "Invite eligible new users through your referral link to support your earning continuity."
-                  : reserveStatus === "medium"
-                    ? "Your network helps support earning continuity. Invite someone new today."
-                    : referralTip}
+              {earningPaused
+                ? "Your ad rewards are paused because the earning reserve is exhausted. Refer an eligible new user; ad rewards can resume automatically after the referral reserve credit is recorded."
+                : reserveStatus === "exhausted"
+                  ? `Your reserve is empty. Existing accounts have ${continuity?.grace_days_remaining ?? 30} transition days remaining. An eligible referral reserve credit can replenish it.`
+                  : reserveStatus === "low"
+                    ? "Invite eligible new users through your referral link to support your earning continuity."
+                    : reserveStatus === "medium"
+                      ? "Your network helps support earning continuity. Invite someone new today."
+                      : referralTip}
             </p>
             <p className="mt-1 text-[11px] leading-4 text-muted-foreground/80">
               Ad rewards depend on available earning reserves. If your reserve is fully used, ad rewards may pause; eligible referral reserve credits can restore them.
