@@ -3,7 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { brokeredPreviewStorage } from "./previewAuthStorage";
-import { SESSION_IDLE_TIMEOUT_MS, isSessionIdleExpired, sessionActivityStorageKey } from "@/lib/inactivity-session";
+import { isSessionIdleExpired, sessionActivityStorageKey } from "@/lib/inactivity-session";
 
 const IMPERSONATION_FLAG = "adverx-impersonating";
 const IMPERSONATION_TOKEN_PARAM = "impersonation_token";
@@ -285,8 +285,8 @@ export async function ensureSupabaseSessionReady() {
   if (sessionUserId) {
     const activityKey = sessionActivityStorageKey(sessionUserId, isImpersonating());
     try {
-      const lastActivity = Number(window.localStorage.getItem(activityKey));
-      if (Number.isFinite(lastActivity) && lastActivity > 0 && isSessionIdleExpired(lastActivity)) {
+      const storedActivity = window.localStorage.getItem(activityKey);
+      if (storedActivity !== null && isSessionIdleExpired(Number(storedActivity))) {
         window.localStorage.removeItem(activityKey);
         await getSupabase().auth.signOut({ scope: "local" });
         return { data: { session: null }, error: null };
