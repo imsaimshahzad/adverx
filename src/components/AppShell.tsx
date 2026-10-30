@@ -166,14 +166,14 @@ export function AppShell({
   return (
     <div className="dashboard-shell flex min-h-screen w-full">
       <div className="aurora" aria-hidden="true"><i /><i /><i /></div>
-      <aside className="app-sidebar hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar">{navigation}</aside>
+      <aside className="app-sidebar hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:hidden">{navigation}</aside>
       {mobileOpen ? <button aria-label="Close navigation" className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
       <aside className={`app-mobile-sidebar fixed inset-y-0 left-0 z-40 w-72 bg-sidebar shadow-xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>{navigation}<button className="absolute right-4 top-6 rounded-md p-1 text-muted-foreground" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button></aside>
       <div className="min-w-0 flex-1">
         <header className="dashboard-header sticky top-0 z-20 flex min-h-20 flex-wrap items-center justify-between gap-2 border-b px-3 py-2 sm:gap-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-2"><Button variant="ghost" size="icon" aria-label="Open menu" className="shrink-0 lg:hidden" onClick={() => setMobileOpen(true)}><Menu /></Button><Link to="/" aria-label="AdverX home" className="hidden shrink-0 lg:block"><BrandLogo compact className="max-w-[8.5rem]" /></Link><div className="min-w-0"><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1><p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p></div></div>
+          <div className="flex min-w-0 items-center gap-2"><Button variant="ghost" size="icon" aria-label="Open menu" className="shrink-0 lg:hidden" onClick={() => setMobileOpen(true)}><Menu /></Button><Link to="/" aria-label="AdverX home" className="shrink-0"><BrandLogo compact className="max-w-[8.5rem]" /></Link><div className="hidden min-w-0 sm:block"><h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1><p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p></div></div>
           <nav aria-label="Primary navigation" className="order-3 hidden w-full items-center justify-center gap-1 lg:order-none lg:flex lg:w-auto">
-            {NAV_GROUPS.flatMap((group) => group.items).slice(0, 5).map(({ to, label, icon: Icon }) => <Link key={to} to={to} activeOptions={{ exact: to === "/" }} className="app-top-nav-item inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-medium"><Icon className="size-4" />{label}</Link>)}
+            {[{ to: "/", label: "Home", icon: Home }, { to: "/ads", label: "Tasks", icon: MonitorPlay }, { to: "/plans", label: "Plans", icon: BadgeCheck }, { to: "/network", label: "Team", icon: Users }, { to: "/history", label: "More", icon: History }].map(({ to, label, icon: Icon }) => <Link key={to} to={to} activeOptions={{ exact: to === "/" }} className="app-top-nav-item inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-medium"><Icon className="size-4" />{label}</Link>)}
           </nav>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <select aria-label="Display currency" value={displayCurrency} onChange={(event) => changeCurrency(event.target.value as "PKR" | "USD")} className="h-9 rounded-md border border-border bg-background px-2 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-primary/20"><option value="PKR">PKR</option><option value="USD">USD</option></select>
@@ -197,7 +197,7 @@ export function AppShell({
           {children}
         </main>
         <nav aria-label="Mobile navigation" className="app-bottom-nav fixed inset-x-4 bottom-4 z-30 flex items-center gap-1 rounded-3xl p-1.5 lg:hidden">
-          {NAV_GROUPS.flatMap((group) => group.items).slice(0, 4).map(({ to, label, icon: Icon }) => <Link key={to} to={to} activeOptions={{ exact: to === "/" }} className="app-bottom-nav-item flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-medium"><Icon className="size-5" />{label === "Transaction History" ? "History" : label}</Link>)}
+          {[{ to: "/", label: "Home", icon: Home }, { to: "/ads", label: "Tasks", icon: MonitorPlay }, { to: "/plans", label: "Plans", icon: BadgeCheck }, { to: "/network", label: "Team", icon: Users }].map(({ to, label, icon: Icon }) => <Link key={to} to={to} activeOptions={{ exact: to === "/" }} className="app-bottom-nav-item flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-medium"><Icon className="size-5" />{label}</Link>)}
         </nav>
         {showWhatsAppPrompt ? (
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">

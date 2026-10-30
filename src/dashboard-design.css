@@ -120,3 +120,29 @@ html:not(.dark) .dashboard-shell textarea::placeholder { color:#6a817d; opacity:
 .dark .dashboard-shell td { color:#eaf6f4; border-color:rgba(255,255,255,.1); }
 .dark .dashboard-shell tbody tr:hover { background:rgba(255,255,255,.07); }
 .dark .dashboard-shell input,.dark .dashboard-shell textarea,.dark .dashboard-shell select { background:rgba(255,255,255,.07); color:#eaf6f4; border-color:rgba(255,255,255,.2); }
+
+/* Reference layout rules shared by every authenticated screen. */
+.dashboard-shell { font-family: "Fira Sans", "Segoe UI", system-ui, sans-serif; background:#041214; color:#eaf6f4; }
+.dashboard-shell .dashboard-header { background:linear-gradient(180deg,#041214 35%,transparent); border-color:rgba(255,255,255,.16); }
+.dashboard-shell main { max-width:1152px; }
+.dashboard-shell [data-slot="card"], .dashboard-shell .surface, .dashboard-shell .glass-panel { border-radius:26px; border-color:rgba(255,255,255,.2); background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(6,26,28,.5); box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 14px 44px rgba(0,0,0,.38); }
+.dashboard-shell .app-bottom-nav { background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(6,26,28,.72); border:1px solid rgba(255,255,255,.2); box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 18px 44px rgba(0,0,0,.38); backdrop-filter:blur(28px) saturate(170%); }
+.dashboard-shell .app-bottom-nav-item[data-status="active"], .dashboard-shell .app-bottom-nav-item.active { background:linear-gradient(135deg,#ffb347,#f28c00); color:#1c1200; }
+.dashboard-shell .app-top-nav-item[data-status="active"], .dashboard-shell .app-top-nav-item.active { background:linear-gradient(135deg,#ffb347,#f28c00); color:#1c1200; }
+.dashboard-shell .app-sidebar, .dashboard-shell .app-mobile-sidebar { background:#0b2f2b; border-color:rgba(255,255,255,.16); }
+.dashboard-shell h1,.dashboard-shell h2,.dashboard-shell h3,.dashboard-shell .text-foreground { color:#eaf6f4; }
+.dashboard-shell .text-muted-foreground { color:#b4cdc9; }
+@media (min-width:900px) { .dashboard-shell .app-sidebar { display:none; } .dashboard-shell main { padding-top:6px; } }
+@media (max-width:899px) { .dashboard-shell main { padding-bottom:112px; } }
+
+.dark .dashboard-shell { background:#041214; color:#eaf6f4; }
+.dark .dashboard-shell .app-top-nav-item, .dark .dashboard-shell .app-bottom-nav-item { color:#dff1ee; }
+
+html:not(.dark) .dashboard-shell { background:#e4f1ee; color:#0d2a2b; }
+html:not(.dark) .dashboard-shell .dashboard-header { background:linear-gradient(180deg,#e4f1ee 35%,transparent); border-color:rgba(13,42,43,.14); }
+html:not(.dark) .dashboard-shell [data-slot="card"], html:not(.dark) .dashboard-shell .surface, html:not(.dark) .dashboard-shell .glass-panel { background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.36)),rgba(255,255,255,.52); border-color:rgba(13,42,43,.18); box-shadow:inset 0 1px 0 #fff,0 14px 44px rgba(10,70,64,.16); }
+html:not(.dark) .dashboard-shell h1, html:not(.dark) .dashboard-shell h2, html:not(.dark) .dashboard-shell h3, html:not(.dark) .dashboard-shell .text-foreground { color:#0d2a2b; }
+html:not(.dark) .dashboard-shell .text-muted-foreground { color:#3e5855; }
+html:not(.dark) .dashboard-shell .app-bottom-nav { background:rgba(255,255,255,.72); border-color:rgba(13,42,43,.18); box-shadow:0 18px 44px rgba(10,70,64,.16); }
+html:not(.dark) .dashboard-shell .app-top-nav-item, html:not(.dark) .dashboard-shell .app-bottom-nav-item { color:#0d2a2b; }
+html:not(.dark) .dashboard-shell .app-sidebar, html:not(.dark) .dashboard-shell .app-mobile-sidebar { background:#fff; border-color:rgba(13,42,43,.14); }
