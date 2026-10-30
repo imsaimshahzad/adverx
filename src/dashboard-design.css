@@ -84,9 +84,9 @@ a { text-underline-offset:3px; }
 }
 
 
-/* Compact member stat cards use a soft aqua tint; larger surfaces keep their existing color. */
+/* Compact member stat cards stay white in both normal and hover states. */
 .dashboard-shell main .morphic-stats > .surface {
-  background-color:#defafa !important;
+  background-color:#fff !important;
 }
 @media (hover:hover) {
   .dashboard-shell main .morphic-stats > .surface:hover {
@@ -101,9 +101,3 @@ a { text-underline-offset:3px; }
 }
 
 
-/* Requested hover color for compact member stat cards. */
-@media (hover:hover) {
-  .dashboard-shell main .morphic-stats > .surface:hover {
-    background-color:#DEFAFA !important;
-  }
-}
