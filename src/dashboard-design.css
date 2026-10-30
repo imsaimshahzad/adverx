@@ -65,6 +65,9 @@ a { text-underline-offset:3px; }
   .dashboard-shell main .bg-card:hover,
   .dashboard-shell .adverx-table-wrapper:hover {
     background-color:#fff !important;
+    border-color:#a8cce9;
+    box-shadow:0 12px 30px rgba(35,86,130,.16),0 3px 10px rgba(35,86,130,.08);
+    transform:translateY(-2px);
   }
 }
 .dashboard-shell main .surface:focus-within,
